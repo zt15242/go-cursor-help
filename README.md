@@ -41,8 +41,8 @@ Too many free trial accounts used on this machine. Please upgrade to pro. We hav
 
 ### System Support
 - ✅ Windows (Tested)
-- ⚠️ MacOS (Untested)
-- ⚠️ Linux (Untested)
+- ✅ MacOS (Tested)
+- ✅ Linux (Tested)
 
 ### Automatic Reset
 #### Prerequisites
@@ -111,8 +111,8 @@ Too many free trial accounts used on this machine. Please upgrade to pro. We hav
 
 ### 系统支持
 - ✅ Windows (已测试)
-- ⚠️ MacOS (未测试)
-- ⚠️ Linux (未测试)
+- ✅ MacOS (已测试)
+- ✅ Linux (已测试)
 
 ### 自动重置
 #### 使用前提
