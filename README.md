@@ -61,7 +61,7 @@ Too many free trial accounts used on this machine. Please upgrade to pro. We hav
 ### Manual Reset
 1. Close Cursor completely
 2. Locate the storage.json file:
-   - Windows: `%APPDATA%\Cursor\User\globalStorage\storage.json`
+   - Windows: `%APPDATA%\Roaming\Cursor\User\globalStorage\storage.json`
    - MacOS: `~/Library/Application Support/Cursor/User/globalStorage/storage.json`
    - Linux: `~/.config/Cursor/User/globalStorage/storage.json`
 3. Make the file writable (if needed):
@@ -131,7 +131,7 @@ Too many free trial accounts used on this machine. Please upgrade to pro. We hav
 ### 手动重置
 1. 完全关闭Cursor
 2. 找到storage.json文件：
-   - Windows: `%APPDATA%\Cursor\User\globalStorage\storage.json`
+   - Windows: `%APPDATA%\Roaming\Cursor\User\globalStorage\storage.json`
    - MacOS: `~/Library/Application Support/Cursor/User/globalStorage/storage.json`
    - Linux: `~/.config/Cursor/User/globalStorage/storage.json`
 3. 修改文件为可写（如果需要）：
