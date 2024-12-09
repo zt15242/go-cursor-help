@@ -2,6 +2,29 @@
 
 [English](#english) | [中文](#chinese)
 
+### Important Notice | 重要声明
+This tool is only intended for the following specific scenarios:
+1. During Cursor's official free trial period
+2. When system mistakenly flags as duplicate trial due to technical issues
+3. As a temporary solution when official support is not readily available
+
+Please note:
+- This tool is not meant for bypassing paid features or cracking software
+- If your trial period has expired, please purchase a license or seek alternatives
+- It's recommended to contact official support first
+- Please ensure you are within valid trial period before using this tool
+
+本工具仅用于解决以下特定场景:
+1. 在Cursor官方承诺的免费试用期内
+2. 由于技术原因导致系统误判为重复试用
+3. 无法通过正常渠道及时获得官方支持时的临时解决方案
+
+请注意:
+- 本工具不是用于规避付费或破解软件
+- 如果您已超出试用期,请购买正版授权或寻找其他替代方案
+- 建议优先通过官方支持渠道解决问题
+- 使用本工具前请确认您处于有效的试用期内
+
 <a name="english"></a>
 ## English
 
