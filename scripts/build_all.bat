@@ -2,7 +2,7 @@
 setlocal EnableDelayedExpansion
 
 :: 设置版本信息
-set VERSION=1.0.0
+set VERSION=2.0.0
 
 :: 设置颜色代码
 set "GREEN=[32m"
