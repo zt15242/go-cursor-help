@@ -117,6 +117,7 @@ func printCyberpunkBanner() {
 	cyan := color.New(color.FgCyan, color.Bold)
 	yellow := color.New(color.FgYellow, color.Bold)
 	magenta := color.New(color.FgMagenta, color.Bold)
+	green := color.New(color.FgGreen, color.Bold)
 
 	banner := `
     ██████╗██╗   ██╗██████╗ ███████╗ ██████╗ ██████╗ 
@@ -129,6 +130,15 @@ func printCyberpunkBanner() {
 	cyan.Println(banner)
 	yellow.Println("\t\t>> Cursor ID Modifier v1.0 <<")
 	magenta.Println("\t\t   [ By Pancake Fruit Rolled Shark Chili ]")
+	
+	// 添加语言标识
+	langText := "当前语言/Language: "
+	if currentLanguage == CN {
+		langText += "简体中文"
+	} else {
+		langText += "English"
+	}
+	green.Printf("\n\t\t   %s\n\n", langText)
 }
 
 type ProgressSpinner struct {
@@ -241,8 +251,11 @@ func saveConfig(config *StorageConfig) error {
 // showSuccess 显示成功信息
 func showSuccess() {
 	text := texts[currentLanguage]
-	color.Green(text.SuccessMessage)
-	color.Yellow(text.RestartMessage)
+	successColor := color.New(color.FgGreen, color.Bold)
+	warningColor := color.New(color.FgYellow, color.Bold)
+	
+	successColor.Printf("\n%s\n", text.SuccessMessage)
+	warningColor.Printf("%s\n", text.RestartMessage)
 }
 
 // 修改 loadAndUpdateConfig 函数使用 configPath
@@ -299,11 +312,18 @@ func main() {
 
 	setupProgram()
 	
+	oldConfig, err := readExistingConfig()
+	if err != nil {
+		oldConfig = nil
+	}
+	
 	config, err := loadAndUpdateConfig()
 	if err != nil {
 		handleError("配置更新失败", err)
 		return
 	}
+	
+	showIdComparison(oldConfig, config)
 	
 	if err := saveConfig(config); err != nil {
 		handleError("保存配置失败", err)
@@ -428,4 +448,45 @@ func detectLanguage() Language {
         return CN
     }
     return EN
+}
+
+// 添加新函数用于显示ID对比
+func showIdComparison(oldConfig *StorageConfig, newConfig *StorageConfig) {
+	cyan := color.New(color.FgCyan)
+	yellow := color.New(color.FgYellow)
+	
+	fmt.Println("\n=== ID 修改对比 ===")
+	
+	if oldConfig != nil {
+		cyan.Println("\n[原始 ID]")
+		yellow.Printf("Machine ID: %s\n", oldConfig.TelemetryMachineId)
+		yellow.Printf("Mac Machine ID: %s\n", oldConfig.TelemetryMacMachineId)
+		yellow.Printf("Dev Device ID: %s\n", oldConfig.TelemetryDevDeviceId)
+	}
+	
+	cyan.Println("\n[新生成 ID]")
+	yellow.Printf("Machine ID: %s\n", newConfig.TelemetryMachineId)
+	yellow.Printf("Mac Machine ID: %s\n", newConfig.TelemetryMacMachineId)
+	yellow.Printf("Dev Device ID: %s\n", newConfig.TelemetryDevDeviceId)
+	fmt.Println()
+}
+
+// 新增函数用于读取现有配置
+func readExistingConfig() (*StorageConfig, error) {
+	configPath, err := getConfigPath()
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var config StorageConfig
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
