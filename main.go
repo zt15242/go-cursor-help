@@ -110,8 +110,6 @@ func getCursorExePath() (string, error) {
 	}
 }
 
-
-
 func main() {
 	// 获取配置文件路径
 	configPath, err := getConfigPath()
@@ -124,6 +122,14 @@ func main() {
 	content, err := os.ReadFile(configPath)
 	if err != nil {
 		fmt.Printf("读取配置文件失败: %v\n", err)
+		return
+	}
+
+	// 备份配置文件
+	backupPath := configPath + ".bak"
+	err = os.WriteFile(backupPath, content, 0666)
+	if err != nil {
+		fmt.Printf("备份配置文件失败: %v\n", err)
 		return
 	}
 
@@ -166,7 +172,6 @@ func main() {
 		fmt.Printf("设置文件只读权限失败: %v\n", err)
 		return
 	}
-
 
 	fmt.Println("配置文件已成功更新，请手动重启Cursor以使更改生效。")
 }
