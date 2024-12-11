@@ -51,6 +51,7 @@ type TextResource struct {
 	RunAsAdmin       string
 	RunWithSudo      string
 	SudoExample      string
+	ConfigLocation   string
 }
 
 // StorageConfig 优化的存储配置结构 / StorageConfig optimized storage configuration struct
@@ -102,6 +103,7 @@ var (
 			RunAsAdmin:       "请右键点击程序，选择「以管理员身份运行」",
 			RunWithSudo:      "请使用 sudo 命令运行此程序",
 			SudoExample:      "示例: sudo %s",
+			ConfigLocation:   "配置文件位置:",
 		},
 		EN: {
 			SuccessMessage:   "[√] Configuration file updated successfully!",
@@ -114,6 +116,7 @@ var (
 			RunAsAdmin:       "Please right-click and select 'Run as Administrator'",
 			RunWithSudo:      "Please run this program with sudo",
 			SudoExample:      "Example: sudo %s",
+			ConfigLocation:   "Config file location:",
 		},
 	}
 )
@@ -350,9 +353,15 @@ func showSuccess() {
 	text := texts[currentLanguage]
 	successColor := color.New(color.FgGreen, color.Bold)
 	warningColor := color.New(color.FgYellow, color.Bold)
+	pathColor := color.New(color.FgCyan)
 
 	successColor.Printf("\n%s\n", text.SuccessMessage)
 	warningColor.Printf("%s\n", text.RestartMessage)
+
+	// 获取并输出配置文件路径
+	if configPath, err := getConfigPath(); err == nil {
+		pathColor.Printf("\n配置文件位置/Config file location:\n%s\n", configPath)
+	}
 }
 
 func showPrivilegeError() {
@@ -668,7 +677,7 @@ func initConfig() *Config {
 	}
 }
 
-// UI 组件���化
+// UI 组件
 type UI struct {
 	config  *UIConfig
 	spinner *ProgressSpinner
