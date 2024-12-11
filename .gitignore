@@ -1,20 +1,12 @@
 # Binary files
-app.exe
-cursor-id-modifier-linux
-cursor-id-modifier-macos
-cursor-id-modifier-*
 *.exe
 *.dll
 *.so
 *.dylib
 
 # Build directories
-bin/
 releases/
-scripts/
 
-# IDE
-.vscode/
 
 # Go specific
 go.sum

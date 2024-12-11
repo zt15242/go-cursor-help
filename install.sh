@@ -55,6 +55,12 @@ detect_platform() {
 check_requirements() {
     info "Checking system requirements..." "正在检查系统要求..."
     
+    # 添加网络连接检查
+    if ! ping -c 1 github.com >/dev/null 2>&1; then
+        error "No network connection to GitHub" \
+              "无法连接到 GitHub"
+    fi
+    
     # Check curl
     if ! command -v curl >/dev/null 2>&1; then
         error "curl is required. Please install curl first." \
@@ -76,6 +82,12 @@ verify_binary() {
               "二进制文件下载失败或不存在"
     fi
     
+    # 添加可执行文件格式检查
+    if ! file "$TEMP_DIR/$BINARY_NAME" | grep -q "executable"; then
+        error "Downloaded file is not an executable" \
+              "下载的文件不是可执行文件"
+    fi
+    
     # Check file size / 检查文件大小
     local size=$(wc -c < "$TEMP_DIR/$BINARY_NAME")
     if [ "$size" -lt 1000000 ]; then  # At least 1MB / 至少1MB
@@ -92,7 +104,12 @@ main() {
     # Initialize installation / 初始化安装
     detect_platform
     INSTALL_DIR="/usr/local/bin"
-    [ -d "$INSTALL_DIR" ] || mkdir -p "$INSTALL_DIR"
+    if [ ! -d "$INSTALL_DIR" ]; then
+        if ! mkdir -p "$INSTALL_DIR" 2>/dev/null; then
+            error "Failed to create installation directory" \
+                  "无法创建安装目录"
+        fi
+    fi
     
     # Check requirements / 检查要求
     check_requirements
@@ -104,10 +121,16 @@ main() {
     # Download binary / 下载二进制文件
     info "Downloading cursor-id-modifier ($OS-$ARCH)..." \
          "正在下载 cursor-id-modifier ($OS-$ARCH)..."
-    DOWNLOAD_URL="https://github.com/yuaotian/go-cursor-help/raw/main/bin/$BINARY_NAME"
     
-    if ! curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_DIR/$BINARY_NAME"; then
-        error "Failed to download binary" "下载二进制文件失败"
+    # 修改下载 URL，使用正确的仓库分支和文件路径
+    DOWNLOAD_URL="https://github.com/yuaotian/go-cursor-help/raw/refs/heads/master/bin/$BINARY_NAME"
+    
+    # 使用 curl 显示详细的下载进度信息
+    if ! curl -L --progress --show-error \
+              --write-out "\n" \
+              "$DOWNLOAD_URL" -o "$TEMP_DIR/$BINARY_NAME"; then
+        error "Failed to download binary from: $DOWNLOAD_URL" \
+              "从以下地址下载二进制文件失败：$DOWNLOAD_URL"
     fi
     
     # Verify download / 验证下载
@@ -116,7 +139,7 @@ main() {
     # Set permissions / 设置权限
     info "Setting execution permissions..." "正在设置执行权限..."
     if ! chmod +x "$TEMP_DIR/$BINARY_NAME"; then
-        error "Failed to set executable permissions" "无法设置可执行权���"
+        error "Failed to set executable permissions" "无法设置可执行权"
     fi
     
     # Handle macOS security / 处理macOS安全设置
@@ -135,6 +158,14 @@ main() {
             "安装成功！现在可以在任何位置运行 'cursor-id-modifier'。"
     success "For help, run 'cursor-id-modifier --help'" \
             "如需帮助，请运行 'cursor-id-modifier --help'"
+}
+
+cleanup_old_version() {
+    if [ -f "$INSTALL_DIR/cursor-id-modifier" ]; then
+        info "Removing old version..." "正在删除旧版本..."
+        rm -f "$INSTALL_DIR/cursor-id-modifier" || \
+            error "Failed to remove old version" "删除旧版本失败"
+    fi
 }
 
 # Start installation / 开始安装
