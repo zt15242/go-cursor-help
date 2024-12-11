@@ -81,7 +81,7 @@ verify_binary() {
     if [ "$size" -lt 1000000 ]; then  # At least 1MB / 至少1MB
         error "Downloaded file size is abnormal, download might be incomplete" \
               "下载的文件大小异常，可能下载不完整"
-    }
+    fi
 }
 
 # Main installation process / 主安装流程
@@ -116,7 +116,7 @@ main() {
     # Set permissions / 设置权限
     info "Setting execution permissions..." "正在设置执行权限..."
     if ! chmod +x "$TEMP_DIR/$BINARY_NAME"; then
-        error "Failed to set executable permissions" "无法设置可执行权限"
+        error "Failed to set executable permissions" "无法设置可执行权���"
     fi
     
     # Handle macOS security / 处理macOS安全设置
