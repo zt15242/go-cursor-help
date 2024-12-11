@@ -76,7 +76,7 @@ check_requirements() {
 
 # Verify binary / 验证二进制文件
 verify_binary() {
-    info "Verifying binary..." "正在验证二进制文件..."
+    info "Verifying binary..." "正在验证二���制文件..."
     if [ ! -f "$TEMP_DIR/$BINARY_NAME" ]; then
         error "Binary file download failed or does not exist" \
               "二进制文件下载失败或不存在"
@@ -126,11 +126,10 @@ main() {
     DOWNLOAD_URL="https://github.com/yuaotian/go-cursor-help/raw/refs/heads/master/bin/$BINARY_NAME"
     
     # 使用 curl 显示详细的下载进度信息
-    if ! curl -L --progress --show-error \
-              --write-out "\n" \
-              "$DOWNLOAD_URL" -o "$TEMP_DIR/$BINARY_NAME"; then
-        error "Failed to download binary from: $DOWNLOAD_URL" \
-              "从以下地址下载二进制文件失败：$DOWNLOAD_URL"
+    if ! curl -L --progress-bar \
+              "$DOWNLOAD_URL" -o "$TEMP_DIR/$BINARY_NAME" 2>/dev/null; then
+        error "Failed to download binary from: $DOWNLOAD_URL (HTTP Status: $?)" \
+              "从以下地址下载二进制文件失败：$DOWNLOAD_URL (HTTP状态码: $?)"
     fi
     
     # Verify download / 验证下载
