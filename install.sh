@@ -77,23 +77,52 @@ check_requirements() {
 # Verify binary / 验证二进制文件
 verify_binary() {
     info "Verifying binary..." "正在验证二进制文件..."
-    if [ ! -f "$TEMP_DIR/$BINARY_NAME" ]; then
+    if [ ! -f "$DOWNLOAD_PATH" ]; then
         error "Binary file download failed or does not exist" \
               "二进制文件下载失败或不存在"
     fi
     
     # 添加可执行文件格式检查
-    if ! file "$TEMP_DIR/$BINARY_NAME" | grep -q "executable"; then
+    if ! file "$DOWNLOAD_PATH" | grep -q "executable"; then
         error "Downloaded file is not an executable" \
               "下载的文件不是可执行文件"
     fi
     
     # Check file size / 检查文件大小
-    local size=$(wc -c < "$TEMP_DIR/$BINARY_NAME")
+    local size=$(wc -c < "$DOWNLOAD_PATH")
     if [ "$size" -lt 1000000 ]; then  # At least 1MB / 至少1MB
         error "Downloaded file size is abnormal, download might be incomplete" \
               "下载的文件大小异常，可能下载不完整"
     fi
+
+    # Set executable permissions / 设置可执行权限
+    info "Setting executable permissions..." "正在设置可执行权限..."
+    if ! chmod +x "$DOWNLOAD_PATH"; then
+        error "Failed to set executable permissions" "无法设置可执行权限"
+    fi
+}
+
+# 在文件开头添加配置项
+KEEP_BINARY=true  # 修改默认值为 true
+DOWNLOAD_DIR="."   # 默认下载到当前目录
+
+# 在 main 函数之前添加参数解析
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --keep-binary)
+                KEEP_BINARY=true
+                shift
+                ;;
+            --download-dir=*)
+                DOWNLOAD_DIR="${1#*=}"
+                shift
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
 }
 
 # Main installation process / 主安装流程
@@ -115,47 +144,67 @@ main() {
     check_requirements
     
     # Create temp directory / 创建临时目录
+    info "Creating temporary directory..." \
+         "正在创建临时目录..."
     TEMP_DIR=$(mktemp -d)
+    info "Note: Temporary directory will be automatically cleaned up after installation" \
+         "注意：临时目录将在安装完成后自动清理"
     trap 'rm -rf "$TEMP_DIR"' EXIT
     
-    # Download binary / 下载二进制文件
+    # 检查下载目录权限
+    if [ ! -w "$DOWNLOAD_DIR" ]; then
+        error "No write permission for download directory: $DOWNLOAD_DIR" \
+              "下载目录无写入权限：$DOWNLOAD_DIR"
+    fi
+    
+    # 下载二进制文件
     info "Downloading cursor-id-modifier ($OS-$ARCH)..." \
          "正在下载 cursor-id-modifier ($OS-$ARCH)..."
     
-    # 使用正确的 URL 格式
+    # 定义下载 URL
     DOWNLOAD_URL="https://github.com/yuaotian/go-cursor-help/raw/refs/heads/master/bin/$BINARY_NAME"
+    DOWNLOAD_PATH="$DOWNLOAD_DIR/$BINARY_NAME"
+    info "File will be downloaded to: $DOWNLOAD_PATH" \
+         "文件将下载到：$DOWNLOAD_PATH"
     
-    info "Temporary file will be saved to: $TEMP_DIR" \
-         "临时文件将保存到：$TEMP_DIR"
-    
-    # 使用 curl 显示下载进度
-    if ! curl -L --progress-bar "$DOWNLOAD_URL" -o "$TEMP_DIR/$BINARY_NAME"; then
+    if ! curl -L --progress-bar "$DOWNLOAD_URL" -o "$DOWNLOAD_PATH"; then
         error "Failed to download binary from: $DOWNLOAD_URL" \
               "从以下地址下载二进制文件失败：$DOWNLOAD_URL"
     fi
     
-    success "Download completed to: $TEMP_DIR/$BINARY_NAME" \
-            "下载完成，文件位置：$TEMP_DIR/$BINARY_NAME"
+    success "Download completed to: $DOWNLOAD_PATH" \
+            "下载完成，文件位置：$DOWNLOAD_PATH"
     
-    # Verify download / 验证下载
+    # 添加手动设置权限的提示
+    info "To make the file executable, run:" \
+         "要使文件可执行，请运行："
+    info "chmod +x $DOWNLOAD_PATH" \
+         "chmod +x $DOWNLOAD_PATH"
+    info "Then you can run it with:" \
+         "然后可以通过以下命令运行："
+    info "./$BINARY_NAME" \
+         "./$BINARY_NAME"
+    
+    # 验证和安装
     verify_binary
     
-    # Set permissions / 设置权限
-    info "Setting execution permissions..." "正在设置执行权限..."
-    if ! chmod +x "$TEMP_DIR/$BINARY_NAME"; then
-        error "Failed to set executable permissions" "无法设置可执行权"
-    fi
-    
-    # Handle macOS security / 处理macOS安全设置
-    if [ "$OS" = "darwin" ]; then
-        info "Handling macOS security settings..." "正在处理macOS安全设置..."
-        xattr -d com.apple.quarantine "$TEMP_DIR/$BINARY_NAME" 2>/dev/null || true
-    fi
-    
-    # Install binary / 安装二进制文件
+    # 安装到系统目录
     info "Installing binary..." "正在安装二进制文件..."
-    if ! mv "$TEMP_DIR/$BINARY_NAME" "$INSTALL_DIR/cursor-id-modifier"; then
+    if ! cp "$DOWNLOAD_PATH" "$INSTALL_DIR/cursor-id-modifier"; then
         error "Failed to install binary" "安装二进制文件失败"
+    fi
+    
+    # 根据设置决定是否保留下载的文件
+    if [ "$KEEP_BINARY" = false ]; then
+        info "Binary file will be cleaned up after installation" \
+             "二进制文件将在安装后被清理"
+        info "Use --keep-binary flag to keep the downloaded file" \
+             "使用 --keep-binary 参数可以保留下载的文件"
+        info "Cleaning up downloaded file..." "正在清理下载的文件..."
+        rm -f "$DOWNLOAD_PATH"
+    else
+        info "Binary file is kept at: $DOWNLOAD_PATH" \
+             "二进制文件保留在：$DOWNLOAD_PATH"
     fi
     
     success "Installation successful! You can now run 'cursor-id-modifier' from anywhere." \
@@ -171,6 +220,9 @@ cleanup_old_version() {
             error "Failed to remove old version" "删除旧版本失败"
     fi
 }
+
+# 在主程序开始前解析参数
+parse_args "$@"
 
 # Start installation / 开始安装
 main
