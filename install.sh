@@ -65,7 +65,7 @@ check_requirements() {
     if [ ! -w "$INSTALL_DIR" ]; then
         error "No write permission for $INSTALL_DIR. Please run with sudo." \
               "没有 $INSTALL_DIR 的写入权限。请使用 sudo 运行此脚本。"
-    }
+    fi
 }
 
 # Verify binary / 验证二进制文件
