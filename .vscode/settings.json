@@ -9,6 +9,7 @@
         "ldflags",
         "LOCALAPPDATA",
         "pkill",
+        "runas",
         "setlocal",
         "taskkill",
         "trimpath"

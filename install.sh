@@ -16,15 +16,14 @@ detect_platform() {
     case "$OS" in
         linux*)
             case "$ARCH" in
-                x86_64)  BINARY_NAME="cursor-id-modifier" ;;
-                aarch64) BINARY_NAME="cursor-id-modifier-arm64" ;;
+                x86_64)  BINARY_NAME="cursor_id_modifier_v2.0.0_linux_amd64" ;;
                 *) error "Unsupported Linux architecture/不支持的Linux架构: $ARCH" ;;
             esac
             ;;
         darwin*)
             case "$ARCH" in
-                x86_64) BINARY_NAME="cursor-id-modifier-amd64" ;;
-                arm64)  BINARY_NAME="cursor-id-modifier-arm64" ;;
+                x86_64) BINARY_NAME="cursor_id_modifier_v2.0.0_mac_intel" ;;
+                arm64)  BINARY_NAME="cursor_id_modifier_v2.0.0_mac_m1" ;;
                 *) error "Unsupported macOS architecture/不支持的macOS架构: $ARCH" ;;
             esac
             ;;
@@ -47,7 +46,7 @@ INSTALL_DIR="/usr/local/bin"
 # Download binary / 下载二进制文件
 echo "Downloading cursor-id-modifier for/正在下载 $OS ($ARCH)..."
 TEMP_DIR=$(mktemp -d)
-DOWNLOAD_URL="https://github.com/yuaotian/go-cursor-help/releases/latest/download/$BINARY_NAME"
+DOWNLOAD_URL="https://github.com/yuaotian/go-cursor-help/raw/main/bin/$BINARY_NAME"
 
 if ! curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_DIR/$BINARY_NAME"; then
     error "Failed to download binary/下载二进制文件失败"

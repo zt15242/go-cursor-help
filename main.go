@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/fatih/color"
@@ -28,23 +27,23 @@ type Language string
 const (
 	CN Language = "cn"
 	EN Language = "en"
-	
+
 	// Version constant
 	Version = "1.0.1"
 )
 
 // TextResource 存储多语言文本 / TextResource stores multilingual text
 type TextResource struct {
-	SuccessMessage    string
-	RestartMessage    string
-	ReadingConfig     string
-	GeneratingIds     string
-	PressEnterToExit  string
-	ErrorPrefix       string
-	PrivilegeError    string
-	RunAsAdmin        string
-	RunWithSudo       string
-	SudoExample       string
+	SuccessMessage   string
+	RestartMessage   string
+	ReadingConfig    string
+	GeneratingIds    string
+	PressEnterToExit string
+	ErrorPrefix      string
+	PrivilegeError   string
+	RunAsAdmin       string
+	RunWithSudo      string
+	SudoExample      string
 }
 
 // StorageConfig 优化的存储配置结构 / StorageConfig optimized storage configuration struct
@@ -76,28 +75,28 @@ var (
 
 	texts = map[Language]TextResource{
 		CN: {
-			SuccessMessage:    "[√] 配置文件已成功更新!",
-			RestartMessage:    "[!] 请手动重启 Cursor 以使更新生效",
-			ReadingConfig:     "正在读取配置文件...",
-			GeneratingIds:     "正在生成新的标识符...",
-			PressEnterToExit:  "按回车键退出程序...",
-			ErrorPrefix:       "程序发生严重错误: %v",
-			PrivilegeError:    "\n[!] 错误：需要管理员权限",
-			RunAsAdmin:        "请右键点击程序，选择「以管理员身份运行」",
-			RunWithSudo:       "请使用 sudo 命令运行此程序",
-			SudoExample:       "示例: sudo %s",
+			SuccessMessage:   "[√] 配置文件已成功更新!",
+			RestartMessage:   "[!] 请手动重启 Cursor 以使更新生效",
+			ReadingConfig:    "正在读取配置文件...",
+			GeneratingIds:    "正在生成新的标识符...",
+			PressEnterToExit: "按回车键退出程序...",
+			ErrorPrefix:      "程序发生严重错误: %v",
+			PrivilegeError:   "\n[!] 错误：需要管理员权限",
+			RunAsAdmin:       "请右键点击程序，选择「以管理员身份运行」",
+			RunWithSudo:      "请使用 sudo 命令运行此程序",
+			SudoExample:      "示例: sudo %s",
 		},
 		EN: {
-			SuccessMessage:    "[√] Configuration file updated successfully!",
-			RestartMessage:    "[!] Please restart Cursor manually for changes to take effect",
-			ReadingConfig:     "Reading configuration file...",
-			GeneratingIds:     "Generating new identifiers...",
-			PressEnterToExit:  "Press Enter to exit...",
-			ErrorPrefix:       "Program encountered a serious error: %v",
-			PrivilegeError:    "\n[!] Error: Administrator privileges required",
-			RunAsAdmin:        "Please right-click and select 'Run as Administrator'",
-			RunWithSudo:       "Please run this program with sudo",
-			SudoExample:       "Example: sudo %s",
+			SuccessMessage:   "[√] Configuration file updated successfully!",
+			RestartMessage:   "[!] Please restart Cursor manually for changes to take effect",
+			ReadingConfig:    "Reading configuration file...",
+			GeneratingIds:    "Generating new identifiers...",
+			PressEnterToExit: "Press Enter to exit...",
+			ErrorPrefix:      "Program encountered a serious error: %v",
+			PrivilegeError:   "\n[!] Error: Administrator privileges required",
+			RunAsAdmin:       "Please right-click and select 'Run as Administrator'",
+			RunWithSudo:      "Please run this program with sudo",
+			SudoExample:      "Example: sudo %s",
 		},
 	}
 )
@@ -224,9 +223,9 @@ func killCursorProcesses() error {
 		// First try graceful shutdown
 		exec.Command("taskkill", "/IM", "Cursor.exe").Run()
 		exec.Command("taskkill", "/IM", "cursor.exe").Run()
-		
+
 		time.Sleep(time.Second)
-		
+
 		// Force kill any remaining instances
 		exec.Command("taskkill", "/F", "/IM", "Cursor.exe").Run()
 		exec.Command("taskkill", "/F", "/IM", "cursor.exe").Run()
@@ -244,7 +243,7 @@ func checkCursorRunning() bool {
 	} else {
 		cmd = exec.Command("pgrep", "-f", "Cursor")
 	}
-	
+
 	output, _ := cmd.Output()
 	return strings.Contains(string(output), "Cursor") || strings.Contains(string(output), "cursor")
 }
@@ -288,7 +287,7 @@ func printCyberpunkBanner() {
 	cyan.Println(banner)
 	yellow.Println("\t\t>> Cursor ID Modifier v1.0 <<")
 	magenta.Println("\t\t   [ By Pancake Fruit Rolled Shark Chili ]")
-	
+
 	langText := "当前语言/Language: "
 	if currentLanguage == CN {
 		langText += "简体中文"
@@ -302,7 +301,7 @@ func showSuccess() {
 	text := texts[currentLanguage]
 	successColor := color.New(color.FgGreen, color.Bold)
 	warningColor := color.New(color.FgYellow, color.Bold)
-	
+
 	successColor.Printf("\n%s\n", text.SuccessMessage)
 	warningColor.Printf("%s\n", text.RestartMessage)
 }
@@ -311,7 +310,7 @@ func showPrivilegeError() {
 	text := texts[currentLanguage]
 	red := color.New(color.FgRed, color.Bold)
 	yellow := color.New(color.FgYellow)
-	
+
 	red.Println(text.PrivilegeError)
 	if runtime.GOOS == "windows" {
 		yellow.Println(text.RunAsAdmin)
@@ -324,16 +323,16 @@ func showPrivilegeError() {
 func showIdComparison(oldConfig *StorageConfig, newConfig *StorageConfig) {
 	cyan := color.New(color.FgCyan)
 	yellow := color.New(color.FgYellow)
-	
+
 	fmt.Println("\n=== ID Modification Comparison / ID 修改对比 ===")
-	
+
 	if oldConfig != nil {
 		cyan.Println("\n[Original IDs / 原始 ID]")
 		yellow.Printf("Machine ID: %s\n", oldConfig.TelemetryMachineId)
 		yellow.Printf("Mac Machine ID: %s\n", oldConfig.TelemetryMacMachineId)
 		yellow.Printf("Dev Device ID: %s\n", oldConfig.TelemetryDevDeviceId)
 	}
-	
+
 	cyan.Println("\n[Newly Generated IDs / 新生成 ID]")
 	yellow.Printf("Machine ID: %s\n", newConfig.TelemetryMachineId)
 	yellow.Printf("Mac Machine ID: %s\n", newConfig.TelemetryMacMachineId)
@@ -395,7 +394,7 @@ func loadAndUpdateConfig() (*StorageConfig, error) {
 
 	text := texts[currentLanguage]
 	showProgress(text.ReadingConfig)
-	
+
 	_, err = os.ReadFile(configPath)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, &AppError{"read config file", configPath, err}
@@ -413,14 +412,14 @@ func checkAdminPrivileges() (bool, error) {
 		cmd := exec.Command("net", "session")
 		err := cmd.Run()
 		return err == nil, nil
-		
+
 	case "darwin", "linux":
 		currentUser, err := user.Current()
 		if err != nil {
 			return false, fmt.Errorf("failed to get current user: %v", err)
 		}
 		return currentUser.Uid == "0", nil
-		
+
 	default:
 		return false, fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
@@ -432,16 +431,16 @@ func selfElevate() error {
 	if err != nil {
 		return err
 	}
-	
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
-
-	verbPtr, _ := syscall.UTF16PtrFromString(verb)
-	exePtr, _ := syscall.UTF16PtrFromString(exe)
-	cwdPtr, _ := syscall.UTF16PtrFromString(cwd)
-	argPtr, _ := syscall.UTF16PtrFromString("")
+	// 将字符串转换为UTF-16指针
+	verbPtr, _ := windows.UTF16PtrFromString(verb)
+	exePtr, _ := windows.UTF16PtrFromString(exe)
+	cwdPtr, _ := windows.UTF16PtrFromString(cwd)
+	argPtr, _ := windows.UTF16PtrFromString("")
 
 	var showCmd int32 = 1 //SW_NORMAL
 
@@ -460,7 +459,7 @@ func detectLanguage() Language {
 	if lang == "" {
 		lang = os.Getenv("LANGUAGE")
 	}
-	
+
 	if strings.Contains(strings.ToLower(lang), "zh") {
 		return CN
 	}
@@ -494,7 +493,7 @@ func main() {
 
 	os.Stdout.Sync()
 	currentLanguage = detectLanguage()
-	
+
 	isAdmin, err := checkAdminPrivileges()
 	if err != nil {
 		handleError("permission check failed", err)
@@ -524,7 +523,7 @@ func main() {
 			waitExit()
 			return
 		}
-		
+
 		time.Sleep(2 * time.Second)
 		if checkCursorRunning() {
 			fmt.Println("\nWarning: Cursor is still running. Please close it manually. / 警告：Cursor 仍在运行，请手动关闭。")
@@ -535,21 +534,21 @@ func main() {
 
 	clearScreen()
 	printCyberpunkBanner()
-	
+
 	oldConfig, err := readExistingConfig()
 	if err != nil {
 		oldConfig = nil
 	}
-	
+
 	config, err := loadAndUpdateConfig()
 	if err != nil {
 		handleError("configuration update failed", err)
 		waitExit()
 		return
 	}
-	
+
 	showIdComparison(oldConfig, config)
-	
+
 	if err := saveConfig(config); err != nil {
 		handleError("failed to save configuration", err)
 		waitExit()
