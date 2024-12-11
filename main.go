@@ -1,4 +1,3 @@
-// 主程序包 / Main package
 package main
 
 // 导入所需的包 / Import required packages
@@ -9,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -16,9 +16,10 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
 	"github.com/fatih/color"
-	"golang.org/x/sys/windows"
+	"context"
+	"errors"
+	"runtime/debug"
 )
 
 // 语言类型和常量 / Language type and constants
@@ -30,6 +31,12 @@ const (
 
 	// Version constant
 	Version = "1.0.1"
+
+	// 定义错误类型常量
+	ErrPermission = "permission_error"
+	ErrConfig     = "config_error"
+	ErrProcess    = "process_error"
+	ErrSystem     = "system_error"
 )
 
 // TextResource 存储多语言文本 / TextResource stores multilingual text
@@ -57,9 +64,11 @@ type StorageConfig struct {
 
 // AppError 定义错误类型 / AppError defines error types
 type AppError struct {
-	Op   string
-	Path string
-	Err  error
+	Type    string
+	Op      string
+	Path    string
+	Err     error
+	Context map[string]interface{}
 }
 
 // ProgressSpinner 用于显示进度动画 / ProgressSpinner for showing progress animation
@@ -68,6 +77,14 @@ type ProgressSpinner struct {
 	current int
 	message string
 }
+
+// SpinnerConfig 定义进度条配置
+type SpinnerConfig struct {
+	Frames []string
+	Delay  time.Duration
+}
+
+
 
 // 全局变量 / Global variables
 var (
@@ -103,13 +120,13 @@ var (
 
 // Error implementation for AppError
 func (e *AppError) Error() string {
-	if e.Path != "" {
-		return fmt.Sprintf("%s: %v [Path: %s]", e.Op, e.Err, e.Path)
+	if e.Context != nil {
+		return fmt.Sprintf("[%s] %s: %v (context: %v)", e.Type, e.Op, e.Err, e.Context)
 	}
-	return fmt.Sprintf("%s: %v", e.Op, e.Err)
+	return fmt.Sprintf("[%s] %s: %v", e.Type, e.Op, e.Err)
 }
 
-// NewStorageConfig 创建新的配置实例 / Creates a new configuration instance
+// NewStorageConfig 创建新的实例 / Creates a new configuration instance
 func NewStorageConfig() *StorageConfig {
 	return &StorageConfig{
 		TelemetryMacMachineId: generateMachineId(),
@@ -120,7 +137,7 @@ func NewStorageConfig() *StorageConfig {
 	}
 }
 
-// 生成类似原始machineId的字符串(64位小写十六进制) / Generate a string similar to the original machineId (64-bit lowercase hex)
+// 生成类似原始machineId的字符串(64位小十六进制) / Generate a string similar to the original machineId (64-bit lowercase hex)
 func generateMachineId() string {
 	data := make([]byte, 32)
 	if _, err := rand.Read(data); err != nil {
@@ -168,6 +185,11 @@ func (s *ProgressSpinner) Stop() {
 	fmt.Println()
 }
 
+// Start starts the spinner animation
+func (s *ProgressSpinner) Start() {
+	s.current = 0
+}
+
 // File and system operations
 
 func getConfigPath() (string, error) {
@@ -196,17 +218,32 @@ func getConfigPath() (string, error) {
 func safeWriteFile(path string, data []byte, perm os.FileMode) error {
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return &AppError{"create directory", dir, err}
+		return &AppError{
+			Type: ErrSystem,
+			Op:   "create directory",
+			Path: dir,
+			Err:  err,
+		}
 	}
 
 	tmpPath := path + ".tmp"
 	if err := os.WriteFile(tmpPath, data, perm); err != nil {
-		return &AppError{"write temporary file", tmpPath, err}
+		return &AppError{
+			Type: ErrSystem,
+			Op:   "write temporary file",
+			Path: tmpPath,
+			Err:  err,
+		}
 	}
 
 	if err := os.Rename(tmpPath, path); err != nil {
 		os.Remove(tmpPath)
-		return &AppError{"rename file", path, err}
+		return &AppError{
+			Type: ErrSystem,
+			Op:   "rename file",
+			Path: path,
+			Err:  err,
+		}
 	}
 
 	return nil
@@ -218,22 +255,34 @@ func setFilePermissions(filePath string) error {
 
 // Process management functions
 
-func killCursorProcesses() error {
-	if runtime.GOOS == "windows" {
-		// First try graceful shutdown
-		exec.Command("taskkill", "/IM", "Cursor.exe").Run()
-		exec.Command("taskkill", "/IM", "cursor.exe").Run()
+type ProcessManager struct {
+	config *SystemConfig
+}
 
-		time.Sleep(time.Second)
+func (pm *ProcessManager) killCursorProcesses() error {
+	ctx, cancel := context.WithTimeout(context.Background(), pm.config.Timeout)
+	defer cancel()
 
-		// Force kill any remaining instances
-		exec.Command("taskkill", "/F", "/IM", "Cursor.exe").Run()
-		exec.Command("taskkill", "/F", "/IM", "cursor.exe").Run()
-	} else {
-		exec.Command("pkill", "-f", "Cursor").Run()
-		exec.Command("pkill", "-f", "cursor").Run()
+	for attempt := 0; attempt < pm.config.RetryAttempts; attempt++ {
+		if err := pm.killProcess(ctx); err != nil {
+			time.Sleep(pm.config.RetryDelay)
+			continue
+		}
+		return nil
 	}
-	return nil
+	
+	return &AppError{
+		Type: ErrProcess,
+		Op:   "kill_processes",
+		Err:  errors.New("failed to kill all Cursor processes after retries"),
+	}
+}
+
+func (pm *ProcessManager) killProcess(ctx context.Context) error {
+	if runtime.GOOS == "windows" {
+		return pm.killWindowsProcess(ctx)
+	}
+	return pm.killUnixProcess(ctx)
 }
 
 func checkCursorRunning() bool {
@@ -278,11 +327,11 @@ func printCyberpunkBanner() {
 
 	banner := `
     ██████╗██╗   ██╗██████╗ ███████╗ ██████╗ ██████╗ 
-   ██╔════╝██║   ██║██╔══██╗██╔════╝██╔═══██╗██╔══██╗
+   ██╔════╝██║   ██║██╔══██╗██╔════╝█╔═══██╗██╔══██╗
    ██║     ██║   ██║██████╔╝███████╗██║   ██║██████╔╝
-   ██║     ██║   ██║██╔══██╗╚════██║██║   ██║██╔══██╗
+   ██║     ██║   ██║██╔══██╗╚════██ ██║   ██║██╔══██╗
    ╚██████╗╚██████╔╝██║  ██║███████║╚██████╔╝██║  ██║
-    ╚════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
+    ╚════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚════╝ ╚═╝  ╚═╝
     `
 	cyan.Println(banner)
 	yellow.Println("\t\t>> Cursor ID Modifier v1.0 <<")
@@ -350,11 +399,21 @@ func saveConfig(config *StorageConfig) error {
 
 	content, err := json.MarshalIndent(config, "", "    ")
 	if err != nil {
-		return &AppError{"generate JSON", "", err}
+		return &AppError{
+			Type: ErrSystem,
+			Op:   "generate JSON",
+			Path: "",
+			Err:  err,
+		}
 	}
 
 	if err := os.Chmod(configPath, 0666); err != nil && !os.IsNotExist(err) {
-		return &AppError{"modify file permissions", configPath, err}
+		return &AppError{
+			Type: ErrSystem,
+			Op:   "modify file permissions",
+			Path: configPath,
+			Err:  err,
+		}
 	}
 
 	if err := safeWriteFile(configPath, content, 0666); err != nil {
@@ -386,18 +445,23 @@ func readExistingConfig() (*StorageConfig, error) {
 	return &config, nil
 }
 
-func loadAndUpdateConfig() (*StorageConfig, error) {
+func loadAndUpdateConfig(ui *UI) (*StorageConfig, error) {
 	configPath, err := getConfigPath()
 	if err != nil {
 		return nil, err
 	}
 
 	text := texts[currentLanguage]
-	showProgress(text.ReadingConfig)
+	ui.showProgress(text.ReadingConfig)
 
 	_, err = os.ReadFile(configPath)
 	if err != nil && !os.IsNotExist(err) {
-		return nil, &AppError{"read config file", configPath, err}
+		return nil, &AppError{
+			Type: ErrSystem,
+			Op:   "read config file",
+			Path: configPath,
+			Err:  err,
+		}
 	}
 
 	showProgress(text.GeneratingIds)
@@ -409,47 +473,24 @@ func loadAndUpdateConfig() (*StorageConfig, error) {
 func checkAdminPrivileges() (bool, error) {
 	switch runtime.GOOS {
 	case "windows":
-		cmd := exec.Command("net", "session")
-		err := cmd.Run()
-		return err == nil, nil
-
+		cmd := exec.Command("whoami", "/groups")
+		output, err := cmd.Output()
+		if err != nil {
+			return false, err
+		}
+		return strings.Contains(string(output), "S-1-16-12288") || 
+			   strings.Contains(string(output), "S-1-5-32-544"), nil
+		
 	case "darwin", "linux":
 		currentUser, err := user.Current()
 		if err != nil {
 			return false, fmt.Errorf("failed to get current user: %v", err)
 		}
 		return currentUser.Uid == "0", nil
-
+		
 	default:
 		return false, fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
-}
-
-func selfElevate() error {
-	verb := "runas"
-	exe, err := os.Executable()
-	if err != nil {
-		return err
-	}
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	// 将字符串转换为UTF-16指针
-	verbPtr, _ := windows.UTF16PtrFromString(verb)
-	exePtr, _ := windows.UTF16PtrFromString(exe)
-	cwdPtr, _ := windows.UTF16PtrFromString(cwd)
-	argPtr, _ := windows.UTF16PtrFromString("")
-
-	var showCmd int32 = 1 //SW_NORMAL
-
-	err = windows.ShellExecute(0, verbPtr, exePtr, argPtr, cwdPtr, showCmd)
-	if err != nil {
-		return err
-	}
-	os.Exit(0)
-	return nil
 }
 
 // Utility functions
@@ -472,31 +513,57 @@ func waitExit() {
 	bufio.NewReader(os.Stdin).ReadString('\n')
 }
 
-func handleError(msg string, err error) {
-	if appErr, ok := err.(*AppError); ok {
-		color.Red("%s: %v", msg, appErr)
-	} else {
-		color.Red("%s: %v", msg, err)
+// 错误处理函数
+func handleError(err error) {
+	if err == nil {
+		return
+	}
+
+	logger := log.New(os.Stderr, "", log.LstdFlags)
+	
+	switch e := err.(type) {
+	case *AppError:
+		logger.Printf("[ERROR] %v\n", e)
+		if e.Type == ErrPermission {
+			showPrivilegeError()
+		}
+	default:
+		logger.Printf("[ERROR] Unexpected error: %v\n", err)
 	}
 }
 
 // Main program entry
 
 func main() {
+	// 初始化错误恢复
 	defer func() {
 		if r := recover(); r != nil {
-			color.Red(texts[currentLanguage].ErrorPrefix, r)
-			fmt.Println("\nAn error occurred! / 发生错误！")
+			log.Printf("Panic recovered: %v\n", r)
+			debug.PrintStack()
 			waitExit()
 		}
 	}()
 
+	// 始化配置
+	config := initConfig()
+	
+	// 初始化组件
+	ui := NewUI(&config.UI)
+	pm := &ProcessManager{
+		config: &SystemConfig{
+			RetryAttempts: 3,
+			RetryDelay:    time.Second,
+			Timeout:       30 * time.Second,
+		},
+	}
+	
+	// 权限检查
 	os.Stdout.Sync()
 	currentLanguage = detectLanguage()
 
 	isAdmin, err := checkAdminPrivileges()
 	if err != nil {
-		handleError("permission check failed", err)
+		handleError(err)
 		waitExit()
 		return
 	}
@@ -504,7 +571,7 @@ func main() {
 	if !isAdmin && runtime.GOOS == "windows" {
 		fmt.Println("Requesting administrator privileges... / 请求管理员权限...")
 		if err := selfElevate(); err != nil {
-			handleError("failed to elevate privileges", err)
+			handleError(err)
 			showPrivilegeError()
 			waitExit()
 			return
@@ -518,7 +585,7 @@ func main() {
 
 	if checkCursorRunning() {
 		fmt.Println("\nDetected running Cursor instance(s). Closing... / 检测到正在运行的 Cursor 实例，正在关闭...")
-		if err := killCursorProcesses(); err != nil {
+		if err := pm.killCursorProcesses(); err != nil {
 			fmt.Println("Warning: Could not close all Cursor instances. Please close them manually. / 警告：无法关闭所有 Cursor 实例，请手动关闭。")
 			waitExit()
 			return
@@ -540,17 +607,17 @@ func main() {
 		oldConfig = nil
 	}
 
-	config, err := loadAndUpdateConfig()
+	storageConfig, err := loadAndUpdateConfig(ui)
 	if err != nil {
-		handleError("configuration update failed", err)
+		handleError(err)
 		waitExit()
 		return
 	}
 
-	showIdComparison(oldConfig, config)
+	showIdComparison(oldConfig, storageConfig)
 
-	if err := saveConfig(config); err != nil {
-		handleError("failed to save configuration", err)
+	if err := saveConfig(storageConfig); err != nil {
+		handleError(err)
 		waitExit()
 		return
 	}
@@ -559,3 +626,118 @@ func main() {
 	fmt.Println("\nOperation completed! / 操作完成！")
 	waitExit()
 }
+
+// 优化配置结构
+type Config struct {
+	Storage StorageConfig
+	UI      UIConfig
+	System  SystemConfig
+}
+
+type UIConfig struct {
+	Language Language
+	Theme    string
+	Spinner  SpinnerConfig
+}
+
+type SystemConfig struct {
+	RetryAttempts int
+	RetryDelay    time.Duration
+	Timeout       time.Duration
+}
+
+// 配置初始化函数
+func initConfig() *Config {
+	return &Config{
+		Storage: StorageConfig{
+			Version: Version,
+		},
+		UI: UIConfig{
+			Language: detectLanguage(),
+			Theme:    "default",
+			Spinner: SpinnerConfig{
+				Frames:  []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+				Delay:   100 * time.Millisecond,
+			},
+		},
+		System: SystemConfig{
+			RetryAttempts: 3,
+			RetryDelay:    time.Second,
+			Timeout:       30 * time.Second,
+		},
+	}
+}
+
+// UI 组件���化
+type UI struct {
+	config  *UIConfig
+	spinner *ProgressSpinner
+}
+
+func NewUI(config *UIConfig) *UI {
+	return &UI{
+		config:  config,
+		spinner: NewProgressSpinner(""),
+	}
+}
+
+func (ui *UI) showProgress(message string) {
+	ui.spinner.message = message
+	ui.spinner.Start()
+	defer ui.spinner.Stop()
+	
+	ticker := time.NewTicker(ui.config.Spinner.Delay)
+	defer ticker.Stop()
+	
+	for i := 0; i < 15; i++ {
+		<-ticker.C
+		ui.spinner.Spin()
+	}
+}
+
+func (pm *ProcessManager) killWindowsProcess(ctx context.Context) error {
+	// 使用 taskkill 命令结束进程
+	exec.CommandContext(ctx, "taskkill", "/IM", "Cursor.exe").Run()
+	time.Sleep(pm.config.RetryDelay)
+	exec.CommandContext(ctx, "taskkill", "/F", "/IM", "Cursor.exe").Run()
+	return nil
+}
+
+func (pm *ProcessManager) killUnixProcess(ctx context.Context) error {
+	exec.CommandContext(ctx, "pkill", "-f", "Cursor").Run()
+	exec.CommandContext(ctx, "pkill", "-f", "cursor").Run()
+	return nil
+}
+
+func selfElevate() error {
+	switch runtime.GOOS {
+	case "windows":
+		// 使用 cmd 实现 Windows 下的提权
+		verb := "runas"
+		exe, _ := os.Executable()
+		cwd, _ := os.Getwd()
+		args := strings.Join(os.Args[1:], " ")
+		
+		cmd := exec.Command("cmd", "/C", "start", verb, exe, args)
+		cmd.Dir = cwd
+		return cmd.Run()
+		
+	case "darwin", "linux":
+		// Unix 系统使用 sudo
+		exe, err := os.Executable()
+		if err != nil {
+			return err
+		}
+		
+		cmd := exec.Command("sudo", append([]string{exe}, os.Args[1:]...)...)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+		
+	default:
+		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+	}
+}
+
+

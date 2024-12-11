@@ -6,12 +6,18 @@
         "fatih",
         "gcflags",
         "GOARCH",
+        "IMAGENAME",
         "ldflags",
         "LOCALAPPDATA",
+        "mktemp",
+        "msys",
+        "pgrep",
         "pkill",
         "runas",
         "setlocal",
         "taskkill",
-        "trimpath"
+        "tasklist",
+        "trimpath",
+        "xattr"
     ]
 }
