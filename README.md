@@ -65,7 +65,7 @@ this is a mistake.
 #### Linux/macOS
 
 ```bash
-curl -fsSL https://github.com/yuaotian/go-cursor-help/raw/refs/heads/master/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/install.sh | sudo bash
 ```
 
 #### Windows PowerShell
@@ -208,7 +208,7 @@ this is a mistake.
 
 
 ```bash
-curl -fsSL https://github.com/yuaotian/go-cursor-help/raw/refs/heads/master/install.sh  | sudo bash
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/install.sh  | sudo bash
 ```
 
 #### Windows PowerShell
