@@ -45,17 +45,21 @@ const (
 type (
 	// TextResource stores multilingual text / 存储多语言文本
 	TextResource struct {
-		SuccessMessage   string
-		RestartMessage   string
-		ReadingConfig    string
-		GeneratingIds    string
-		PressEnterToExit string
-		ErrorPrefix      string
-		PrivilegeError   string
-		RunAsAdmin       string
-		RunWithSudo      string
-		SudoExample      string
-		ConfigLocation   string
+		SuccessMessage    string
+		RestartMessage    string
+		ReadingConfig     string
+		GeneratingIds     string
+		PressEnterToExit  string
+		ErrorPrefix       string
+		PrivilegeError    string
+		RunAsAdmin        string
+		RunWithSudo       string
+		SudoExample       string
+		ConfigLocation    string
+		CheckingProcesses string
+		ClosingProcesses  string
+		ProcessesClosed   string
+		PleaseWait        string
 	}
 
 	// StorageConfig optimized storage configuration / 优化的存储配置
@@ -115,30 +119,38 @@ var (
 
 	texts = map[Language]TextResource{
 		CN: {
-			SuccessMessage:   "[√] 配置文件已成功更新！",
-			RestartMessage:   "[!] 请手动重启 Cursor 以使更新生效",
-			ReadingConfig:    "正在读取配置文件...",
-			GeneratingIds:    "正在生成新的标识符...",
-			PressEnterToExit: "按回车键退出程序...",
-			ErrorPrefix:      "程序发生严重错误: %v",
-			PrivilegeError:   "\n[!] 错误：需要管理员权限",
-			RunAsAdmin:       "请右键点击程序，选择「以管理员身份运行」",
-			RunWithSudo:      "请使用 sudo 命令运行此程序",
-			SudoExample:      "示例: sudo %s",
-			ConfigLocation:   "配置文件位置:",
+			SuccessMessage:    "[√] 配置文件已成功更新！",
+			RestartMessage:    "[!] 请手动重启 Cursor 以使更新生效",
+			ReadingConfig:     "正在读取配置文件...",
+			GeneratingIds:     "正在生成新的标识符...",
+			PressEnterToExit:  "按回车键退出程序...",
+			ErrorPrefix:       "程序发生严重错误: %v",
+			PrivilegeError:    "\n[!] 错误：需要管理员权限",
+			RunAsAdmin:        "请右键点击程序，选择「以管理员身份运行」",
+			RunWithSudo:       "请使用 sudo 命令运行此程序",
+			SudoExample:       "示例: sudo %s",
+			ConfigLocation:    "配置文件位置:",
+			CheckingProcesses: "正在检查运行中的 Cursor 实例...",
+			ClosingProcesses:  "正在关闭 Cursor 实例...",
+			ProcessesClosed:   "所有 Cursor 实例已关闭",
+			PleaseWait:        "请稍候...",
 		},
 		EN: {
-			SuccessMessage:   "[√] Configuration file updated successfully!",
-			RestartMessage:   "[!] Please restart Cursor manually for changes to take effect",
-			ReadingConfig:    "Reading configuration file...",
-			GeneratingIds:    "Generating new identifiers...",
-			PressEnterToExit: "Press Enter to exit...",
-			ErrorPrefix:      "Program encountered a serious error: %v",
-			PrivilegeError:   "\n[!] Error: Administrator privileges required",
-			RunAsAdmin:       "Please right-click and select 'Run as Administrator'",
-			RunWithSudo:      "Please run this program with sudo",
-			SudoExample:      "Example: sudo %s",
-			ConfigLocation:   "Config file location:",
+			SuccessMessage:    "[√] Configuration file updated successfully!",
+			RestartMessage:    "[!] Please restart Cursor manually for changes to take effect",
+			ReadingConfig:     "Reading configuration file...",
+			GeneratingIds:     "Generating new identifiers...",
+			PressEnterToExit:  "Press Enter to exit...",
+			ErrorPrefix:       "Program encountered a serious error: %v",
+			PrivilegeError:    "\n[!] Error: Administrator privileges required",
+			RunAsAdmin:        "Please right-click and select 'Run as Administrator'",
+			RunWithSudo:       "Please run this program with sudo",
+			SudoExample:       "Example: sudo %s",
+			ConfigLocation:    "Config file location:",
+			CheckingProcesses: "Checking for running Cursor instances...",
+			ClosingProcesses:  "Closing Cursor instances...",
+			ProcessesClosed:   "All Cursor instances have been closed",
+			PleaseWait:        "Please wait...",
 		},
 	}
 )
@@ -470,7 +482,7 @@ func showSuccess() {
 		successColor.Printf("%s\n", text.SuccessMessage)
 		fmt.Println()
 		warningColor.Printf("%s\n", text.RestartMessage)
-		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━")
 	}
 
 	// Add spacing before config location
@@ -649,18 +661,23 @@ func waitExit() {
 // Add this new function near the other process management functions
 func ensureCursorClosed() error {
 	maxAttempts := 3
+	text := texts[currentLanguage]
+
+	showProcessStatus(text.CheckingProcesses)
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		if !checkCursorRunning() {
+			showProcessStatus(text.ProcessesClosed)
+			fmt.Println() // New line after status
 			return nil
 		}
 
 		if currentLanguage == EN {
-			fmt.Printf("\nPlease close Cursor before continuing. Attempt %d/%d\n", attempt, maxAttempts)
-			fmt.Println("Waiting 5 seconds...")
+			showProcessStatus(fmt.Sprintf("Please close Cursor before continuing. Attempt %d/%d\n%s",
+				attempt, maxAttempts, text.PleaseWait))
 		} else {
-			fmt.Printf("\n请在继续之前关闭 Cursor。尝试 %d/%d\n", attempt, maxAttempts)
-			fmt.Println("等待 5 秒...")
+			showProcessStatus(fmt.Sprintf("请在继续之前关闭 Cursor。尝试 %d/%d\n%s",
+				attempt, maxAttempts, text.PleaseWait))
 		}
 
 		time.Sleep(5 * time.Second)
@@ -729,7 +746,7 @@ func main() {
 		return
 	}
 
-	// Add this block after the privilege check
+	// Ensure all Cursor instances are closed
 	if err := ensureCursorClosed(); err != nil {
 		if currentLanguage == EN {
 			fmt.Println("\nError: Please close Cursor manually before running this program.")
@@ -749,13 +766,11 @@ func main() {
 		},
 	}
 	if checkCursorRunning() {
-		if currentLanguage == EN {
-			fmt.Println("\nDetected running Cursor instance(s). Closing...")
-		} else {
-			fmt.Println("\n检测到正在运行的 Cursor 实例，正在关闭...")
-		}
+		text := texts[currentLanguage]
+		showProcessStatus(text.ClosingProcesses)
 
 		if err := pm.killCursorProcesses(); err != nil {
+			fmt.Println() // New line after status
 			if currentLanguage == EN {
 				fmt.Println("Warning: Could not close all Cursor instances. Please close them manually.")
 			} else {
@@ -767,6 +782,7 @@ func main() {
 
 		time.Sleep(2 * time.Second)
 		if checkCursorRunning() {
+			fmt.Println() // New line after status
 			if currentLanguage == EN {
 				fmt.Println("\nWarning: Cursor is still running. Please close it manually.")
 			} else {
@@ -775,6 +791,9 @@ func main() {
 			waitExit()
 			return
 		}
+
+		showProcessStatus(text.ProcessesClosed)
+		fmt.Println() // New line after status
 	}
 
 	// Clear screen and show banner
@@ -861,11 +880,11 @@ func printCyberpunkBanner() {
 
 	banner := `
     ██████╗██╗   ██╗██████╗ ███████╗ ██████╗ ██████╗ 
-   ██╔════╝██║   ██║██╔══██╗██╔════╝█╔═══██╗██╔══██╗
+   ██╔════╝██║   ██║██╔══██╗██╔════╝██╔═══██╗██╔══██╗
    ██║     ██║   ██║██████╔╝███████╗██║   ██║██████╔╝
-   ██║     ██║   ██║██╔══██╗╚════██ ██║   ██║██╔══██╗
+   ██║     ██║   ██║██╔══██╗╚════██║██║   ██║██╔══██╗
    ╚██████╗╚██████╔╝██║  ██║███████║╚██████╔╝██║  ██║
-    ╚════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚════╝ ╚═╝  ╚═╝
+    ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
     `
 	cyan.Println(banner)
 	yellow.Println("\t\t>> Cursor ID Modifier v1.0 <<")
@@ -923,4 +942,11 @@ func loadAndUpdateConfig(ui *UI, username string) (*StorageConfig, error) { // a
 
 	ui.showProgress(text.GeneratingIds)
 	return NewStorageConfig(oldConfig), nil
+}
+
+// Add a new function to show process status
+func showProcessStatus(message string) {
+	cyan := color.New(color.FgCyan)
+	fmt.Printf("\r%s", strings.Repeat(" ", 80)) // Clear line
+	fmt.Printf("\r%s", cyan.Sprint("⚡ "+message))
 }
