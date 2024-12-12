@@ -1,12 +1,14 @@
 package main
 
-// 导入所需的包 / Import required packages
+// Core imports / 核心导入
 import (
 	"bufio"
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -14,86 +16,106 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
+
 	"github.com/fatih/color"
-	"context"
-	"errors"
-	"runtime/debug"
 )
 
-// 语言类型和常量 / Language type and constants
+// Types and Constants / 类型和常量
 type Language string
 
 const (
+	// Language options / 语言选项
 	CN Language = "cn"
 	EN Language = "en"
 
-	// Version constant
+	// Version / 版本号
 	Version = "1.0.1"
 
-	// 定义错误类型常量
+	// Error types / 错误类型
 	ErrPermission = "permission_error"
 	ErrConfig     = "config_error"
 	ErrProcess    = "process_error"
 	ErrSystem     = "system_error"
 )
 
-// TextResource 存储多语言文本 / TextResource stores multilingual text
-type TextResource struct {
-	SuccessMessage   string
-	RestartMessage   string
-	ReadingConfig    string
-	GeneratingIds    string
-	PressEnterToExit string
-	ErrorPrefix      string
-	PrivilegeError   string
-	RunAsAdmin       string
-	RunWithSudo      string
-	SudoExample      string
-	ConfigLocation   string
-}
+// Configuration Structures / 配置结构
+type (
+	// TextResource stores multilingual text / 存储多语言文本
+	TextResource struct {
+		SuccessMessage   string
+		RestartMessage   string
+		ReadingConfig    string
+		GeneratingIds    string
+		PressEnterToExit string
+		ErrorPrefix      string
+		PrivilegeError   string
+		RunAsAdmin       string
+		RunWithSudo      string
+		SudoExample      string
+		ConfigLocation   string
+	}
 
-// StorageConfig 优化的存储配置结构 / StorageConfig optimized storage configuration struct
-type StorageConfig struct {
-	TelemetryMacMachineId string    `json:"telemetry.macMachineId"`
-	TelemetryMachineId    string    `json:"telemetry.machineId"`
-	TelemetryDevDeviceId  string    `json:"telemetry.devDeviceId"`
-	LastModified          time.Time `json:"lastModified"`
-	Version               string    `json:"version"`
-}
+	// StorageConfig optimized storage configuration / 优化的存储配置
+	StorageConfig struct {
+		TelemetryMacMachineId string    `json:"telemetry.macMachineId"`
+		TelemetryMachineId    string    `json:"telemetry.machineId"`
+		TelemetryDevDeviceId  string    `json:"telemetry.devDeviceId"`
+		LastModified          time.Time `json:"lastModified"`
+		Version               string    `json:"version"`
+	}
 
-// AppError 定义错误类型 / AppError defines error types
-type AppError struct {
-	Type    string
-	Op      string
-	Path    string
-	Err     error
-	Context map[string]interface{}
-}
+	// AppError defines error types / 定义错误类型
+	AppError struct {
+		Type    string
+		Op      string
+		Path    string
+		Err     error
+		Context map[string]interface{}
+	}
 
-// ProgressSpinner 用于显示进度动画 / ProgressSpinner for showing progress animation
-type ProgressSpinner struct {
-	frames  []string
-	current int
-	message string
-}
+	// Config structures / 配置结构
+	Config struct {
+		Storage StorageConfig
+		UI      UIConfig
+		System  SystemConfig
+	}
 
-// SpinnerConfig 定义进度条配置
-type SpinnerConfig struct {
-	Frames []string
-	Delay  time.Duration
-}
+	UIConfig struct {
+		Language Language
+		Theme    string
+		Spinner  SpinnerConfig
+	}
 
+	SystemConfig struct {
+		RetryAttempts int
+		RetryDelay    time.Duration
+		Timeout       time.Duration
+	}
 
+	// SpinnerConfig defines spinner configuration / 定义进度条配置
+	SpinnerConfig struct {
+		Frames []string
+		Delay  time.Duration
+	}
 
-// 全局变量 / Global variables
+	// ProgressSpinner for showing progress animation / 用于显示进度动画
+	ProgressSpinner struct {
+		frames  []string
+		current int
+		message string
+	}
+)
+
+// Global Variables / 全局变量
 var (
-	currentLanguage = CN // 默认为中文 / Default to Chinese
+	currentLanguage = CN // Default to Chinese / 默认为中文
 
 	texts = map[Language]TextResource{
 		CN: {
-			SuccessMessage:   "[√] 配置文件已成功更新!",
+			SuccessMessage:   "[√] 配置文件已成功更新！",
 			RestartMessage:   "[!] 请手动重启 Cursor 以使更新生效",
 			ReadingConfig:    "正在读取配置文件...",
 			GeneratingIds:    "正在生成新的标识符...",
@@ -121,7 +143,7 @@ var (
 	}
 )
 
-// Error implementation for AppError
+// Error Implementation / 错误实现
 func (e *AppError) Error() string {
 	if e.Context != nil {
 		return fmt.Sprintf("[%s] %s: %v (context: %v)", e.Type, e.Op, e.Err, e.Context)
@@ -129,7 +151,7 @@ func (e *AppError) Error() string {
 	return fmt.Sprintf("[%s] %s: %v", e.Type, e.Op, e.Err)
 }
 
-// NewStorageConfig 创建新的实例 / Creates a new configuration instance
+// Configuration Functions / 配置函数
 func NewStorageConfig() *StorageConfig {
 	return &StorageConfig{
 		TelemetryMacMachineId: generateMachineId(),
@@ -140,7 +162,28 @@ func NewStorageConfig() *StorageConfig {
 	}
 }
 
-// 生成类似原始machineId的字符串(64位小十六进制) / Generate a string similar to the original machineId (64-bit lowercase hex)
+func initConfig() *Config {
+	return &Config{
+		Storage: StorageConfig{
+			Version: Version,
+		},
+		UI: UIConfig{
+			Language: detectLanguage(),
+			Theme:    "default",
+			Spinner: SpinnerConfig{
+				Frames: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+				Delay:  100 * time.Millisecond,
+			},
+		},
+		System: SystemConfig{
+			RetryAttempts: 3,
+			RetryDelay:    time.Second,
+			Timeout:       30 * time.Second,
+		},
+	}
+}
+
+// ID Generation Functions / ID生成函数
 func generateMachineId() string {
 	data := make([]byte, 32)
 	if _, err := rand.Read(data); err != nil {
@@ -150,51 +193,18 @@ func generateMachineId() string {
 	return hex.EncodeToString(hash[:])
 }
 
-// 生成类似原始devDeviceId的字符串(标准UUID格式) / Generate a string similar to the original devDeviceId (standard UUID format)
 func generateDevDeviceId() string {
 	uuid := make([]byte, 16)
 	if _, err := rand.Read(uuid); err != nil {
 		panic(fmt.Errorf("failed to generate UUID: %v", err))
 	}
-
 	uuid[6] = (uuid[6] & 0x0f) | 0x40 // Version 4
 	uuid[8] = (uuid[8] & 0x3f) | 0x80 // RFC 4122 variant
-
 	return fmt.Sprintf("%x-%x-%x-%x-%x",
-		uuid[0:4],
-		uuid[4:6],
-		uuid[6:8],
-		uuid[8:10],
-		uuid[10:16])
+		uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:16])
 }
 
-// NewProgressSpinner creates a new progress spinner
-func NewProgressSpinner(message string) *ProgressSpinner {
-	return &ProgressSpinner{
-		frames:  []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
-		message: message,
-	}
-}
-
-// Spin advances the spinner animation
-func (s *ProgressSpinner) Spin() {
-	frame := s.frames[s.current%len(s.frames)]
-	s.current++
-	fmt.Printf("\r%s %s", color.CyanString(frame), s.message)
-}
-
-// Stop ends the spinner animation
-func (s *ProgressSpinner) Stop() {
-	fmt.Println()
-}
-
-// Start starts the spinner animation
-func (s *ProgressSpinner) Start() {
-	s.current = 0
-}
-
-// File and system operations
-
+// File Operations / 文件操作
 func getConfigPath() (string, error) {
 	var configDir string
 	switch runtime.GOOS {
@@ -218,8 +228,24 @@ func getConfigPath() (string, error) {
 	return filepath.Join(configDir, "storage.json"), nil
 }
 
-func safeWriteFile(path string, data []byte, perm os.FileMode) error {
-	dir := filepath.Dir(path)
+func saveConfig(config *StorageConfig) error {
+	configPath, err := getConfigPath()
+	if err != nil {
+		return err
+	}
+
+	content, err := json.MarshalIndent(config, "", "    ")
+	if err != nil {
+		return &AppError{
+			Type: ErrSystem,
+			Op:   "generate JSON",
+			Path: "",
+			Err:  err,
+		}
+	}
+
+	// Create parent directories with proper permissions
+	dir := filepath.Dir(configPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return &AppError{
 			Type: ErrSystem,
@@ -229,8 +255,19 @@ func safeWriteFile(path string, data []byte, perm os.FileMode) error {
 		}
 	}
 
-	tmpPath := path + ".tmp"
-	if err := os.WriteFile(tmpPath, data, perm); err != nil {
+	// First ensure we can write to the file
+	if err := os.Chmod(configPath, 0666); err != nil && !os.IsNotExist(err) {
+		return &AppError{
+			Type: ErrSystem,
+			Op:   "modify file permissions",
+			Path: configPath,
+			Err:  err,
+		}
+	}
+
+	// Write to temporary file first
+	tmpPath := configPath + ".tmp"
+	if err := os.WriteFile(tmpPath, content, 0666); err != nil {
 		return &AppError{
 			Type: ErrSystem,
 			Op:   "write temporary file",
@@ -239,25 +276,60 @@ func safeWriteFile(path string, data []byte, perm os.FileMode) error {
 		}
 	}
 
-	if err := os.Rename(tmpPath, path); err != nil {
+	// Ensure proper permissions on temporary file
+	if err := os.Chmod(tmpPath, 0444); err != nil {
+		os.Remove(tmpPath)
+		return &AppError{
+			Type: ErrSystem,
+			Op:   "set temporary file permissions",
+			Path: tmpPath,
+			Err:  err,
+		}
+	}
+
+	// Atomic rename
+	if err := os.Rename(tmpPath, configPath); err != nil {
 		os.Remove(tmpPath)
 		return &AppError{
 			Type: ErrSystem,
 			Op:   "rename file",
-			Path: path,
+			Path: configPath,
 			Err:  err,
 		}
+	}
+
+	// Sync the directory to ensure changes are written to disk
+	if dir, err := os.Open(filepath.Dir(configPath)); err == nil {
+		dir.Sync()
+		dir.Close()
 	}
 
 	return nil
 }
 
-func setFilePermissions(filePath string) error {
-	return os.Chmod(filePath, 0444)
+func readExistingConfig() (*StorageConfig, error) {
+	configPath, err := getConfigPath()
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var config StorageConfig
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
 
-// Process management functions
-
+// Process Management / 进程管理
 type ProcessManager struct {
 	config *SystemConfig
 }
@@ -288,6 +360,36 @@ func (pm *ProcessManager) killProcess(ctx context.Context) error {
 	return pm.killUnixProcess(ctx)
 }
 
+func (pm *ProcessManager) killWindowsProcess(ctx context.Context) error {
+	exec.CommandContext(ctx, "taskkill", "/IM", "Cursor.exe").Run()
+	time.Sleep(pm.config.RetryDelay)
+	exec.CommandContext(ctx, "taskkill", "/F", "/IM", "Cursor.exe").Run()
+	return nil
+}
+
+func (pm *ProcessManager) killUnixProcess(ctx context.Context) error {
+	// First try graceful termination
+	if err := exec.CommandContext(ctx, "pkill", "-TERM", "-f", "Cursor").Run(); err == nil {
+		// Wait for processes to terminate gracefully
+		time.Sleep(2 * time.Second)
+	}
+	
+	// Force kill if still running
+	if err := exec.CommandContext(ctx, "pkill", "-KILL", "-f", "Cursor").Run(); err == nil {
+		time.Sleep(1 * time.Second)
+	}
+	
+	// Also try lowercase variant
+	exec.CommandContext(ctx, "pkill", "-KILL", "-f", "cursor").Run()
+	
+	// Verify no processes are left
+	if output, err := exec.CommandContext(ctx, "pgrep", "-f", "Cursor").Output(); err == nil && len(output) > 0 {
+		return errors.New("cursor processes still running after kill attempts")
+	}
+	
+	return nil
+}
+
 func checkCursorRunning() bool {
 	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" {
@@ -300,8 +402,371 @@ func checkCursorRunning() bool {
 	return strings.Contains(string(output), "Cursor") || strings.Contains(string(output), "cursor")
 }
 
-// UI and display functions
+// UI Components / UI组件
+type UI struct {
+	config  *UIConfig
+	spinner *ProgressSpinner
+}
 
+func NewUI(config *UIConfig) *UI {
+	return &UI{
+		config:  config,
+		spinner: NewProgressSpinner(""),
+	}
+}
+
+func (ui *UI) showProgress(message string) {
+	ui.spinner.message = message
+	ui.spinner.Start()
+	defer ui.spinner.Stop()
+	
+	ticker := time.NewTicker(ui.config.Spinner.Delay)
+	defer ticker.Stop()
+	
+	for i := 0; i < 15; i++ {
+		<-ticker.C
+		ui.spinner.Spin()
+	}
+}
+
+// Display Functions / 显示函数
+func showSuccess() {
+	text := texts[currentLanguage]
+	successColor := color.New(color.FgGreen, color.Bold)
+	warningColor := color.New(color.FgYellow, color.Bold)
+	pathColor := color.New(color.FgCyan)
+
+	// Clear any previous output
+	fmt.Println()
+
+	if currentLanguage == EN {
+		// English messages with extra spacing
+		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		successColor.Printf("%s\n", text.SuccessMessage)
+		fmt.Println()
+		warningColor.Printf("%s\n", text.RestartMessage)
+		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	} else {
+		// Chinese messages with extra spacing
+		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		successColor.Printf("%s\n", text.SuccessMessage)
+		fmt.Println()
+		warningColor.Printf("%s\n", text.RestartMessage)
+		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	}
+
+	// Add spacing before config location
+	fmt.Println()
+	
+	if configPath, err := getConfigPath(); err == nil {
+		pathColor.Printf("%s\n%s\n", text.ConfigLocation, configPath)
+	}
+}
+
+func showPrivilegeError() {
+	text := texts[currentLanguage]
+	red := color.New(color.FgRed, color.Bold)
+	yellow := color.New(color.FgYellow)
+
+	if currentLanguage == EN {
+		red.Println(text.PrivilegeError)
+		if runtime.GOOS == "windows" {
+			yellow.Println(text.RunAsAdmin)
+		} else {
+			yellow.Printf("%s\n%s\n", text.RunWithSudo, fmt.Sprintf(text.SudoExample, os.Args[0]))
+		}
+	} else {
+		red.Printf("\n%s\n", text.PrivilegeError)
+		if runtime.GOOS == "windows" {
+			yellow.Printf("%s\n", text.RunAsAdmin)
+		} else {
+			yellow.Printf("%s\n%s\n", text.RunWithSudo, fmt.Sprintf(text.SudoExample, os.Args[0]))
+		}
+	}
+}
+
+// System Functions / 系统函数
+func checkAdminPrivileges() (bool, error) {
+	switch runtime.GOOS {
+	case "windows":
+		cmd := exec.Command("whoami", "/groups")
+		output, err := cmd.Output()
+		if err != nil {
+			return false, err
+		}
+		return strings.Contains(string(output), "S-1-16-12288") || 
+			   strings.Contains(string(output), "S-1-5-32-544"), nil
+		
+	case "darwin", "linux":
+		currentUser, err := user.Current()
+		if err != nil {
+			return false, fmt.Errorf("failed to get current user: %v", err)
+		}
+		return currentUser.Uid == "0", nil
+		
+	default:
+		return false, fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+	}
+}
+
+func detectLanguage() Language {
+	// Check common environment variables
+	for _, envVar := range []string{"LANG", "LANGUAGE", "LC_ALL"} {
+		if lang := os.Getenv(envVar); lang != "" {
+			if strings.Contains(strings.ToLower(lang), "zh") {
+				return CN
+			}
+		}
+	}
+
+	// Windows-specific language check
+	if runtime.GOOS == "windows" {
+		cmd := exec.Command("powershell", "-Command", 
+			"[System.Globalization.CultureInfo]::CurrentUICulture.Name")
+		output, err := cmd.Output()
+		if err == nil {
+			lang := strings.ToLower(strings.TrimSpace(string(output)))
+			if strings.HasPrefix(lang, "zh") {
+				return CN
+			}
+		}
+
+		// Check Windows locale
+		cmd = exec.Command("wmic", "os", "get", "locale")
+		output, err = cmd.Output()
+		if err == nil && strings.Contains(string(output), "2052") {
+			return CN
+		}
+	}
+
+	// Check Unix locale
+	if runtime.GOOS != "windows" {
+		cmd := exec.Command("locale")
+		output, err := cmd.Output()
+		if err == nil && strings.Contains(strings.ToLower(string(output)), "zh_cn") {
+			return CN
+		}
+	}
+
+	return EN
+}
+
+func selfElevate() error {
+	switch runtime.GOOS {
+	case "windows":
+		// Set automated mode for the elevated process
+		os.Setenv("AUTOMATED_MODE", "1")
+		
+		verb := "runas"
+		exe, _ := os.Executable()
+		cwd, _ := os.Getwd()
+		args := strings.Join(os.Args[1:], " ")
+		
+		cmd := exec.Command("cmd", "/C", "start", verb, exe, args)
+		cmd.Dir = cwd
+		return cmd.Run()
+		
+	case "darwin", "linux":
+		// Set automated mode for the elevated process
+		os.Setenv("AUTOMATED_MODE", "1")
+		
+		exe, err := os.Executable()
+		if err != nil {
+			return err
+		}
+		
+		cmd := exec.Command("sudo", append([]string{exe}, os.Args[1:]...)...)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+		
+	default:
+		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+	}
+}
+
+// Utility Functions / 实用函数
+func handleError(err error) {
+	if err == nil {
+		return
+	}
+
+	logger := log.New(os.Stderr, "", log.LstdFlags)
+	
+	switch e := err.(type) {
+	case *AppError:
+		logger.Printf("[ERROR] %v\n", e)
+		if e.Type == ErrPermission {
+			showPrivilegeError()
+		}
+	default:
+		logger.Printf("[ERROR] Unexpected error: %v\n", err)
+	}
+}
+
+func waitExit() {
+	// Skip waiting in automated mode
+	if os.Getenv("AUTOMATED_MODE") == "1" {
+		return
+	}
+	
+	if currentLanguage == EN {
+		fmt.Println("\nPress Enter to exit...")
+	} else {
+		fmt.Println("\n按回车键退出程序...")
+	}
+	os.Stdout.Sync()
+	bufio.NewReader(os.Stdin).ReadString('\n')
+}
+
+// Main Function / 主函数
+func main() {
+	// Initialize error recovery
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Panic recovered: %v\n", r)
+			debug.PrintStack()
+			waitExit()
+		}
+	}()
+
+	// Initialize configuration
+	config := initConfig()
+	ui := NewUI(&config.UI)
+	
+	// Check privileges
+	os.Stdout.Sync()
+	currentLanguage = detectLanguage()
+	log.Println("Current language: ", currentLanguage)
+	isAdmin, err := checkAdminPrivileges()
+	if err != nil {
+		handleError(err)
+		waitExit()
+		return
+	}
+
+	if !isAdmin && runtime.GOOS == "windows" {
+		if currentLanguage == EN {
+			fmt.Println("\nRequesting administrator privileges...")
+		} else {
+			fmt.Println("\n请求管理员权限...")
+		}
+		if err := selfElevate(); err != nil {
+			handleError(err)
+			showPrivilegeError()
+			waitExit()
+			return
+		}
+		return
+	} else if !isAdmin {
+		showPrivilegeError()
+		waitExit()
+		return
+	}
+
+	// Process management
+	pm := &ProcessManager{
+		config: &SystemConfig{
+			RetryAttempts: 3,
+			RetryDelay:    time.Second,
+			Timeout:       30 * time.Second,
+		},
+	}
+	if checkCursorRunning() {
+		if currentLanguage == EN {
+			fmt.Println("\nDetected running Cursor instance(s). Closing...")
+		} else {
+			fmt.Println("\n检测到正在运行的 Cursor 实例，正在关闭...")
+		}
+		
+		if err := pm.killCursorProcesses(); err != nil {
+			if currentLanguage == EN {
+				fmt.Println("Warning: Could not close all Cursor instances. Please close them manually.")
+			} else {
+				fmt.Println("警告：无法关闭所有 Cursor 实例，请手动关闭。")
+			}
+			waitExit()
+			return
+		}
+
+		time.Sleep(2 * time.Second)
+		if checkCursorRunning() {
+			if currentLanguage == EN {
+				fmt.Println("\nWarning: Cursor is still running. Please close it manually.")
+			} else {
+				fmt.Println("\n警告：Cursor 仍在运行，请手动关闭。")
+			}
+			waitExit()
+			return
+		}
+	}
+
+	// Clear screen and show banner
+	clearScreen()
+	printCyberpunkBanner()
+
+	// Read and update configuration
+	oldConfig, err := readExistingConfig()
+	if err != nil {
+		oldConfig = nil
+	}
+
+	storageConfig, err := loadAndUpdateConfig(ui)
+	if err != nil {
+		handleError(err)
+		waitExit()
+		return
+	}
+
+	// Show changes and save
+	showIdComparison(oldConfig, storageConfig)
+
+	if err := saveConfig(storageConfig); err != nil {
+		handleError(err)
+		waitExit()
+		return
+	}
+
+	// Show success and exit
+	showSuccess()
+	if currentLanguage == EN {
+		fmt.Println("\nOperation completed!")
+	} else {
+		fmt.Println("\n操作完成！")
+	}
+	
+	// Check if running in automated mode
+	if os.Getenv("AUTOMATED_MODE") == "1" {
+		return
+	}
+	
+	waitExit()
+}
+
+// Progress spinner functions / 进度条函数
+func NewProgressSpinner(message string) *ProgressSpinner {
+	return &ProgressSpinner{
+		frames:  []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+		message: message,
+	}
+}
+
+func (s *ProgressSpinner) Spin() {
+	frame := s.frames[s.current%len(s.frames)]
+	s.current++
+	fmt.Printf("\r%s %s", color.CyanString(frame), s.message)
+}
+
+func (s *ProgressSpinner) Stop() {
+	fmt.Println()
+}
+
+func (s *ProgressSpinner) Start() {
+	s.current = 0
+}
+
+// Display utility functions / 显示工具函数
 func clearScreen() {
 	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" {
@@ -311,15 +776,6 @@ func clearScreen() {
 	}
 	cmd.Stdout = os.Stdout
 	cmd.Run()
-}
-
-func showProgress(message string) {
-	spinner := NewProgressSpinner(message)
-	for i := 0; i < 15; i++ {
-		spinner.Spin()
-		time.Sleep(100 * time.Millisecond)
-	}
-	spinner.Stop()
 }
 
 func printCyberpunkBanner() {
@@ -349,35 +805,6 @@ func printCyberpunkBanner() {
 	green.Printf("\n\t\t   %s\n\n", langText)
 }
 
-func showSuccess() {
-	text := texts[currentLanguage]
-	successColor := color.New(color.FgGreen, color.Bold)
-	warningColor := color.New(color.FgYellow, color.Bold)
-	pathColor := color.New(color.FgCyan)
-
-	successColor.Printf("\n%s\n", text.SuccessMessage)
-	warningColor.Printf("%s\n", text.RestartMessage)
-
-	// 获取并输出配置文件路径
-	if configPath, err := getConfigPath(); err == nil {
-		pathColor.Printf("\n配置文件位置/Config file location:\n%s\n", configPath)
-	}
-}
-
-func showPrivilegeError() {
-	text := texts[currentLanguage]
-	red := color.New(color.FgRed, color.Bold)
-	yellow := color.New(color.FgYellow)
-
-	red.Println(text.PrivilegeError)
-	if runtime.GOOS == "windows" {
-		yellow.Println(text.RunAsAdmin)
-	} else {
-		yellow.Println(text.RunWithSudo)
-		yellow.Printf(text.SudoExample, os.Args[0])
-	}
-}
-
 func showIdComparison(oldConfig *StorageConfig, newConfig *StorageConfig) {
 	cyan := color.New(color.FgCyan)
 	yellow := color.New(color.FgYellow)
@@ -398,62 +825,7 @@ func showIdComparison(oldConfig *StorageConfig, newConfig *StorageConfig) {
 	fmt.Println()
 }
 
-// Configuration operations
-
-func saveConfig(config *StorageConfig) error {
-	configPath, err := getConfigPath()
-	if err != nil {
-		return err
-	}
-
-	content, err := json.MarshalIndent(config, "", "    ")
-	if err != nil {
-		return &AppError{
-			Type: ErrSystem,
-			Op:   "generate JSON",
-			Path: "",
-			Err:  err,
-		}
-	}
-
-	if err := os.Chmod(configPath, 0666); err != nil && !os.IsNotExist(err) {
-		return &AppError{
-			Type: ErrSystem,
-			Op:   "modify file permissions",
-			Path: configPath,
-			Err:  err,
-		}
-	}
-
-	if err := safeWriteFile(configPath, content, 0666); err != nil {
-		return err
-	}
-
-	return setFilePermissions(configPath)
-}
-
-func readExistingConfig() (*StorageConfig, error) {
-	configPath, err := getConfigPath()
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	var config StorageConfig
-	if err := json.Unmarshal(data, &config); err != nil {
-		return nil, err
-	}
-
-	return &config, nil
-}
-
+// Configuration functions / 配置函数
 func loadAndUpdateConfig(ui *UI) (*StorageConfig, error) {
 	configPath, err := getConfigPath()
 	if err != nil {
@@ -473,324 +845,7 @@ func loadAndUpdateConfig(ui *UI) (*StorageConfig, error) {
 		}
 	}
 
-	showProgress(text.GeneratingIds)
+	ui.showProgress(text.GeneratingIds)
 	return NewStorageConfig(), nil
-}
-
-// System privilege functions
-
-func checkAdminPrivileges() (bool, error) {
-	switch runtime.GOOS {
-	case "windows":
-		cmd := exec.Command("whoami", "/groups")
-		output, err := cmd.Output()
-		if err != nil {
-			return false, err
-		}
-		return strings.Contains(string(output), "S-1-16-12288") || 
-			   strings.Contains(string(output), "S-1-5-32-544"), nil
-		
-	case "darwin", "linux":
-		currentUser, err := user.Current()
-		if err != nil {
-			return false, fmt.Errorf("failed to get current user: %v", err)
-		}
-		return currentUser.Uid == "0", nil
-		
-	default:
-		return false, fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
-	}
-}
-
-// Utility functions
-
-func detectLanguage() Language {
-	// 1. 首先检查常用的语言环境变量
-	for _, envVar := range []string{"LANG", "LANGUAGE", "LC_ALL"} {
-		if lang := os.Getenv(envVar); lang != "" {
-			if strings.Contains(strings.ToLower(lang), "zh") {
-				return CN
-			}
-		}
-	}
-
-	// 2. Windows 特定的语言检查
-	if runtime.GOOS == "windows" {
-		// 检查 Windows 用户默认语言设置
-		cmd := exec.Command("powershell", "-Command", 
-			"[System.Globalization.CultureInfo]::CurrentUICulture.Name")
-		output, err := cmd.Output()
-		if err == nil {
-			lang := strings.ToLower(strings.TrimSpace(string(output)))
-			if strings.HasPrefix(lang, "zh") {
-				return CN
-			}
-		}
-
-		// 检查 Windows 系统区域设置
-		cmd = exec.Command("wmic", "os", "get", "locale")
-		output, err = cmd.Output()
-		if err == nil {
-			// Windows 语言代码 2052 表示简体中文
-			if strings.Contains(string(output), "2052") {
-				return CN
-			}
-		}
-	}
-
-	// 3. 检查 Unix 系统的其他语言配置
-	if runtime.GOOS != "windows" {
-		cmd := exec.Command("locale")
-		output, err := cmd.Output()
-		if err == nil && strings.Contains(strings.ToLower(string(output)), "zh_cn") {
-			return CN
-		}
-	}
-
-	// 默认返回英文
-	return EN
-}
-
-func waitExit() {
-	fmt.Println("\nPress Enter to exit... / 按回车键退出程序...")
-	os.Stdout.Sync()
-	bufio.NewReader(os.Stdin).ReadString('\n')
-}
-
-// 错误处理函数
-func handleError(err error) {
-	if err == nil {
-		return
-	}
-
-	logger := log.New(os.Stderr, "", log.LstdFlags)
-	
-	switch e := err.(type) {
-	case *AppError:
-		logger.Printf("[ERROR] %v\n", e)
-		if e.Type == ErrPermission {
-			showPrivilegeError()
-		}
-	default:
-		logger.Printf("[ERROR] Unexpected error: %v\n", err)
-	}
-}
-
-// Main program entry
-
-func main() {
-	// 初始化错误恢复
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("Panic recovered: %v\n", r)
-			debug.PrintStack()
-			waitExit()
-		}
-	}()
-
-	// 始化配置
-	config := initConfig()
-	
-	// 初始化组件
-	ui := NewUI(&config.UI)
-	
-	
-	// 权限检查
-	os.Stdout.Sync()
-	currentLanguage = detectLanguage()
-	log.Println("Current language: ", currentLanguage)
-	isAdmin, err := checkAdminPrivileges()
-	if err != nil {
-		handleError(err)
-		waitExit()
-		return
-	}
-
-	if !isAdmin && runtime.GOOS == "windows" {
-		fmt.Println("Requesting administrator privileges... / 请求管理员权限...")
-		if err := selfElevate(); err != nil {
-			handleError(err)
-			showPrivilegeError()
-			waitExit()
-			return
-		}
-		return
-	} else if !isAdmin {
-		showPrivilegeError()
-		waitExit()
-		return
-	}
-
-	// 进程管理
-	pm := &ProcessManager{
-		config: &SystemConfig{
-			RetryAttempts: 3,
-			RetryDelay:    time.Second,
-			Timeout:       30 * time.Second,
-		},
-	}
-	if checkCursorRunning() {
-		fmt.Println("\nDetected running Cursor instance(s). Closing... / 检测到正在运行的 Cursor 实例，正在关闭...")
-		if err := pm.killCursorProcesses(); err != nil {
-			fmt.Println("Warning: Could not close all Cursor instances. Please close them manually. / 警告：无法关闭所有 Cursor 实例，请手动关闭。")
-			waitExit()
-			return
-		}
-
-		time.Sleep(2 * time.Second)
-		if checkCursorRunning() {
-			fmt.Println("\nWarning: Cursor is still running. Please close it manually. / 警告：Cursor 仍在运行，请手动关闭。")
-			waitExit()
-			return
-		}
-	}
-
-	// 清屏并打印标题
-	clearScreen()
-
-	// 打印标题
-	printCyberpunkBanner()
-
-	// 读取现有配置
-	oldConfig, err := readExistingConfig()
-	if err != nil {
-		oldConfig = nil
-	}
-
-	// 加载并更新配置
-	storageConfig, err := loadAndUpdateConfig(ui)
-	if err != nil {
-		handleError(err)
-		waitExit()
-		return
-	}
-
-	// 显示ID修改对比		
-	showIdComparison(oldConfig, storageConfig)
-
-	// 保存配置
-	if err := saveConfig(storageConfig); err != nil {
-		handleError(err)
-		waitExit()
-		return
-	}
-
-	// 显示成功信息
-	showSuccess()
-	fmt.Println("\nOperation completed! / 操作完成！")
-	waitExit()
-}
-
-// 优化配置结构
-type Config struct {
-	Storage StorageConfig
-	UI      UIConfig
-	System  SystemConfig
-}
-
-type UIConfig struct {
-	Language Language
-	Theme    string
-	Spinner  SpinnerConfig
-}
-
-type SystemConfig struct {
-	RetryAttempts int
-	RetryDelay    time.Duration
-	Timeout       time.Duration
-}
-
-// 配置初始化函数
-func initConfig() *Config {
-	return &Config{
-		Storage: StorageConfig{
-			Version: Version,
-		},
-		UI: UIConfig{
-			Language: detectLanguage(),
-			Theme:    "default",
-			Spinner: SpinnerConfig{
-				Frames:  []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
-				Delay:   100 * time.Millisecond,
-			},
-		},
-		System: SystemConfig{
-			RetryAttempts: 3,
-			RetryDelay:    time.Second,
-			Timeout:       30 * time.Second,
-		},
-	}
-}
-
-// UI 组件
-type UI struct {
-	config  *UIConfig
-	spinner *ProgressSpinner
-}
-
-func NewUI(config *UIConfig) *UI {
-	return &UI{
-		config:  config,
-		spinner: NewProgressSpinner(""),
-	}
-}
-
-func (ui *UI) showProgress(message string) {
-	ui.spinner.message = message
-	ui.spinner.Start()
-	defer ui.spinner.Stop()
-	
-	ticker := time.NewTicker(ui.config.Spinner.Delay)
-	defer ticker.Stop()
-	
-	for i := 0; i < 15; i++ {
-		<-ticker.C
-		ui.spinner.Spin()
-	}
-}
-
-func (pm *ProcessManager) killWindowsProcess(ctx context.Context) error {
-	// 使用 taskkill 命令结束进程
-	exec.CommandContext(ctx, "taskkill", "/IM", "Cursor.exe").Run()
-	time.Sleep(pm.config.RetryDelay)
-	exec.CommandContext(ctx, "taskkill", "/F", "/IM", "Cursor.exe").Run()
-	return nil
-}
-
-func (pm *ProcessManager) killUnixProcess(ctx context.Context) error {
-	exec.CommandContext(ctx, "pkill", "-f", "Cursor").Run()
-	exec.CommandContext(ctx, "pkill", "-f", "cursor").Run()
-	return nil
-}
-
-func selfElevate() error {
-	switch runtime.GOOS {
-	case "windows":
-		// 使用 cmd 实现 Windows 下的提权
-		verb := "runas"
-		exe, _ := os.Executable()
-		cwd, _ := os.Getwd()
-		args := strings.Join(os.Args[1:], " ")
-		
-		cmd := exec.Command("cmd", "/C", "start", verb, exe, args)
-		cmd.Dir = cwd
-		return cmd.Run()
-		
-	case "darwin", "linux":
-		// Unix 系统使用 sudo
-		exe, err := os.Executable()
-		if err != nil {
-			return err
-		}
-		
-		cmd := exec.Command("sudo", append([]string{exe}, os.Args[1:]...)...)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		return cmd.Run()
-		
-	default:
-		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
-	}
 }
 
