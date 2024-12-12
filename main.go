@@ -63,10 +63,10 @@ type (
 		TelemetryMacMachineId string    `json:"telemetry.macMachineId"`
 		TelemetryMachineId    string    `json:"telemetry.machineId"`
 		TelemetryDevDeviceId  string    `json:"telemetry.devDeviceId"`
+		TelemetrySqmId        string    `json:"telemetry.sqmId"` // Added TelemetrySqmId
 		LastModified          time.Time `json:"lastModified"`
 		Version               string    `json:"version"`
 	}
-
 	// AppError defines error types / 定义错误类型
 	AppError struct {
 		Type    string
@@ -152,35 +152,26 @@ func (e *AppError) Error() string {
 }
 
 // Configuration Functions / 配置函数
-func NewStorageConfig() *StorageConfig {
-	return &StorageConfig{
+func NewStorageConfig(oldConfig *StorageConfig) *StorageConfig { // Modified to take old config
+	newConfig := &StorageConfig{
 		TelemetryMacMachineId: generateMachineId(),
 		TelemetryMachineId:    generateMachineId(),
 		TelemetryDevDeviceId:  generateDevDeviceId(),
 		LastModified:          time.Now(),
 		Version:               Version,
 	}
-}
 
-func initConfig() *Config {
-	return &Config{
-		Storage: StorageConfig{
-			Version: Version,
-		},
-		UI: UIConfig{
-			Language: detectLanguage(),
-			Theme:    "default",
-			Spinner: SpinnerConfig{
-				Frames: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
-				Delay:  100 * time.Millisecond,
-			},
-		},
-		System: SystemConfig{
-			RetryAttempts: 3,
-			RetryDelay:    time.Second,
-			Timeout:       30 * time.Second,
-		},
+	if oldConfig != nil {
+		newConfig.TelemetrySqmId = oldConfig.TelemetrySqmId
+	} else {
+		newConfig.TelemetrySqmId = generateMachineId()
 	}
+
+	if newConfig.TelemetrySqmId == "" {
+		newConfig.TelemetrySqmId = generateMachineId()
+	}
+
+	return newConfig
 }
 
 // ID Generation Functions / ID生成函数
@@ -205,22 +196,16 @@ func generateDevDeviceId() string {
 }
 
 // File Operations / 文件操作
-func getConfigPath() (string, error) {
+func getConfigPath(username string) (string, error) { // Modified to take username
 	var configDir string
 	switch runtime.GOOS {
 	case "windows":
 		configDir = filepath.Join(os.Getenv("APPDATA"), "Cursor", "User", "globalStorage")
 	case "darwin":
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return "", err
-		}
+		homeDir := filepath.Join("/home/", username)
 		configDir = filepath.Join(homeDir, "Library", "Application Support", "Cursor", "User", "globalStorage")
 	case "linux":
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return "", err
-		}
+		homeDir := filepath.Join("/home/", username)
 		configDir = filepath.Join(homeDir, ".config", "Cursor", "User", "globalStorage")
 	default:
 		return "", fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
@@ -228,8 +213,8 @@ func getConfigPath() (string, error) {
 	return filepath.Join(configDir, "storage.json"), nil
 }
 
-func saveConfig(config *StorageConfig) error {
-	configPath, err := getConfigPath()
+func saveConfig(config *StorageConfig, username string) error { // Modified to take username
+	configPath, err := getConfigPath(username)
 	if err != nil {
 		return err
 	}
@@ -307,8 +292,8 @@ func saveConfig(config *StorageConfig) error {
 	return nil
 }
 
-func readExistingConfig() (*StorageConfig, error) {
-	configPath, err := getConfigPath()
+func readExistingConfig(username string) (*StorageConfig, error) { // Modified to take username
+	configPath, err := getConfigPath(username)
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +330,7 @@ func (pm *ProcessManager) killCursorProcesses() error {
 		}
 		return nil
 	}
-	
+
 	return &AppError{
 		Type: ErrProcess,
 		Op:   "kill_processes",
@@ -368,38 +353,71 @@ func (pm *ProcessManager) killWindowsProcess(ctx context.Context) error {
 }
 
 func (pm *ProcessManager) killUnixProcess(ctx context.Context) error {
+	// Search for the process by it's executable name (AppRun) in ps output
+	cmd := exec.CommandContext(ctx, "ps", "aux")
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to execute ps command: %w", err)
+	}
+
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "AppRun") {
+			parts := strings.Fields(line)
+			if len(parts) > 1 {
+				pid := parts[1]
+				if err := pm.forceKillProcess(ctx, pid); err != nil {
+					return err
+				}
+			}
+		}
+
+		// handle lowercase
+		if strings.Contains(line, "apprun") {
+			parts := strings.Fields(line)
+			if len(parts) > 1 {
+				pid := parts[1]
+				if err := pm.forceKillProcess(ctx, pid); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// helper function to kill process by pid
+func (pm *ProcessManager) forceKillProcess(ctx context.Context, pid string) error {
 	// First try graceful termination
-	if err := exec.CommandContext(ctx, "pkill", "-TERM", "-f", "Cursor").Run(); err == nil {
+	if err := exec.CommandContext(ctx, "kill", pid).Run(); err == nil {
 		// Wait for processes to terminate gracefully
 		time.Sleep(2 * time.Second)
 	}
-	
+
 	// Force kill if still running
-	if err := exec.CommandContext(ctx, "pkill", "-KILL", "-f", "Cursor").Run(); err == nil {
-		time.Sleep(1 * time.Second)
+	if err := exec.CommandContext(ctx, "kill", "-9", pid).Run(); err != nil {
+		return fmt.Errorf("failed to force kill process %s: %w", pid, err)
 	}
-	
-	// Also try lowercase variant
-	exec.CommandContext(ctx, "pkill", "-KILL", "-f", "cursor").Run()
-	
-	// Verify no processes are left
-	if output, err := exec.CommandContext(ctx, "pgrep", "-f", "Cursor").Output(); err == nil && len(output) > 0 {
-		return errors.New("cursor processes still running after kill attempts")
-	}
-	
+
 	return nil
 }
 
 func checkCursorRunning() bool {
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("tasklist", "/FI", "IMAGENAME eq Cursor.exe", "/NH")
-	} else {
-		cmd = exec.Command("pgrep", "-f", "Cursor")
+	cmd := exec.Command("ps", "aux")
+	output, err := cmd.Output()
+	if err != nil {
+		return false
 	}
 
-	output, _ := cmd.Output()
-	return strings.Contains(string(output), "Cursor") || strings.Contains(string(output), "cursor")
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "AppRun") || strings.Contains(line, "apprun") {
+			return true
+		}
+	}
+
+	return false
 }
 
 // UI Components / UI组件
@@ -419,10 +437,10 @@ func (ui *UI) showProgress(message string) {
 	ui.spinner.message = message
 	ui.spinner.Start()
 	defer ui.spinner.Stop()
-	
+
 	ticker := time.NewTicker(ui.config.Spinner.Delay)
 	defer ticker.Stop()
-	
+
 	for i := 0; i < 15; i++ {
 		<-ticker.C
 		ui.spinner.Spin()
@@ -457,8 +475,16 @@ func showSuccess() {
 
 	// Add spacing before config location
 	fmt.Println()
-	
-	if configPath, err := getConfigPath(); err == nil {
+
+	username := os.Getenv("SUDO_USER")
+	if username == "" {
+		user, err := user.Current()
+		if err != nil {
+			panic(err)
+		}
+		username = user.Username
+	}
+	if configPath, err := getConfigPath(username); err == nil {
 		pathColor.Printf("%s\n%s\n", text.ConfigLocation, configPath)
 	}
 }
@@ -494,16 +520,16 @@ func checkAdminPrivileges() (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		return strings.Contains(string(output), "S-1-16-12288") || 
-			   strings.Contains(string(output), "S-1-5-32-544"), nil
-		
+		return strings.Contains(string(output), "S-1-16-12288") ||
+			strings.Contains(string(output), "S-1-5-32-544"), nil
+
 	case "darwin", "linux":
 		currentUser, err := user.Current()
 		if err != nil {
 			return false, fmt.Errorf("failed to get current user: %v", err)
 		}
 		return currentUser.Uid == "0", nil
-		
+
 	default:
 		return false, fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
@@ -521,7 +547,7 @@ func detectLanguage() Language {
 
 	// Windows-specific language check
 	if runtime.GOOS == "windows" {
-		cmd := exec.Command("powershell", "-Command", 
+		cmd := exec.Command("powershell", "-Command",
 			"[System.Globalization.CultureInfo]::CurrentUICulture.Name")
 		output, err := cmd.Output()
 		if err == nil {
@@ -556,31 +582,31 @@ func selfElevate() error {
 	case "windows":
 		// Set automated mode for the elevated process
 		os.Setenv("AUTOMATED_MODE", "1")
-		
+
 		verb := "runas"
 		exe, _ := os.Executable()
 		cwd, _ := os.Getwd()
 		args := strings.Join(os.Args[1:], " ")
-		
+
 		cmd := exec.Command("cmd", "/C", "start", verb, exe, args)
 		cmd.Dir = cwd
 		return cmd.Run()
-		
+
 	case "darwin", "linux":
 		// Set automated mode for the elevated process
 		os.Setenv("AUTOMATED_MODE", "1")
-		
+
 		exe, err := os.Executable()
 		if err != nil {
 			return err
 		}
-		
+
 		cmd := exec.Command("sudo", append([]string{exe}, os.Args[1:]...)...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
-		
+
 	default:
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
@@ -593,7 +619,7 @@ func handleError(err error) {
 	}
 
 	logger := log.New(os.Stderr, "", log.LstdFlags)
-	
+
 	switch e := err.(type) {
 	case *AppError:
 		logger.Printf("[ERROR] %v\n", e)
@@ -610,7 +636,7 @@ func waitExit() {
 	if os.Getenv("AUTOMATED_MODE") == "1" {
 		return
 	}
-	
+
 	if currentLanguage == EN {
 		fmt.Println("\nPress Enter to exit...")
 	} else {
@@ -620,7 +646,29 @@ func waitExit() {
 	bufio.NewReader(os.Stdin).ReadString('\n')
 }
 
-// Main Function / 主函数
+// Add this new function near the other process management functions
+func ensureCursorClosed() error {
+	maxAttempts := 3
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		if !checkCursorRunning() {
+			return nil
+		}
+
+		if currentLanguage == EN {
+			fmt.Printf("\nPlease close Cursor before continuing. Attempt %d/%d\n", attempt, maxAttempts)
+			fmt.Println("Waiting 5 seconds...")
+		} else {
+			fmt.Printf("\n请在继续之前关闭 Cursor。尝试 %d/%d\n", attempt, maxAttempts)
+			fmt.Println("等待 5 秒...")
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+
+	return errors.New("cursor is still running")
+}
+
 func main() {
 	// Initialize error recovery
 	defer func() {
@@ -631,10 +679,26 @@ func main() {
 		}
 	}()
 
+	var username string
+	if username = os.Getenv("SUDO_USER"); username == "" {
+		user, err := user.Current()
+		if err != nil {
+			panic(err)
+		}
+		username = user.Username
+	}
+	log.Println("Current user: ", username)
+
 	// Initialize configuration
-	config := initConfig()
-	ui := NewUI(&config.UI)
-	
+	ui := NewUI(&UIConfig{
+		Language: detectLanguage(),
+		Theme:    "default",
+		Spinner: SpinnerConfig{
+			Frames: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+			Delay:  100 * time.Millisecond,
+		},
+	})
+
 	// Check privileges
 	os.Stdout.Sync()
 	currentLanguage = detectLanguage()
@@ -665,6 +729,17 @@ func main() {
 		return
 	}
 
+	// Add this block after the privilege check
+	if err := ensureCursorClosed(); err != nil {
+		if currentLanguage == EN {
+			fmt.Println("\nError: Please close Cursor manually before running this program.")
+		} else {
+			fmt.Println("\n错误：请在运行此程序之前手动关闭 Cursor。")
+		}
+		waitExit()
+		return
+	}
+
 	// Process management
 	pm := &ProcessManager{
 		config: &SystemConfig{
@@ -679,7 +754,7 @@ func main() {
 		} else {
 			fmt.Println("\n检测到正在运行的 Cursor 实例，正在关闭...")
 		}
-		
+
 		if err := pm.killCursorProcesses(); err != nil {
 			if currentLanguage == EN {
 				fmt.Println("Warning: Could not close all Cursor instances. Please close them manually.")
@@ -707,12 +782,12 @@ func main() {
 	printCyberpunkBanner()
 
 	// Read and update configuration
-	oldConfig, err := readExistingConfig()
+	oldConfig, err := readExistingConfig(username) // add username parameter
 	if err != nil {
 		oldConfig = nil
 	}
 
-	storageConfig, err := loadAndUpdateConfig(ui)
+	storageConfig, err := loadAndUpdateConfig(ui, username) // add username parameter
 	if err != nil {
 		handleError(err)
 		waitExit()
@@ -722,7 +797,7 @@ func main() {
 	// Show changes and save
 	showIdComparison(oldConfig, storageConfig)
 
-	if err := saveConfig(storageConfig); err != nil {
+	if err := saveConfig(storageConfig, username); err != nil { // add username parameter
 		handleError(err)
 		waitExit()
 		return
@@ -735,12 +810,12 @@ func main() {
 	} else {
 		fmt.Println("\n操作完成！")
 	}
-	
+
 	// Check if running in automated mode
 	if os.Getenv("AUTOMATED_MODE") == "1" {
 		return
 	}
-	
+
 	waitExit()
 }
 
@@ -822,12 +897,13 @@ func showIdComparison(oldConfig *StorageConfig, newConfig *StorageConfig) {
 	yellow.Printf("Machine ID: %s\n", newConfig.TelemetryMachineId)
 	yellow.Printf("Mac Machine ID: %s\n", newConfig.TelemetryMacMachineId)
 	yellow.Printf("Dev Device ID: %s\n", newConfig.TelemetryDevDeviceId)
+	yellow.Printf("SQM ID: %s\n", newConfig.TelemetrySqmId)
 	fmt.Println()
 }
 
 // Configuration functions / 配置函数
-func loadAndUpdateConfig(ui *UI) (*StorageConfig, error) {
-	configPath, err := getConfigPath()
+func loadAndUpdateConfig(ui *UI, username string) (*StorageConfig, error) { // add username parameter
+	configPath, err := getConfigPath(username) // add username parameter
 	if err != nil {
 		return nil, err
 	}
@@ -835,7 +911,7 @@ func loadAndUpdateConfig(ui *UI) (*StorageConfig, error) {
 	text := texts[currentLanguage]
 	ui.showProgress(text.ReadingConfig)
 
-	_, err = os.ReadFile(configPath)
+	oldConfig, err := readExistingConfig(username) // add username parameter
 	if err != nil && !os.IsNotExist(err) {
 		return nil, &AppError{
 			Type: ErrSystem,
@@ -846,6 +922,5 @@ func loadAndUpdateConfig(ui *UI) (*StorageConfig, error) {
 	}
 
 	ui.showProgress(text.GeneratingIds)
-	return NewStorageConfig(), nil
+	return NewStorageConfig(oldConfig), nil
 }
-
