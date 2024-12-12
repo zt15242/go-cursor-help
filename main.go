@@ -505,14 +505,49 @@ func checkAdminPrivileges() (bool, error) {
 // Utility functions
 
 func detectLanguage() Language {
-	lang := os.Getenv("LANG")
-	if lang == "" {
-		lang = os.Getenv("LANGUAGE")
+	// 1. 首先检查常用的语言环境变量
+	for _, envVar := range []string{"LANG", "LANGUAGE", "LC_ALL"} {
+		if lang := os.Getenv(envVar); lang != "" {
+			if strings.Contains(strings.ToLower(lang), "zh") {
+				return CN
+			}
+		}
 	}
 
-	if strings.Contains(strings.ToLower(lang), "zh") {
-		return CN
+	// 2. Windows 特定的语言检查
+	if runtime.GOOS == "windows" {
+		// 检查 Windows 用户默认语言设置
+		cmd := exec.Command("powershell", "-Command", 
+			"[System.Globalization.CultureInfo]::CurrentUICulture.Name")
+		output, err := cmd.Output()
+		if err == nil {
+			lang := strings.ToLower(strings.TrimSpace(string(output)))
+			if strings.HasPrefix(lang, "zh") {
+				return CN
+			}
+		}
+
+		// 检查 Windows 系统区域设置
+		cmd = exec.Command("wmic", "os", "get", "locale")
+		output, err = cmd.Output()
+		if err == nil {
+			// Windows 语言代码 2052 表示简体中文
+			if strings.Contains(string(output), "2052") {
+				return CN
+			}
+		}
 	}
+
+	// 3. 检查 Unix 系统的其他语言配置
+	if runtime.GOOS != "windows" {
+		cmd := exec.Command("locale")
+		output, err := cmd.Output()
+		if err == nil && strings.Contains(strings.ToLower(string(output)), "zh_cn") {
+			return CN
+		}
+	}
+
+	// 默认返回英文
 	return EN
 }
 
@@ -558,18 +593,12 @@ func main() {
 	
 	// 初始化组件
 	ui := NewUI(&config.UI)
-	pm := &ProcessManager{
-		config: &SystemConfig{
-			RetryAttempts: 3,
-			RetryDelay:    time.Second,
-			Timeout:       30 * time.Second,
-		},
-	}
+	
 	
 	// 权限检查
 	os.Stdout.Sync()
 	currentLanguage = detectLanguage()
-
+	log.Println("Current language: ", currentLanguage)
 	isAdmin, err := checkAdminPrivileges()
 	if err != nil {
 		handleError(err)
@@ -592,6 +621,14 @@ func main() {
 		return
 	}
 
+	// 进程管理
+	pm := &ProcessManager{
+		config: &SystemConfig{
+			RetryAttempts: 3,
+			RetryDelay:    time.Second,
+			Timeout:       30 * time.Second,
+		},
+	}
 	if checkCursorRunning() {
 		fmt.Println("\nDetected running Cursor instance(s). Closing... / 检测到正在运行的 Cursor 实例，正在关闭...")
 		if err := pm.killCursorProcesses(); err != nil {
@@ -608,14 +645,19 @@ func main() {
 		}
 	}
 
+	// 清屏并打印标题
 	clearScreen()
+
+	// 打印标题
 	printCyberpunkBanner()
 
+	// 读取现有配置
 	oldConfig, err := readExistingConfig()
 	if err != nil {
 		oldConfig = nil
 	}
 
+	// 加载并更新配置
 	storageConfig, err := loadAndUpdateConfig(ui)
 	if err != nil {
 		handleError(err)
@@ -623,14 +665,17 @@ func main() {
 		return
 	}
 
+	// 显示ID修改对比		
 	showIdComparison(oldConfig, storageConfig)
 
+	// 保存配置
 	if err := saveConfig(storageConfig); err != nil {
 		handleError(err)
 		waitExit()
 		return
 	}
 
+	// 显示成功信息
 	showSuccess()
 	fmt.Println("\nOperation completed! / 操作完成！")
 	waitExit()
@@ -748,5 +793,4 @@ func selfElevate() error {
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
 }
-
 
