@@ -59,9 +59,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
      "telemetry.machineId": "generate-new-uuid",
      "telemetry.macMachineId": "generate-new-uuid",
      "telemetry.devDeviceId": "generate-new-uuid",
-     "telemetry.sqmId": "generate-new-uuid",
-     "lastModified": "2024-01-01T00:00:00.000Z",
-     "version": "2.5.0"
+     "telemetry.sqmId": "generate-new-uuid"
    }
    ```
 5. Save the file and restart Cursor
@@ -154,9 +152,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
      "telemetry.machineId": "生成新的uuid",
      "telemetry.macMachineId": "生成新的uuid",
      "telemetry.devDeviceId": "生成新的uuid",
-     "telemetry.sqmId": "生成新的uuid",
-     "lastModified": "2024-01-01T00:00:00.000Z",
-     "version": "2.5.0"
+     "telemetry.sqmId": "生成新的uuid"
    }
    ```
 5. 保存文件并重启 Cursor
