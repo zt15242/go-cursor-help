@@ -6,6 +6,7 @@
 
 # Build directories
 releases/
+cursor-id-modifier
 
 
 # Go specific

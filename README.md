@@ -2,306 +2,151 @@
 
 <div align="center">
 
-[![Release](https://img.shields.io/github/v/release/yuaotian/go-cursor-help?style=for-the-badge&logo=github&color=blue)](https://github.com/yuaotian/go-cursor-help/releases/latest)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge&logo=bookstack)](https://github.com/yuaotian/go-cursor-help/blob/main/LICENSE)
-[![Stars](https://img.shields.io/github/stars/yuaotian/go-cursor-help?style=for-the-badge&logo=github)](https://github.com/yuaotian/go-cursor-help/stargazers)
+[![Release](https://img.shields.io/github/v/release/yuaotian/go-cursor-help?style=flat-square&logo=github&color=blue)](https://github.com/yuaotian/go-cursor-help/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square&logo=bookstack)](https://github.com/yuaotian/go-cursor-help/blob/main/LICENSE)
+[![Stars](https://img.shields.io/github/stars/yuaotian/go-cursor-help?style=flat-square&logo=github)](https://github.com/yuaotian/go-cursor-help/stargazers)
 
-[English](#english) | [中文](#chinese)
+[English](#-english) | [中文](#-chinese)
 
----
-
-<img src="https://ai-cursor.com/wp-content/uploads/2024/09/logo-cursor-ai-png.webp" alt="Cursor Logo" width="150"/>
+<img src="https://ai-cursor.com/wp-content/uploads/2024/09/logo-cursor-ai-png.webp" alt="Cursor Logo" width="120"/>
 
 </div>
 
-## ⚠️ Important Notice | 重要声明
-
-<table>
-<tr>
-<td>
-
-<a name="english"></a>
-
-## 🌟 English
+# 🌟 English
 
 ### 📝 Description
 
-A tool to resolve the following prompt issue during Cursor's free trial period:
+Resets Cursor's free trial limitation when you see:
 
-<table>
-<tr>
-<td>
-<pre>
+```
 Too many free trial accounts used on this machine.
 Please upgrade to pro. We have this limit in place
 to prevent abuse. Please let us know if you believe
 this is a mistake.
-</pre>
-</td>
-</tr>
-</table>
-
-### ✨ Features
-
-- 🔄 Reset Cursor free trial limitations
-- 🔍 Automatic detection and closing of running instances
-- 🌐 Cross-platform support with architecture detection
-- 📦 Automated installation scripts
-- 🖥️ Both GUI and command-line interfaces
+```
 
 ### 💻 System Support
 
-| Platform                                                                                        | Status                 |
-| ----------------------------------------------------------------------------------------------- | ---------------------- |
-| ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat&logo=windows&logoColor=white) | ✅ x64                 |
-| ![macOS](https://img.shields.io/badge/macOS-000000?style=flat&logo=apple&logoColor=white)       | ✅ Intel/Apple Silicon |
-| ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black)       | ✅ x64/ARM64           |
+**Windows** ✅ x64  
+**macOS** ✅ Intel & M-series  
+**Linux** ✅ x64 & ARM64
 
-### 📥 Installation Methods
+### 📥 Installation
 
-<details open>
-<summary><b>1️⃣ Automated Installation (Recommended)</b></summary>
+#### Automatic Installation
 
-#### Linux/macOS
-
+**Linux/macOS**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/install.sh | bash -s -- --auto-sudo && rm -f /tmp/cursor_id_modifier_*
 ```
 
-#### Windows PowerShell
-
+**Windows** (Run in PowerShell as Admin)
 ```powershell
-# Download and run with admin privileges
-$url = "https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/bin/cursor_id_modifier_v2.0.0_windows_amd64.exe"
-$output = "$env:TEMP\cursor-id-modifier.exe"
-Invoke-WebRequest -Uri $url -OutFile $output
-Start-Process -FilePath $output -Verb RunAs
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/bin/cursor_id_modifier_v2.0.0_windows_amd64.exe')); Remove-Item -Path "$env:TEMP\cursor-id-modifier.exe" -ErrorAction SilentlyContinue
 ```
 
-</details>
+#### Manual Method
 
-<details>
-<summary><b>2️⃣ Manual Download</b></summary>
+1. Close Cursor completely
+2. Navigate to the configuration file location:
+   - Windows: `%APPDATA%\Cursor\User\globalStorage\storage.json`
+   - macOS: `~/Library/Application Support/Cursor/User/globalStorage/storage.json`
+   - Linux: `~/.config/Cursor/User/globalStorage/storage.json`
+3. Create a backup of `storage.json`
+4. Edit `storage.json` and update these fields with new random UUIDs:
+   ```json
+   {
+     "telemetry.machineId": "generate-new-uuid",
+     "telemetry.macMachineId": "generate-new-uuid",
+     "telemetry.devDeviceId": "generate-new-uuid",
+     "telemetry.sqmId": "generate-new-uuid",
+     "lastModified": "2024-01-01T00:00:00.000Z",
+     "version": "1.0.1"
+   }
+   ```
+5. Save the file and restart Cursor
 
-Download from [Releases](https://github.com/yuaotian/go-cursor-help/releases/latest):
+### 🔧 Technical Details
 
-| Platform                                                                                        | Architecture  | File                       |
-| ----------------------------------------------------------------------------------------------- | ------------- | -------------------------- |
-| ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat&logo=windows&logoColor=white) | x64           | `cursor-id-modifier.exe`   |
-| ![macOS](https://img.shields.io/badge/macOS-000000?style=flat&logo=apple&logoColor=white)       | Intel (x64)   | `cursor-id-modifier-amd64` |
-| ![macOS](https://img.shields.io/badge/macOS-000000?style=flat&logo=apple&logoColor=white)       | Apple Silicon | `cursor-id-modifier-arm64` |
-| ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black)       | x64           | `cursor-id-modifier`       |
-| ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black)       | ARM64         | `cursor-id-modifier-arm64` |
+The program modifies Cursor's `storage.json` config file:
+- Windows: `%APPDATA%\Cursor\User\globalStorage\`
+- macOS: `~/Library/Application Support/Cursor/User/globalStorage/`
+- Linux: `~/.config/Cursor/User/globalStorage/`
 
-</details>
-
-### 📚 Usage Instructions
-
-<details>
-<summary>Prerequisites</summary>
-
-- 👑 Administrator/root privileges required
-- 🚫 Cursor should be completely closed
-- 🌐 Internet connection for installation
-
-</details>
-
-<details>
-<summary>Running the Tool</summary>
-
-The tool will automatically:
-
-1. 🔑 Check for and request admin privileges
-2. 🔍 Detect and close Cursor instances
-3. 💾 Backup existing configuration
-4. 🔄 Generate new identifiers
-5. ✅ Apply changes
-
-Restart Cursor after completion.
-
-</details>
-
-### 🔧 Troubleshooting
-
-<details>
-<summary>Common Issues</summary>
-
-#### 🚫 Permission Denied
-
-- Windows: Right-click → "Run as Administrator"
-- Linux/macOS: Use \`sudo\` when running
-
-#### ⚠️ Cursor Still Running
-
-- Tool will attempt auto-close
-- Manual close via Task Manager if needed
-
-#### 🔒 macOS Security
-
-If you see "unidentified developer" warning:
-
-1. Right-click → Open
-2. Click "Open" in dialog
-
-</details>
-
-### ⚠️ Cautions
-
-- 🛡️ Use at your own risk
-- 💾 Backup important data
-- 📚 Educational purposes only
-
-### 🤝 Contributing
-
-We welcome contributions! Please ensure:
-
-- ✅ Cross-platform compatibility
-- 🚫 No breaking changes
-- 🔍 Proper error handling
-- 📝 Documentation updates
+Generates new unique identifiers for:
+- `telemetry.machineId`
+- `telemetry.macMachineId`
+- `telemetry.devDeviceId`
+- `telemetry.sqmId`
 
 ---
 
-<a name="chinese"></a>
-
-## 🌏 中文
+# 🌏 Chinese
 
 ### 📝 问题描述
 
-解决Cursor在免费订阅期间出现以下提示的问题:
+当看到以下提示时重置Cursor试用期：
 
-<table>
-<tr>
-<td>
-<pre>
+```
 Too many free trial accounts used on this machine.
 Please upgrade to pro. We have this limit in place
 to prevent abuse. Please let us know if you believe
 this is a mistake.
-</pre>
-</td>
-</tr>
-</table>
-
-### ✨ 功能特性
-
-- 🔄 重置Cursor免费试用限制
-- 🔍 自动检测和关闭运行中的实例
-- 🌐 跨平台支持，自动检测系统架构
-- 📦 自动化安装脚本
-- 🖥️ 支持图形界面和命令行
+```
 
 ### 💻 系统支持
 
-| 平台                                                                                            | 状态                   |
-| ----------------------------------------------------------------------------------------------- | ---------------------- |
-| ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat&logo=windows&logoColor=white) | ✅ x64                 |
-| ![macOS](https://img.shields.io/badge/macOS-000000?style=flat&logo=apple&logoColor=white)       | ✅ Intel/Apple Silicon |
-| ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black)       | ✅ x64/ARM64           |
+**Windows** ✅ x64  
+**macOS** ✅ Intel和M系列  
+**Linux** ✅ x64和ARM64
 
 ### 📥 安装方法
 
-<details open>
-<summary><b>1️⃣ 自动安装（推荐）</b></summary>
+#### 自动安装
 
-#### Linux/macOS
-
-
+**Linux/macOS**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/install.sh  | sudo bash
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/install.sh | bash -s -- --auto-sudo && rm -f /tmp/cursor_id_modifier_*
 ```
 
-#### Windows PowerShell
-
+**Windows** (以管理员身份运行PowerShell)
 ```powershell
-# 下载管理员运行
-$url = "https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/bin/cursor_id_modifier_v2.0.0_windows_amd64.exe"
-$output = "$env:TEMP\cursor-id-modifier.exe"
-Invoke-WebRequest -Uri $url -OutFile $output
-Start-Process -FilePath $output -Verb RunAs
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/bin/cursor_id_modifier_v2.0.0_windows_amd64.exe')); Remove-Item -Path "$env:TEMP\cursor-id-modifier.exe" -ErrorAction SilentlyContinue
 ```
 
-</details>
+#### 手动方法
 
-<details>
-<summary><b>2️⃣ 手动下载</b></summary>
+1. 完全关闭 Cursor
+2. 找到配置文件位置：
+   - Windows: `%APPDATA%\Cursor\User\globalStorage\storage.json`
+   - macOS: `~/Library/Application Support/Cursor/User/globalStorage/storage.json`
+   - Linux: `~/.config/Cursor/User/globalStorage/storage.json`
+3. 备份 `storage.json`
+4. 编辑 `storage.json` 并更新以下字段（使用新的随机UUID）：
+   ```json
+   {
+     "telemetry.machineId": "生成新的uuid",
+     "telemetry.macMachineId": "生成新的uuid",
+     "telemetry.devDeviceId": "生成新的uuid",
+     "telemetry.sqmId": "生成新的uuid",
+     "lastModified": "2024-01-01T00:00:00.000Z",
+     "version": "1.0.1"
+   }
+   ```
+5. 保存文件并重启 Cursor
 
-从[发布页面](https://github.com/yuaotian/go-cursor-help/releases/latest)下载：
+### 🔧 技术细节
 
-| 平台                                                                                            | 架构          | 文件                       |
-| ----------------------------------------------------------------------------------------------- | ------------- | -------------------------- |
-| ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat&logo=windows&logoColor=white) | x64           | `cursor-id-modifier.exe`   |
-| ![macOS](https://img.shields.io/badge/macOS-000000?style=flat&logo=apple&logoColor=white)       | Intel (x64)   | `cursor-id-modifier-amd64` |
-| ![macOS](https://img.shields.io/badge/macOS-000000?style=flat&logo=apple&logoColor=white)       | Apple Silicon | `cursor-id-modifier-arm64` |
-| ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black)       | x64           | `cursor-id-modifier`       |
-| ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black)       | ARM64         | `cursor-id-modifier-arm64` |
+程序修改Cursor的`storage.json`配置文件：
+- Windows: `%APPDATA%\Cursor\User\globalStorage\`
+- macOS: `~/Library/Application Support/Cursor/User/globalStorage/`
+- Linux: `~/.config/Cursor/User/globalStorage/`
 
-</details>
-
-### 📚 使用说明
-
-<details>
-<summary>使用前提</summary>
-
-- 👑 需要管理员/root权限
-- 🚫 确保Cursor完全关闭
-- 🌐 需要网络连接进行安装
-
-</details>
-
-<details>
-<summary>运行工具</summary>
-
-工具将自动执行：
-
-1. 🔑 检查并请求管理员权限
-2. 🔍 检测并关闭Cursor进程
-3. 💾 备份现有配置
-4. 🔄 生成新的标识符
-5. ✅ 应用更改
-
-完成后重启Cursor即可。
-
-</details>
-
-### 🔧 故障排除
-
-<details>
-<summary>常见问题</summary>
-
-#### 🚫 权限被拒绝
-
-- Windows：右键 → "以管理员身份运行"
-- Linux/macOS：使用 \`sudo\` 运行
-
-#### ⚠️ Cursor仍在运行
-
-- 工具会尝试自动关闭
-- 如需要请通过任务管理器手动关闭
-
-#### 🔒 macOS安全性问题
-
-如果看到"未识别的开发者"提示：
-
-1. 右键点击 → 打开
-2. 点击确认对话框中的"打开"
-
-</details>
-
-### ⚠️ 注意事项
-
-- 🛡️ 使用本工具需自行承担风险
-- 💾 使用前请备份重要数据
-- 📚 仅用于学习研究目的
-
-### 🤝 贡献
-
-欢迎提交问题和改进建议！请确保：
-
-- ✅ 保持跨平台兼容性
-- 🚫 避免破坏性更改
-- 🔍 完善的错误处理
-- 📝 更新相关文档
+生成新的唯一标识符：
+- `telemetry.machineId`
+- `telemetry.macMachineId`
+- `telemetry.devDeviceId`
+- `telemetry.sqmId`
 
 ## 📄 License
 
