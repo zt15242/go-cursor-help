@@ -69,7 +69,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 If you prefer using scripts directly, you can use these platform-specific scripts:
 
 **For Linux/macOS:**
-1. Download the [cursor_modifier.sh](scripts/cursor_modifier.sh)
+1. Download the [cursor_modifier.sh](cursor_modifier.sh)
 2. Make it executable:
    ```bash
    chmod +x cursor_modifier.sh
@@ -80,7 +80,7 @@ If you prefer using scripts directly, you can use these platform-specific script
    ```
 
 **For Windows:**
-1. Download the [cursor_modifier.bat](scripts/cursor_modifier.bat)
+1. Download the [cursor_modifier.bat](cursor_modifier.bat)
 2. Right-click and "Run as administrator"
 
 These scripts will:
@@ -162,7 +162,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 如果您喜欢直接使用脚本，可以使用这些特定平台的脚本：
 
 **适用于 Linux/macOS：**
-1. 下载 [cursor_modifier.sh](scripts/cursor_modifier.sh)
+1. 下载 [cursor_modifier.sh](cursor_modifier.sh)
 2. 使其可执行：
    ```bash
    chmod +x cursor_modifier.sh
@@ -173,7 +173,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
    ```
 
 **适用于 Windows：**
-1. 下载 [cursor_modifier.bat]（脚本/cursor_modifier.bat）
+1. 下载 [cursor_modifier.bat]（cursor_modifier.bat）
 2. 右键单击并 “以管理员身份运行”。
 
 这些脚本将
