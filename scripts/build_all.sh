@@ -6,7 +6,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # 版本信息
-VERSION="1.0.0"
+VERSION="2.0.0"
 
 # 错误处理函数
 handle_error() {

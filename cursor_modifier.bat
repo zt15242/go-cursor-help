@@ -2,10 +2,10 @@
 chcp 65001 >nul
 setlocal EnableDelayedExpansion
 
-:: °æ±¾ºÅ
-set "VERSION=1.0.1"
+:: ç‰ˆæœ¬å·
+set "VERSION=2.0.0"
 
-:: ¼ì²âÓïÑÔ
+:: æ£€æµ‹è¯­è¨€
 for /f "tokens=2 delims==" %%a in ('wmic os get OSLanguage /value') do set OSLanguage=%%a
 if "%OSLanguage%"=="2052" (
     set "LANG=cn"
@@ -13,18 +13,18 @@ if "%OSLanguage%"=="2052" (
     set "LANG=en"
 )
 
-:: ¶àÓïÑÔÎÄ±¾
+:: å¤šè¯­è¨€æ–‡æœ¬
 if "%LANG%"=="cn" (
-    set "SUCCESS_MSG=[¡Ì] ÅäÖÃÎÄ¼þÒÑ³É¹¦¸üÐÂ£¡"
-    set "RESTART_MSG=[!] ÇëÊÖ¶¯ÖØÆô Cursor ÒÔÊ¹¸üÐÂÉúÐ§"
-    set "READING_CONFIG=ÕýÔÚ¶ÁÈ¡ÅäÖÃÎÄ¼þ..."
-    set "GENERATING_IDS=ÕýÔÚÉú³ÉÐÂµÄ±êÊ¶·û..."
-    set "CHECKING_PROCESSES=ÕýÔÚ¼ì²éÔËÐÐÖÐµÄ Cursor ÊµÀý..."
-    set "CLOSING_PROCESSES=ÕýÔÚ¹Ø±Õ Cursor ÊµÀý..."
-    set "PROCESSES_CLOSED=ËùÓÐ Cursor ÊµÀýÒÑ¹Ø±Õ"
-    set "PLEASE_WAIT=ÇëÉÔºò..."
+    set "SUCCESS_MSG=[âˆš] é…ç½®æ–‡ä»¶å·²æˆåŠŸæ›´æ–°ï¼"
+    set "RESTART_MSG=[!] è¯·æ‰‹åŠ¨é‡å¯ Cursor ä»¥ä½¿æ›´æ–°ç”Ÿæ•ˆ"
+    set "READING_CONFIG=æ­£åœ¨è¯»å–é…ç½®æ–‡ä»¶..."
+    set "GENERATING_IDS=æ­£åœ¨ç”Ÿæˆæ–°çš„æ ‡è¯†ç¬¦..."
+    set "CHECKING_PROCESSES=æ­£åœ¨æ£€æŸ¥è¿è¡Œä¸­çš„ Cursor å®žä¾‹..."
+    set "CLOSING_PROCESSES=æ­£åœ¨å…³é—­ Cursor å®žä¾‹..."
+    set "PROCESSES_CLOSED=æ‰€æœ‰ Cursor å®žä¾‹å·²å…³é—­"
+    set "PLEASE_WAIT=è¯·ç¨å€™..."
 ) else (
-    set "SUCCESS_MSG=[¡Ì] Configuration file updated successfully!"
+    set "SUCCESS_MSG=[âˆš] Configuration file updated successfully!"
     set "RESTART_MSG=[!] Please restart Cursor manually for changes to take effect"
     set "READING_CONFIG=Reading configuration file..."
     set "GENERATING_IDS=Generating new identifiers..."
@@ -34,40 +34,16 @@ if "%LANG%"=="cn" (
     set "PLEASE_WAIT=Please wait..."
 )
 
-:: ¼ì²é¹ÜÀíÔ±È¨ÏÞ
+:: æ£€æŸ¥ç®¡ç†å‘˜æƒé™
 net session >nul 2>&1
 if %errorLevel% neq 0 (
-    echo ÇëÒÔ¹ÜÀíÔ±Éí·ÝÔËÐÐ´Ë½Å±¾
+    echo è¯·ä»¥ç®¡ç†å‘˜èº«ä»½è¿è¡Œæ­¤è„šæœ¬
     echo Please run this script as administrator
     pause
     exit /b 1
 )
 
-:: Éú³ÉËæ»úID
-:generateId
-set "id="
-for /L %%i in (1,1,32) do (
-    set /a "r=!random! %% 16"
-    set "hex=0123456789abcdef"
-    for %%j in (!r!) do set "id=!id!!hex:~%%j,1!"
-)
-exit /b
-
-:: Éú³ÉUUID
-:generateUUID
-set "uuid="
-for /L %%i in (1,1,32) do (
-    set /a "r=!random! %% 16"
-    set "hex=0123456789abcdef"
-    for %%j in (!r!) do set "uuid=!uuid!!hex:~%%j,1!"
-    if %%i==8 set "uuid=!uuid!-"
-    if %%i==12 set "uuid=!uuid!-"
-    if %%i==16 set "uuid=!uuid!-"
-    if %%i==20 set "uuid=!uuid!-"
-)
-exit /b
-
-:: Ö÷³ÌÐò
+:: ä¸»ç¨‹åº
 :main
 cls
 call :printBanner
@@ -85,37 +61,59 @@ set "CONFIG_PATH=%APPDATA%\Cursor\User\globalStorage\storage.json"
 echo %READING_CONFIG%
 
 echo %GENERATING_IDS%
-call :generateId
-set "machineId=!id!"
-call :generateId
-set "macMachineId=!id!"
-call :generateUUID
-set "devDeviceId=!uuid!"
-call :generateId
-set "sqmId=!id!"
+:: ç”ŸæˆéšæœºID
+set "machineId="
+set "macMachineId="
+set "devDeviceId="
+set "sqmId="
 
-:: ´´½¨ÅäÖÃÄ¿Â¼
+:: ç”Ÿæˆ32ä½éšæœºID
+for /L %%i in (1,1,32) do (
+    set /a "r=!random! %% 16"
+    set "hex=0123456789abcdef"
+    for %%j in (!r!) do set "machineId=!machineId!!hex:~%%j,1!"
+)
+
+for /L %%i in (1,1,32) do (
+    set /a "r=!random! %% 16"
+    for %%j in (!r!) do set "macMachineId=!macMachineId!!hex:~%%j,1!"
+)
+
+:: ç”ŸæˆUUIDæ ¼å¼çš„devDeviceId
+for /L %%i in (1,1,32) do (
+    set /a "r=!random! %% 16"
+    for %%j in (!r!) do set "devDeviceId=!devDeviceId!!hex:~%%j,1!"
+    if %%i==8 set "devDeviceId=!devDeviceId!-"
+    if %%i==12 set "devDeviceId=!devDeviceId!-"
+    if %%i==16 set "devDeviceId=!devDeviceId!-"
+    if %%i==20 set "devDeviceId=!devDeviceId!-"
+)
+
+for /L %%i in (1,1,32) do (
+    set /a "r=!random! %% 16"
+    for %%j in (!r!) do set "sqmId=!sqmId!!hex:~%%j,1!"
+)
+
+:: åˆ›å»ºé…ç½®ç›®å½•
 if not exist "%APPDATA%\Cursor\User\globalStorage" (
     mkdir "%APPDATA%\Cursor\User\globalStorage"
 )
 
-:: Éú³ÉÅäÖÃÎÄ¼þ
+:: ç”Ÿæˆé…ç½®æ–‡ä»¶
 (
 echo {
 echo     "telemetry.macMachineId": "%macMachineId%",
 echo     "telemetry.machineId": "%machineId%",
 echo     "telemetry.devDeviceId": "%devDeviceId%",
-echo     "telemetry.sqmId": "%sqmId%",
-echo     "lastModified": "%date:~10,4%-%date:~4,2%-%date:~7,2%T%time:~0,2%:%time:~3,2%:%time:~6,2%Z",
-echo     "version": "%VERSION%"
+echo     "telemetry.sqmId": "%sqmId%"
 echo }
 ) > "%CONFIG_PATH%"
 
 echo.
-echo ©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥
+echo ============================================================
 echo %SUCCESS_MSG%
 echo %RESTART_MSG%
-echo ©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥©¥
+echo ============================================================
 echo.
 echo Config file location:
 echo %CONFIG_PATH%
@@ -123,19 +121,19 @@ echo.
 pause
 exit /b
 
-:: ´òÓ¡banner
+:: æ‰“å°banner
 :printBanner
 echo.
-echo     ¨€¨€¨€¨€¨€¨€¨[¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨€¨€¨€¨€¨[
-echo    ¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X  ¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨€¨€¨[
-echo    ¨€¨€¨U     ¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨€¨X¨a
-echo    ¨€¨€¨U     ¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨€¨€¨[¨^¨T¨T¨T¨T¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨€¨€¨[
-echo    ¨^¨€¨€¨€¨€¨€¨€¨[¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨U  ¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨U  ¨€¨€¨U
-echo     ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨a  ¨^¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨a  ¨^¨T¨a
+echo     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—   â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—
+echo    â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—
+echo    â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•
+echo    â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â•šâ•â•â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—
+echo    â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘
+echo     â•šâ•â•â•â•â•â• â•šâ•â•â•â•â•â• â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â• â•šâ•â•â•â•â•â• â•šâ•â•  â•šâ•â•
 echo.
 echo              ^>^> Cursor ID Modifier v1.0 ^<^<
 echo         [ By Pancake Fruit Rolled Shark Chili ]
 echo.
 exit /b
 
-endlocal 
+endlocal

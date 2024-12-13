@@ -32,7 +32,7 @@ const (
 	EN Language = "en"
 
 	// Version / 版本号
-	Version = "1.0.1"
+	Version = "2.0.0"
 
 	// Error types / 错误类型
 	ErrPermission = "permission_error"
@@ -64,12 +64,10 @@ type (
 
 	// StorageConfig optimized storage configuration / 优化的存储配置
 	StorageConfig struct {
-		TelemetryMacMachineId string    `json:"telemetry.macMachineId"`
-		TelemetryMachineId    string    `json:"telemetry.machineId"`
-		TelemetryDevDeviceId  string    `json:"telemetry.devDeviceId"`
-		TelemetrySqmId        string    `json:"telemetry.sqmId"` // Added TelemetrySqmId
-		LastModified          time.Time `json:"lastModified"`
-		Version               string    `json:"version"`
+		TelemetryMacMachineId string `json:"telemetry.macMachineId"`
+		TelemetryMachineId    string `json:"telemetry.machineId"`
+		TelemetryDevDeviceId  string `json:"telemetry.devDeviceId"`
+		TelemetrySqmId        string `json:"telemetry.sqmId"`
 	}
 	// AppError defines error types / 定义错误类型
 	AppError struct {
@@ -169,8 +167,6 @@ func NewStorageConfig(oldConfig *StorageConfig) *StorageConfig { // Modified to 
 		TelemetryMacMachineId: generateMachineId(),
 		TelemetryMachineId:    generateMachineId(),
 		TelemetryDevDeviceId:  generateDevDeviceId(),
-		LastModified:          time.Now(),
-		Version:               Version,
 	}
 
 	if oldConfig != nil {
@@ -842,7 +838,7 @@ func main() {
 // Progress spinner functions / 进度条函数
 func NewProgressSpinner(message string) *ProgressSpinner {
 	return &ProgressSpinner{
-		frames:  []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "��", "⠏"},
+		frames:  []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
 		message: message,
 	}
 }
@@ -882,7 +878,7 @@ func printCyberpunkBanner() {
 	banner := `
     ██████╗██╗   ██╗██████╗ ███████╗ ██████╗ ██████╗ 
    ██╔════╝██║   ██║██╔══██╗██╔════╝██╔═══██╗██╔══██╗
-   ██║     ██║   ██║██████╔╝███████╗██║   ██║██████╔╝
+   ██║     ██║   ██║██████╔╝███████╗██║   ██║█████╔╝
    ██║     ██║   ██║██╔══██╗╚════██║██║   ██║██╔══██╗
    ╚██████╗╚██████╔╝██║  ██║███████║╚██████╔╝██║  ██║
     ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝

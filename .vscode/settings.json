@@ -9,6 +9,7 @@
         "gcflags",
         "GOARCH",
         "IMAGENAME",
+        "killall",
         "ldflags",
         "LOCALAPPDATA",
         "mktemp",
@@ -20,6 +21,8 @@
         "taskkill",
         "tasklist",
         "trimpath",
+        "urandom",
+        "uuidgen",
         "xattr"
     ]
 }
