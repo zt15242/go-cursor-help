@@ -66,6 +66,32 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
    ```
 5. Save the file and restart Cursor
 
+#### Script Method (Alternative)
+
+If you prefer using scripts directly, you can use these platform-specific scripts:
+
+**For Linux/macOS:**
+1. Download the [cursor_modifier.sh](scripts/cursor_modifier.sh)
+2. Make it executable:
+   ```bash
+   chmod +x cursor_modifier.sh
+   ```
+3. Run with sudo:
+   ```bash
+   sudo ./cursor_modifier.sh
+   ```
+
+**For Windows:**
+1. Download the [cursor_modifier.bat](scripts/cursor_modifier.bat)
+2. Right-click and "Run as administrator"
+
+These scripts will:
+- Automatically detect system language (English/Chinese)
+- Check for and close any running Cursor instances
+- Generate new random IDs
+- Update the configuration file
+- Show the results with a nice UI
+
 ### 🔧 Technical Details
 
 The program modifies Cursor's `storage.json` config file:
@@ -134,6 +160,32 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
    }
    ```
 5. 保存文件并重启 Cursor
+
+#### 脚本方法（替代方法）
+
+如果您喜欢直接使用脚本，可以使用这些特定平台的脚本：
+
+**适用于 Linux/macOS：**
+1. 下载 [cursor_modifier.sh](scripts/cursor_modifier.sh)
+2. 使其可执行：
+   ```bash
+   chmod +x cursor_modifier.sh
+   ```
+3. 用 sudo 运行
+   ```bash
+   sudo ./cursor_modifier.sh
+   ```
+
+**适用于 Windows：**
+1. 下载 [cursor_modifier.bat]（脚本/cursor_modifier.bat）
+2. 右键单击并 “以管理员身份运行”。
+
+这些脚本将
+- 自动检测系统语言（英语/中文）
+- 检查并关闭任何正在运行的光标实例
+- 生成新的随机 ID
+- 更新配置文件
+- 以漂亮的用户界面显示结果
 
 ### 🔧 技术细节
 
