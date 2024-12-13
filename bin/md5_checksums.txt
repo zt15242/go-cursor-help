@@ -1,0 +1,7 @@
+MD5 Checksums 
+============= 
+ 
+c3f03388afd01cd2d9f6c58348abf8e1 cursor_id_modifier_v2.5.0_windows_amd64.exe 
+b2caec6c3bede8f51245e5b74b11b96c cursor_id_modifier_v2.5.0_darwin_amd64_intel 
+8e93f913d653e26bf522bde78b51a26a cursor_id_modifier_v2.5.0_darwin_arm64_m1 
+73db2eb340c0f5878a206ddc63693f77 cursor_id_modifier_v2.5.0_linux_amd64 
