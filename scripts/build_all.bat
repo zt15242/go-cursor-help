@@ -9,6 +9,7 @@ set "GREEN=[32m"
 set "RED=[31m"
 set "YELLOW=[33m"
 set "RESET=[0m"
+set "CYAN=[36m"
 
 :: 设置编译优化标志
 set "LDFLAGS=-s -w"
@@ -59,6 +60,11 @@ set platforms[3].suffix=
 :: 设置开始时间
 set start_time=%time%
 
+:: 创建 MD5 信息文件
+echo MD5 Checksums > ..\bin\md5_checksums.txt
+echo ============= >> ..\bin\md5_checksums.txt
+echo. >> ..\bin\md5_checksums.txt
+
 :: 编译所有目标
 echo 开始编译所有平台...
 
@@ -82,6 +88,13 @@ for /L %%i in (0,1,3) do (
     
     if !errorlevel! equ 0 (
         echo %GREEN%Build successful: !outfile!%RESET%
+        
+        :: 计算并显示 MD5
+        certutil -hashfile "!outfile!" MD5 | findstr /v "CertUtil" | findstr /v "MD5" > md5.tmp
+        set /p MD5=<md5.tmp
+        del md5.tmp
+        echo !MD5! cursor_id_modifier_v%VERSION%_!os!_!arch!!suffix!!ext! >> ..\bin\md5_checksums.txt
+        echo %CYAN%MD5: !MD5!%RESET%
     ) else (
         echo %RED%Build failed for !os! !arch!%RESET%
     )
@@ -93,7 +106,13 @@ set /a duration = %end_time:~0,2% * 3600 + %end_time:~3,2% * 60 + %end_time:~6,2
 
 echo.
 echo %GREEN%所有构建完成! 总耗时: %duration% 秒%RESET%
+echo %CYAN%MD5 校验值已保存到 bin/md5_checksums.txt%RESET%
 if exist "..\bin" dir /b "..\bin"
+
+:: 显示 MD5 校验文件内容
+echo.
+echo %YELLOW%MD5 校验值:%RESET%
+type ..\bin\md5_checksums.txt
 
 pause
 endlocal
