@@ -482,7 +482,7 @@ func showSuccess() {
 		successColor.Printf("%s\n", text.SuccessMessage)
 		fmt.Println()
 		warningColor.Printf("%s\n", text.RestartMessage)
-		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━")
+		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	}
 
 	// Add spacing before config location
@@ -527,13 +527,14 @@ func showPrivilegeError() {
 func checkAdminPrivileges() (bool, error) {
 	switch runtime.GOOS {
 	case "windows":
-		cmd := exec.Command("whoami", "/groups")
-		output, err := cmd.Output()
-		if err != nil {
-			return false, err
+		// 使用更可靠的方法检查Windows管理员权限
+		cmd := exec.Command("net", "session")
+		err := cmd.Run()
+		if err == nil {
+			return true, nil
 		}
-		return strings.Contains(string(output), "S-1-16-12288") ||
-			strings.Contains(string(output), "S-1-5-32-544"), nil
+		// 如果命令执行失败，说明没有管理员权限
+		return false, nil
 
 	case "darwin", "linux":
 		currentUser, err := user.Current()
@@ -841,7 +842,7 @@ func main() {
 // Progress spinner functions / 进度条函数
 func NewProgressSpinner(message string) *ProgressSpinner {
 	return &ProgressSpinner{
-		frames:  []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+		frames:  []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "��", "⠏"},
 		message: message,
 	}
 }
