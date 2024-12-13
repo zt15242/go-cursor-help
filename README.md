@@ -173,7 +173,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
    ```
 
 **适用于 Windows：**
-1. 下载 [cursor_modifier.bat]（cursor_modifier.bat）
+1. 下载 [cursor_modifier.bat](cursor_modifier.bat)
 2. 右键单击并 “以管理员身份运行”。
 
 这些脚本将
