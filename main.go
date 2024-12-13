@@ -32,7 +32,7 @@ const (
 	EN Language = "en"
 
 	// Version / 版本号
-	Version = "2.0.0"
+	Version = "2.5.0"
 
 	// Error types / 错误类型
 	ErrPermission = "permission_error"

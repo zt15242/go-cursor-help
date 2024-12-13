@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Version / 版本号
-VERSION="v2.0.0"
+VERSION="v2.5.0"
 
 # Configuration / 配置
 KEEP_BINARY=false

@@ -3,7 +3,7 @@ chcp 65001 >nul
 setlocal EnableDelayedExpansion
 
 :: 版本号
-set "VERSION=2.0.0"
+set "VERSION=2.5.0"
 
 :: 检测语言
 for /f "tokens=2 delims==" %%a in ('wmic os get OSLanguage /value') do set OSLanguage=%%a

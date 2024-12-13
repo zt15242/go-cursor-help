@@ -42,7 +42,7 @@ curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/
 
 **Windows** (Run in PowerShell as Admin)
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/bin/cursor_id_modifier_v2.0.0_windows_amd64.exe')); Remove-Item -Path "$env:TEMP\cursor-id-modifier.exe" -ErrorAction SilentlyContinue
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/bin/cursor_id_modifier_v2.5.0_windows_amd64.exe')); Remove-Item -Path "$env:TEMP\cursor-id-modifier.exe" -ErrorAction SilentlyContinue
 ```
 
 #### Manual Method
@@ -61,7 +61,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
      "telemetry.devDeviceId": "generate-new-uuid",
      "telemetry.sqmId": "generate-new-uuid",
      "lastModified": "2024-01-01T00:00:00.000Z",
-     "version": "2.0.0"
+     "version": "2.5.0"
    }
    ```
 5. Save the file and restart Cursor
@@ -137,7 +137,7 @@ curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/
 
 **Windows** (以管理员身份运行PowerShell)
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/bin/cursor_id_modifier_v2.0.0_windows_amd64.exe')); Remove-Item -Path "$env:TEMP\cursor-id-modifier.exe" -ErrorAction SilentlyContinue
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/bin/cursor_id_modifier_v2.5.0_windows_amd64.exe')); Remove-Item -Path "$env:TEMP\cursor-id-modifier.exe" -ErrorAction SilentlyContinue
 ```
 
 #### 手动方法
@@ -156,7 +156,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
      "telemetry.devDeviceId": "生成新的uuid",
      "telemetry.sqmId": "生成新的uuid",
      "lastModified": "2024-01-01T00:00:00.000Z",
-     "version": "2.0.0"
+     "version": "2.5.0"
    }
    ```
 5. 保存文件并重启 Cursor
