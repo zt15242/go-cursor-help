@@ -177,12 +177,22 @@ get_binary_name() {
     esac
 }
 
-# Install the binary / 安装二进制文件
+# Add download progress display function
+download_with_progress() {
+    local url="$1"
+    local output_file="$2"
+    
+    curl -L -f --progress-bar "$url" -o "$output_file"
+    return $?
+}
+
+# Optimize installation function
 install_binary() {
     OS=$(detect_os)
-    BINARY_NAME=$(get_binary_name)
-    REPO="yuaotian/go-cursor-help"
     VERSION=$(get_latest_version)
+    VERSION_WITHOUT_V=${VERSION#v}  # Remove 'v' from version number
+    BINARY_NAME="cursor_id_modifier_${VERSION_WITHOUT_V}_${OS}_$(get_arch)"
+    REPO="yuaotian/go-cursor-help"
     DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/${BINARY_NAME}"
     TMP_DIR=$(mktemp -d)
     FINAL_BINARY_NAME="cursor-id-modifier"
@@ -190,30 +200,61 @@ install_binary() {
     print_status "$(get_message 2)"
     print_status "$(get_message 3) ${DOWNLOAD_URL}"
     
-    if ! curl -L -f "$DOWNLOAD_URL" -o "$TMP_DIR/$BINARY_NAME"; then
+    if ! download_with_progress "$DOWNLOAD_URL" "$TMP_DIR/$BINARY_NAME"; then
+        rm -rf "$TMP_DIR"
         print_error "$(get_message 8) $DOWNLOAD_URL"
     fi
     
     if [ ! -f "$TMP_DIR/$BINARY_NAME" ]; then
+        rm -rf "$TMP_DIR"
         print_error "$(get_message 9)"
     fi
     
     print_status "$(get_message 4)"
     INSTALL_DIR="/usr/local/bin"
     
-    # Create directory if it doesn't exist / 如果目录不存在则创建
+    # Create directory if it doesn't exist
     mkdir -p "$INSTALL_DIR"
     
-    # Move binary to installation directory / 移动二进制文件到安装目录
-    mv "$TMP_DIR/$BINARY_NAME" "$INSTALL_DIR/$FINAL_BINARY_NAME"
-    chmod +x "$INSTALL_DIR/$FINAL_BINARY_NAME"
+    # Move binary to installation directory
+    if ! mv "$TMP_DIR/$BINARY_NAME" "$INSTALL_DIR/$FINAL_BINARY_NAME"; then
+        rm -rf "$TMP_DIR"
+        print_error "Failed to move binary to installation directory"
+    fi
     
-    # Cleanup / 清理
+    if ! chmod +x "$INSTALL_DIR/$FINAL_BINARY_NAME"; then
+        rm -rf "$TMP_DIR"
+        print_error "Failed to set executable permissions"
+    fi
+    
+    # Cleanup
     print_status "$(get_message 5)"
     rm -rf "$TMP_DIR"
     
     print_success "$(get_message 6)"
     printf "${GREEN}[✓]${NC} $(get_message 7)\n" "$FINAL_BINARY_NAME"
+    
+    # Try to run the program directly
+    if [ -x "$INSTALL_DIR/$FINAL_BINARY_NAME" ]; then
+        "$INSTALL_DIR/$FINAL_BINARY_NAME" &
+    else
+        print_warning "Failed to start cursor-id-modifier"
+    fi
+}
+
+# Optimize architecture detection function
+get_arch() {
+    case "$(uname -m)" in
+        x86_64)
+            echo "amd64"
+            ;;
+        aarch64|arm64)
+            echo "arm64"
+            ;;
+        *)
+            print_error "$(get_message 13) $(uname -m)"
+            ;;
+    esac
 }
 
 # Check for required tools / 检查必需工具
@@ -234,6 +275,9 @@ main() {
     # Check root privileges / 检查root权限
     check_root "$@"
     
+    # Check required tools / 检查必需工具
+    check_requirements
+    
     # Close Cursor instances / 关闭Cursor实例
     close_cursor_instances
     
@@ -243,7 +287,7 @@ main() {
     OS=$(detect_os)
     print_status "$(get_message 1) $OS"
     
-    check_requirements
+    # Install the binary / 安装二进制文件
     install_binary
 }
 
