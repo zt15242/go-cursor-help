@@ -204,6 +204,11 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 - 原子文件操作
 - 错误处理和回滚
 
+## ⭐ Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=yuaotian/go-cursor-help&type=Date)](https://star-history.com/#yuaotian/go-cursor-help&Date)
+
+
 ## 📄 License
 
 MIT License
