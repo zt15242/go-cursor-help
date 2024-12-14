@@ -23,6 +23,9 @@ import (
 	"github.com/fatih/color"
 )
 
+// Version information
+var version = "dev" // This will be overwritten by goreleaser
+
 // Types and Constants / 类型和常量
 type Language string
 
@@ -30,9 +33,6 @@ const (
 	// Language options / 语言选项
 	CN Language = "cn"
 	EN Language = "en"
-
-	// Version / 版本号
-	Version = "2.5.0"
 
 	// Error types / 错误类型
 	ErrPermission = "permission_error"
@@ -204,17 +204,15 @@ func generateDevDeviceId() string {
 }
 
 // File Operations / 文件操作
-func getConfigPath(username string) (string, error) { // Modified to take username
+func getConfigPath(username string) (string, error) {
 	var configDir string
 	switch runtime.GOOS {
 	case "windows":
 		configDir = filepath.Join(os.Getenv("APPDATA"), "Cursor", "User", "globalStorage")
 	case "darwin":
-		homeDir := filepath.Join("/home/", username)
-		configDir = filepath.Join(homeDir, "Library", "Application Support", "Cursor", "User", "globalStorage")
+		configDir = filepath.Join("/Users", username, "Library", "Application Support", "Cursor", "User", "globalStorage")
 	case "linux":
-		homeDir := filepath.Join("/home/", username)
-		configDir = filepath.Join(homeDir, ".config", "Cursor", "User", "globalStorage")
+		configDir = filepath.Join("/home", username, ".config", "Cursor", "User", "globalStorage")
 	default:
 		return "", fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
@@ -884,7 +882,7 @@ func printCyberpunkBanner() {
     ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
     `
 	cyan.Println(banner)
-	yellow.Println("\t\t>> Cursor ID Modifier v1.0 <<")
+	yellow.Printf("\t\t>> Cursor ID Modifier %s <<\n", version)
 	magenta.Println("\t\t   [ By Pancake Fruit Rolled Shark Chili ]")
 
 	langText := "当前语言/Language: "
