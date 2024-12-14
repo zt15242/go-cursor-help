@@ -33,19 +33,39 @@ this is a mistake.
 
 ### 📥 Installation
 
-#### Automatic Installation
+#### Automatic Installation (Recommended)
 
 **Linux/macOS**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/install.sh | bash -s -- --auto-sudo && rm -f /tmp/cursor_id_modifier_*
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
 
-**Windows** (Run in PowerShell as Admin)
+**Windows** (Run PowerShell as Admin)
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/bin/cursor_id_modifier_v2.0.0_windows_amd64.exe')); Remove-Item -Path "$env:TEMP\cursor-id-modifier.exe" -ErrorAction SilentlyContinue
+irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
 ```
 
-#### Manual Method
+The installation script will automatically:
+- Request necessary privileges (sudo/admin)
+- Close any running Cursor instances
+- Backup existing configuration
+- Install the tool
+- Add it to system PATH
+- Clean up temporary files
+
+#### Manual Installation
+
+1. Download the latest release for your system from the [releases page](https://github.com/yuaotian/go-cursor-help/releases)
+2. Extract and run with administrator/root privileges:
+   ```bash
+   # Linux/macOS
+   sudo ./cursor-id-modifier
+
+   # Windows (PowerShell Admin)
+   .\cursor-id-modifier.exe
+   ```
+
+#### Manual Configuration Method
 
 1. Close Cursor completely
 2. Navigate to the configuration file location:
@@ -68,16 +88,24 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 
 ### 🔧 Technical Details
 
-The program modifies Cursor's `storage.json` config file:
+#### Configuration Files
+The program modifies Cursor's `storage.json` config file located at:
 - Windows: `%APPDATA%\Cursor\User\globalStorage\`
 - macOS: `~/Library/Application Support/Cursor/User/globalStorage/`
 - Linux: `~/.config/Cursor/User/globalStorage/`
 
-Generates new unique identifiers for:
+#### Modified Fields
+The tool generates new unique identifiers for:
 - `telemetry.machineId`
 - `telemetry.macMachineId`
 - `telemetry.devDeviceId`
 - `telemetry.sqmId`
+
+#### Safety Features
+- Automatic backup of existing configuration
+- Safe process termination
+- Atomic file operations
+- Error handling and rollback
 
 ---
 
@@ -102,19 +130,39 @@ this is a mistake.
 
 ### 📥 安装方法
 
-#### 自动安装
+#### 自动安装（推荐）
 
 **Linux/macOS**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/install.sh | bash -s -- --auto-sudo && rm -f /tmp/cursor_id_modifier_*
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
 
 **Windows** (以管理员身份运行PowerShell)
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/bin/cursor_id_modifier_v2.0.0_windows_amd64.exe')); Remove-Item -Path "$env:TEMP\cursor-id-modifier.exe" -ErrorAction SilentlyContinue
+irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
 ```
 
-#### 手动方法
+安装脚本会自动：
+- 请求必要的权限（sudo/管理员）
+- 关闭所有运行中的Cursor实例
+- 备份现有配置
+- 安装工具
+- 添加到系统PATH
+- 清理临时文件
+
+#### 手动安装
+
+1. 从[发布页面](https://github.com/yuaotian/go-cursor-help/releases)下载适合您系统的最新版本
+2. 解压并以管理员/root权限运行：
+   ```bash
+   # Linux/macOS
+   sudo ./cursor-id-modifier
+
+   # Windows (PowerShell 管理员)
+   .\cursor-id-modifier.exe
+   ```
+
+#### 手动配置方法
 
 1. 完全关闭 Cursor
 2. 找到配置文件位置：
@@ -137,16 +185,24 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 
 ### 🔧 技术细节
 
-程序修改Cursor的`storage.json`配置文件：
+#### 配置文件
+程序修改Cursor的`storage.json`配置文件，位于：
 - Windows: `%APPDATA%\Cursor\User\globalStorage\`
 - macOS: `~/Library/Application Support/Cursor/User/globalStorage/`
 - Linux: `~/.config/Cursor/User/globalStorage/`
 
-生成新的唯一标识符：
+#### 修改字段
+工具会生成新的唯一标识符：
 - `telemetry.machineId`
 - `telemetry.macMachineId`
 - `telemetry.devDeviceId`
 - `telemetry.sqmId`
+
+#### 安全特性
+- 自动备份现有配置
+- 安全的进程终止
+- 原子文件操作
+- 错误处理和回滚
 
 ## 📄 License
 
