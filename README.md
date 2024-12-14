@@ -27,68 +27,21 @@ this is a mistake.
 
 ### 💻 System Support
 
-**Windows** ✅ x64  
-**macOS** ✅ Intel & M-series  
-**Linux** ✅ x64 & ARM64
+**Windows** ✅ AMD64 & ARM64  
+**macOS** ✅ AMD64 & ARM64  
+**Linux** ✅ AMD64 & ARM64
 
 ### 📥 Installation
 
-#### Automatic Installation
-
 **Linux/macOS**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/install.sh | bash -s -- --auto-sudo && rm -f /tmp/cursor_id_modifier_*
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/install.sh | bash
 ```
 
 **Windows** (Run in PowerShell as Admin)
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/bin/cursor_id_modifier_v2.5.0_windows_amd64.exe')); Remove-Item -Path "$env:TEMP\cursor-id-modifier.exe" -ErrorAction SilentlyContinue
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; $arch = if ([Environment]::Is64BitOperatingSystem) { if ([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -eq 'Arm64') { 'arm64' } else { 'amd64' } } else { 'amd64' }; $ver = (irm https://api.github.com/repos/yuaotian/go-cursor-help/releases/latest).tag_name.TrimStart('v'); $outfile = "$env:TEMP\cursor_id_modifier.exe"; irm "https://github.com/yuaotian/go-cursor-help/releases/download/v${ver}/cursor_id_modifier_${ver}_windows_${arch}.exe" -OutFile $outfile; & $outfile; Remove-Item -Path $outfile -ErrorAction SilentlyContinue
 ```
-
-#### Manual Method
-
-1. Close Cursor completely
-2. Navigate to the configuration file location:
-   - Windows: `%APPDATA%\Cursor\User\globalStorage\storage.json`
-   - macOS: `~/Library/Application Support/Cursor/User/globalStorage/storage.json`
-   - Linux: `~/.config/Cursor/User/globalStorage/storage.json`
-3. Create a backup of `storage.json`
-4. Edit `storage.json` and update these fields with new random UUIDs:
-   ```json
-   {
-     "telemetry.machineId": "generate-new-uuid",
-     "telemetry.macMachineId": "generate-new-uuid",
-     "telemetry.devDeviceId": "generate-new-uuid",
-     "telemetry.sqmId": "generate-new-uuid"
-   }
-   ```
-5. Save the file and restart Cursor
-
-#### Script Method (Alternative)
-
-If you prefer using scripts directly, you can use these platform-specific scripts:
-
-**For Linux/macOS:**
-1. Download the [cursor_modifier.sh](cursor_modifier.sh)
-2. Make it executable:
-   ```bash
-   chmod +x cursor_modifier.sh
-   ```
-3. Run with sudo:
-   ```bash
-   sudo ./cursor_modifier.sh
-   ```
-
-**For Windows:**
-1. Download the [cursor_modifier.bat](cursor_modifier.bat)
-2. Right-click and "Run as administrator"
-
-These scripts will:
-- Automatically detect system language (English/Chinese)
-- Check for and close any running Cursor instances
-- Generate new random IDs
-- Update the configuration file
-- Show the results with a nice UI
 
 ### 🔧 Technical Details
 
@@ -120,68 +73,21 @@ this is a mistake.
 
 ### 💻 系统支持
 
-**Windows** ✅ x64  
-**macOS** ✅ Intel和M系列  
-**Linux** ✅ x64和ARM64
+**Windows** ✅ AMD64和ARM64  
+**macOS** ✅ AMD64和ARM64  
+**Linux** ✅ AMD64和ARM64
 
 ### 📥 安装方法
 
-#### 自动安装
-
 **Linux/macOS**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/install.sh | bash -s -- --auto-sudo && rm -f /tmp/cursor_id_modifier_*
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/install.sh | bash
 ```
 
 **Windows** (以管理员身份运行PowerShell)
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/bin/cursor_id_modifier_v2.5.0_windows_amd64.exe')); Remove-Item -Path "$env:TEMP\cursor-id-modifier.exe" -ErrorAction SilentlyContinue
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; $arch = if ([Environment]::Is64BitOperatingSystem) { if ([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -eq 'Arm64') { 'arm64' } else { 'amd64' } } else { 'amd64' }; $ver = (irm https://api.github.com/repos/yuaotian/go-cursor-help/releases/latest).tag_name.TrimStart('v'); $outfile = "$env:TEMP\cursor_id_modifier.exe"; irm "https://github.com/yuaotian/go-cursor-help/releases/download/v${ver}/cursor_id_modifier_${ver}_windows_${arch}.exe" -OutFile $outfile; & $outfile; Remove-Item -Path $outfile -ErrorAction SilentlyContinue
 ```
-
-#### 手动方法
-
-1. 完全关闭 Cursor
-2. 找到配置文件位置：
-   - Windows: `%APPDATA%\Cursor\User\globalStorage\storage.json`
-   - macOS: `~/Library/Application Support/Cursor/User/globalStorage/storage.json`
-   - Linux: `~/.config/Cursor/User/globalStorage/storage.json`
-3. 备份 `storage.json`
-4. 编辑 `storage.json` 并更新以下字段（使用新的随机UUID）：
-   ```json
-   {
-     "telemetry.machineId": "生成新的uuid",
-     "telemetry.macMachineId": "生成新的uuid",
-     "telemetry.devDeviceId": "生成新的uuid",
-     "telemetry.sqmId": "生成新的uuid"
-   }
-   ```
-5. 保存文件并重启 Cursor
-
-#### 脚本方法（替代方法）
-
-如果您喜欢直接使用脚本，可以使用这些特定平台的脚本：
-
-**适用于 Linux/macOS：**
-1. 下载 [cursor_modifier.sh](cursor_modifier.sh)
-2. 使其可执行：
-   ```bash
-   chmod +x cursor_modifier.sh
-   ```
-3. 用 sudo 运行
-   ```bash
-   sudo ./cursor_modifier.sh
-   ```
-
-**适用于 Windows：**
-1. 下载 [cursor_modifier.bat](cursor_modifier.bat)
-2. 右键单击并 “以管理员身份运行”。
-
-这些脚本将
-- 自动检测系统语言（英语/中文）
-- 检查并关闭任何正在运行的光标实例
-- 生成新的随机 ID
-- 更新配置文件
-- 以漂亮的用户界面显示结果
 
 ### 🔧 技术细节
 
@@ -201,14 +107,3 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 MIT License
 
 Copyright (c) 2024
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
