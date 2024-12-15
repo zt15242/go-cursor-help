@@ -144,7 +144,7 @@ backup_storage_json() {
 # Detect OS / 检测操作系统
 detect_os() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "macos"
+        echo "darwin"
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "linux"
     else
