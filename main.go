@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -45,21 +46,22 @@ const (
 type (
 	// TextResource stores multilingual text / 存储多语言文本
 	TextResource struct {
-		SuccessMessage    string
-		RestartMessage    string
-		ReadingConfig     string
-		GeneratingIds     string
-		PressEnterToExit  string
-		ErrorPrefix       string
-		PrivilegeError    string
-		RunAsAdmin        string
-		RunWithSudo       string
-		SudoExample       string
-		ConfigLocation    string
-		CheckingProcesses string
-		ClosingProcesses  string
-		ProcessesClosed   string
-		PleaseWait        string
+		SuccessMessage     string
+		RestartMessage     string
+		ReadingConfig      string
+		GeneratingIds      string
+		PressEnterToExit   string
+		ErrorPrefix        string
+		PrivilegeError     string
+		RunAsAdmin         string
+		RunWithSudo        string
+		SudoExample        string
+		ConfigLocation     string
+		CheckingProcesses  string
+		ClosingProcesses   string
+		ProcessesClosed    string
+		PleaseWait         string
+		SetReadOnlyMessage string
 	}
 
 	// StorageConfig optimized storage configuration / 优化的存储配置
@@ -117,41 +119,45 @@ var (
 
 	texts = map[Language]TextResource{
 		CN: {
-			SuccessMessage:    "[√] 配置文件已成功更新！",
-			RestartMessage:    "[!] 请手动重启 Cursor 以使更新生效",
-			ReadingConfig:     "正在读取配置文件...",
-			GeneratingIds:     "正在生成新的标识符...",
-			PressEnterToExit:  "按回车键退出程序...",
-			ErrorPrefix:       "程序发生严重错误: %v",
-			PrivilegeError:    "\n[!] 错误：需要管理员权限",
-			RunAsAdmin:        "请右键点击程序，选择「以管理员身份运行」",
-			RunWithSudo:       "请使用 sudo 命令运行此程序",
-			SudoExample:       "示例: sudo %s",
-			ConfigLocation:    "配置文件位置:",
-			CheckingProcesses: "正在检查运行中的 Cursor 实例...",
-			ClosingProcesses:  "正在关闭 Cursor 实例...",
-			ProcessesClosed:   "所有 Cursor 实例已关闭",
-			PleaseWait:        "请稍候...",
+			SuccessMessage:     "[√] 配置文件已成功更新！",
+			RestartMessage:     "[!] 请手动重启 Cursor 以使更新生效",
+			ReadingConfig:      "正在读取配置文件...",
+			GeneratingIds:      "正在生成新的标识符...",
+			PressEnterToExit:   "按回车键退出程序...",
+			ErrorPrefix:        "程序发生严重错误: %v",
+			PrivilegeError:     "\n[!] 错误：需要管理员权限",
+			RunAsAdmin:         "请右键点击程序，选择「以管理员身份运行」",
+			RunWithSudo:        "请使用 sudo 命令运行此程序",
+			SudoExample:        "示例: sudo %s",
+			ConfigLocation:     "配置文件位置:",
+			CheckingProcesses:  "正在检查运行中的 Cursor 实例...",
+			ClosingProcesses:   "正在关闭 Cursor 实例...",
+			ProcessesClosed:    "所有 Cursor 实例已关闭",
+			PleaseWait:         "请稍候...",
+			SetReadOnlyMessage: "设置 storage.json 为只读模式, 这将导致 workspace 记录信息丢失等问题",
 		},
 		EN: {
-			SuccessMessage:    "[√] Configuration file updated successfully!",
-			RestartMessage:    "[!] Please restart Cursor manually for changes to take effect",
-			ReadingConfig:     "Reading configuration file...",
-			GeneratingIds:     "Generating new identifiers...",
-			PressEnterToExit:  "Press Enter to exit...",
-			ErrorPrefix:       "Program encountered a serious error: %v",
-			PrivilegeError:    "\n[!] Error: Administrator privileges required",
-			RunAsAdmin:        "Please right-click and select 'Run as Administrator'",
-			RunWithSudo:       "Please run this program with sudo",
-			SudoExample:       "Example: sudo %s",
-			ConfigLocation:    "Config file location:",
-			CheckingProcesses: "Checking for running Cursor instances...",
-			ClosingProcesses:  "Closing Cursor instances...",
-			ProcessesClosed:   "All Cursor instances have been closed",
-			PleaseWait:        "Please wait...",
+			SuccessMessage:     "[√] Configuration file updated successfully!",
+			RestartMessage:     "[!] Please restart Cursor manually for changes to take effect",
+			ReadingConfig:      "Reading configuration file...",
+			GeneratingIds:      "Generating new identifiers...",
+			PressEnterToExit:   "Press Enter to exit...",
+			ErrorPrefix:        "Program encountered a serious error: %v",
+			PrivilegeError:     "\n[!] Error: Administrator privileges required",
+			RunAsAdmin:         "Please right-click and select 'Run as Administrator'",
+			RunWithSudo:        "Please run this program with sudo",
+			SudoExample:        "Example: sudo %s",
+			ConfigLocation:     "Config file location:",
+			CheckingProcesses:  "Checking for running Cursor instances...",
+			ClosingProcesses:   "Closing Cursor instances...",
+			ProcessesClosed:    "All Cursor instances have been closed",
+			PleaseWait:         "Please wait...",
+			SetReadOnlyMessage: "Set storage.json to read-only mode, which will cause issues such as lost workspace records",
 		},
 	}
 )
+
+var setReadOnly *bool = flag.Bool("r", false, "set storage.json to read-only mode")
 
 // Error Implementation / 错误实现
 func (e *AppError) Error() string {
@@ -225,16 +231,6 @@ func saveConfig(config *StorageConfig, username string) error { // Modified to t
 		return err
 	}
 
-	content, err := json.MarshalIndent(config, "", "    ")
-	if err != nil {
-		return &AppError{
-			Type: ErrSystem,
-			Op:   "generate JSON",
-			Path: "",
-			Err:  err,
-		}
-	}
-
 	// Create parent directories with proper permissions
 	dir := filepath.Dir(configPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -256,9 +252,53 @@ func saveConfig(config *StorageConfig, username string) error { // Modified to t
 		}
 	}
 
+	originalFileStat, err := os.Stat(configPath)
+	if err != nil {
+		return &AppError{
+			Type: ErrSystem,
+			Op:   "get file mode",
+			Path: configPath,
+			Err:  err,
+		}
+	}
+	originalFileMode := originalFileStat.Mode()
+
+	originalFileContent, err := os.ReadFile(configPath)
+	if err != nil {
+		return &AppError{
+			Type: ErrSystem,
+			Op:   "read original file",
+			Path: configPath,
+			Err:  err,
+		}
+	}
+
+	var originalFile map[string]any
+	if err := json.Unmarshal(originalFileContent, &originalFile); err != nil {
+		return &AppError{
+			Type: ErrSystem,
+			Op:   "unmarshal original file",
+			Path: configPath,
+			Err:  err,
+		}
+	}
+	originalFile["telemetry.sqmId"] = config.TelemetrySqmId
+	originalFile["telemetry.macMachineId"] = config.TelemetryMacMachineId
+	originalFile["telemetry.machineId"] = config.TelemetryMachineId
+	originalFile["telemetry.devDeviceId"] = config.TelemetryDevDeviceId
+	newFileContent, err := json.MarshalIndent(originalFile, "", "    ")
+	if err != nil {
+		return &AppError{
+			Type: ErrSystem,
+			Op:   "marshal new file",
+			Path: configPath,
+			Err:  err,
+		}
+	}
+
 	// Write to temporary file first
 	tmpPath := configPath + ".tmp"
-	if err := os.WriteFile(tmpPath, content, 0666); err != nil {
+	if err := os.WriteFile(tmpPath, newFileContent, 0666); err != nil {
 		return &AppError{
 			Type: ErrSystem,
 			Op:   "write temporary file",
@@ -267,8 +307,12 @@ func saveConfig(config *StorageConfig, username string) error { // Modified to t
 		}
 	}
 
+	if *setReadOnly {
+		originalFileMode = 0444
+	}
+
 	// Ensure proper permissions on temporary file
-	if err := os.Chmod(tmpPath, 0444); err != nil {
+	if err := os.Chmod(tmpPath, originalFileMode); err != nil {
 		os.Remove(tmpPath)
 		return &AppError{
 			Type: ErrSystem,
@@ -495,6 +539,15 @@ func showSuccess() {
 	}
 }
 
+func showReadOnlyMessage() {
+	if *setReadOnly {
+		warningColor := color.New(color.FgYellow, color.Bold)
+		warningColor.Printf("%s\n", texts[currentLanguage].SetReadOnlyMessage)
+		fmt.Println("Press Enter to continue...")
+		bufio.NewReader(os.Stdin).ReadString('\n')
+	}
+}
+
 func showPrivilegeError() {
 	text := texts[currentLanguage]
 	red := color.New(color.FgRed, color.Bold)
@@ -690,6 +743,9 @@ func main() {
 			waitExit()
 		}
 	}()
+
+	flag.Parse()
+	showReadOnlyMessage()
 
 	var username string
 	if username = os.Getenv("SUDO_USER"); username == "" {
