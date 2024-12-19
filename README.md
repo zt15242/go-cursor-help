@@ -59,10 +59,11 @@ The installation script will automatically:
 2. Extract and run with administrator/root privileges:
    ```bash
    # Linux/macOS
-   sudo ./cursor-id-modifier
+   chmod +x ./cursor_id_modifier_*    # Add execute permission
+   sudo ./cursor_id_modifier_*
 
    # Windows (PowerShell Admin)
-   .\cursor-id-modifier.exe
+   .\cursor_id_modifier_*.exe
    ```
 
 #### Manual Configuration Method
@@ -156,10 +157,11 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 2. 解压并以管理员/root权限运行：
    ```bash
    # Linux/macOS
-   sudo ./cursor-id-modifier
+   chmod +x ./cursor_id_modifier_*    # 添加执行权限
+   sudo ./cursor_id_modifier_*
 
    # Windows (PowerShell 管理员)
-   .\cursor-id-modifier.exe
+   .\cursor_id_modifier_*.exe
    ```
 
 #### 手动配置方法
