@@ -4,7 +4,7 @@ package main
 import (
 	"bufio"
 	"context"
-	"crypto/rand"
+	cryptorand "crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -12,6 +12,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"os/exec"
 	"os/user"
@@ -170,7 +171,7 @@ func (e *AppError) Error() string {
 // Configuration Functions / 配置函数
 func NewStorageConfig(oldConfig *StorageConfig) *StorageConfig {
 	// Use different ID generation functions for different fields
-	// 为不同字段使用不同的ID生成函数
+	// 为不同字段用不同的ID生成函数
 	// Reason: machineId needs new format while others keep old format
 	// 原因：machineId需要使用新格式，而其他ID保持旧格式
 	newConfig := &StorageConfig{
@@ -194,20 +195,38 @@ func NewStorageConfig(oldConfig *StorageConfig) *StorageConfig {
 	return newConfig
 }
 
-// ID Generation Functions / ID生成函数
 func generateMachineId() string {
+	// 基础结构：auth0|user_XX[unique_id]
 	prefix := "auth0|user_"
-	remainingLength := 74 - len(prefix)
-	bytes := make([]byte, remainingLength/2)
-	if _, err := rand.Read(bytes); err != nil {
-		panic(fmt.Errorf("failed to generate random data: %v", err))
+
+	// 生成两位数字序列 (00-99)
+	sequence := fmt.Sprintf("%02d", rand.Intn(100))
+
+	// 生成唯一标识部分 (23字符)
+	uniqueId := generateUniqueId(23)
+
+	// 组合完整ID
+	fullId := prefix + sequence + uniqueId
+
+	// 转换为十六进制
+	return hex.EncodeToString([]byte(fullId))
+}
+
+func generateUniqueId(length int) string {
+	// 字符集：使用类似 Crockford's Base32 的字符集
+	const charset = "0123456789ABCDEFGHJKLMNPQRSTVWXYZ"
+
+	// 生成随机字符串
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
 	}
-	return prefix + hex.EncodeToString(bytes)
+	return string(b)
 }
 
 func generateMacMachineId() string {
 	data := make([]byte, 32)
-	if _, err := rand.Read(data); err != nil {
+	if _, err := cryptorand.Read(data); err != nil {
 		panic(fmt.Errorf("failed to generate random data: %v", err))
 	}
 	hash := sha256.Sum256(data)
@@ -216,7 +235,7 @@ func generateMacMachineId() string {
 
 func generateDevDeviceId() string {
 	uuid := make([]byte, 16)
-	if _, err := rand.Read(uuid); err != nil {
+	if _, err := cryptorand.Read(uuid); err != nil {
 		panic(fmt.Errorf("failed to generate UUID: %v", err))
 	}
 	uuid[6] = (uuid[6] & 0x0f) | 0x40 // Version 4
@@ -541,7 +560,7 @@ func showSuccess() {
 		successColor.Printf("%s\n", text.SuccessMessage)
 		fmt.Println()
 		warningColor.Printf("%s\n", text.RestartMessage)
-		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━��━━")
+		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	} else {
 		// Chinese messages with extra spacing
 		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -728,7 +747,7 @@ func waitExit() {
 	if currentLanguage == EN {
 		fmt.Println("\nPress Enter to exit...")
 	} else {
-		fmt.Println("\n按回车键退出程序...")
+		fmt.Println("\n按��车键退出程序...")
 	}
 	os.Stdout.Sync()
 	bufio.NewReader(os.Stdin).ReadString('\n')
@@ -830,7 +849,7 @@ func main() {
 		if currentLanguage == EN {
 			fmt.Println("\nError: Please close Cursor manually before running this program.")
 		} else {
-			fmt.Println("\n错误：请在运行此程序之前手动关闭 Cursor。")
+			fmt.Println("\n错误：请在运���此程序之前手动关闭 Cursor。")
 		}
 		waitExit()
 		return
