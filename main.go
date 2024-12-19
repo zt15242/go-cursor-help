@@ -168,21 +168,27 @@ func (e *AppError) Error() string {
 }
 
 // Configuration Functions / 配置函数
-func NewStorageConfig(oldConfig *StorageConfig) *StorageConfig { // Modified to take old config
+func NewStorageConfig(oldConfig *StorageConfig) *StorageConfig {
+	// Use different ID generation functions for different fields
+	// 为不同字段使用不同的ID生成函数
+	// Reason: machineId needs new format while others keep old format
+	// 原因：machineId需要使用新格式，而其他ID保持旧格式
 	newConfig := &StorageConfig{
-		TelemetryMacMachineId: generateMachineId(),
-		TelemetryMachineId:    generateMachineId(),
+		TelemetryMacMachineId: generateMacMachineId(), // Use old format / 使用旧格式
+		TelemetryMachineId:    generateMachineId(),    // Use new format / 使用新格式
 		TelemetryDevDeviceId:  generateDevDeviceId(),
 	}
 
+	// Keep sqmId from old config or generate new one using old format
+	// 保留旧配置的sqmId或使用旧格式生成新的
 	if oldConfig != nil {
 		newConfig.TelemetrySqmId = oldConfig.TelemetrySqmId
 	} else {
-		newConfig.TelemetrySqmId = generateMachineId()
+		newConfig.TelemetrySqmId = generateMacMachineId()
 	}
 
 	if newConfig.TelemetrySqmId == "" {
-		newConfig.TelemetrySqmId = generateMachineId()
+		newConfig.TelemetrySqmId = generateMacMachineId()
 	}
 
 	return newConfig
@@ -190,6 +196,16 @@ func NewStorageConfig(oldConfig *StorageConfig) *StorageConfig { // Modified to 
 
 // ID Generation Functions / ID生成函数
 func generateMachineId() string {
+	prefix := "auth0|user_"
+	remainingLength := 74 - len(prefix)
+	bytes := make([]byte, remainingLength/2)
+	if _, err := rand.Read(bytes); err != nil {
+		panic(fmt.Errorf("failed to generate random data: %v", err))
+	}
+	return prefix + hex.EncodeToString(bytes)
+}
+
+func generateMacMachineId() string {
 	data := make([]byte, 32)
 	if _, err := rand.Read(data); err != nil {
 		panic(fmt.Errorf("failed to generate random data: %v", err))
@@ -225,7 +241,7 @@ func getConfigPath(username string) (string, error) {
 	return filepath.Join(configDir, "storage.json"), nil
 }
 
-func saveConfig(config *StorageConfig, username string) error { // Modified to take username
+func saveConfig(config *StorageConfig, username string) error {
 	configPath, err := getConfigPath(username)
 	if err != nil {
 		return err
@@ -252,40 +268,52 @@ func saveConfig(config *StorageConfig, username string) error { // Modified to t
 		}
 	}
 
-	originalFileStat, err := os.Stat(configPath)
-	if err != nil {
-		return &AppError{
-			Type: ErrSystem,
-			Op:   "get file mode",
-			Path: configPath,
-			Err:  err,
-		}
-	}
-	originalFileMode := originalFileStat.Mode()
-
+	// Read the original file to preserve all fields
+	var originalFile map[string]interface{}
 	originalFileContent, err := os.ReadFile(configPath)
 	if err != nil {
-		return &AppError{
-			Type: ErrSystem,
-			Op:   "read original file",
-			Path: configPath,
-			Err:  err,
+		if !os.IsNotExist(err) {
+			return &AppError{
+				Type: ErrSystem,
+				Op:   "read original file",
+				Path: configPath,
+				Err:  err,
+			}
+		}
+		// If file doesn't exist, create a new map
+		originalFile = make(map[string]interface{})
+	} else {
+		if err := json.Unmarshal(originalFileContent, &originalFile); err != nil {
+			return &AppError{
+				Type: ErrSystem,
+				Op:   "unmarshal original file",
+				Path: configPath,
+				Err:  err,
+			}
 		}
 	}
 
-	var originalFile map[string]any
-	if err := json.Unmarshal(originalFileContent, &originalFile); err != nil {
-		return &AppError{
-			Type: ErrSystem,
-			Op:   "unmarshal original file",
-			Path: configPath,
-			Err:  err,
-		}
+	// Get original file mode
+	var originalFileMode os.FileMode = 0666
+	if stat, err := os.Stat(configPath); err == nil {
+		originalFileMode = stat.Mode()
 	}
+
+	// Update only the telemetry fields while preserving all other fields
 	originalFile["telemetry.sqmId"] = config.TelemetrySqmId
 	originalFile["telemetry.macMachineId"] = config.TelemetryMacMachineId
 	originalFile["telemetry.machineId"] = config.TelemetryMachineId
 	originalFile["telemetry.devDeviceId"] = config.TelemetryDevDeviceId
+
+	// Add lastModified and version fields if they don't exist
+	if _, exists := originalFile["lastModified"]; !exists {
+		originalFile["lastModified"] = time.Now().UTC().Format(time.RFC3339)
+	}
+	if _, exists := originalFile["version"]; !exists {
+		originalFile["version"] = "1.0.1"
+	}
+
+	// Marshal with indentation
 	newFileContent, err := json.MarshalIndent(originalFile, "", "    ")
 	if err != nil {
 		return &AppError{
@@ -513,7 +541,7 @@ func showSuccess() {
 		successColor.Printf("%s\n", text.SuccessMessage)
 		fmt.Println()
 		warningColor.Printf("%s\n", text.RestartMessage)
-		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━��━━")
 	} else {
 		// Chinese messages with extra spacing
 		successColor.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
