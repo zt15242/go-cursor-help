@@ -42,11 +42,11 @@ archives:
       {{- if and (eq .Os "darwin") (eq .Arch "amd64") }}_intel{{ end }}
       {{- if and (eq .Os "darwin") (eq .Arch "arm64") }}_apple_silicon{{ end }}
     files:
-      - src: README.md
+      - src: ./README.md
         dst: .
-      - src: LICENSE
+      - src: ./LICENSE
         dst: .
-      - src: scripts/*
+      - src: ./scripts/*
         dst: scripts
 
 checksum:
