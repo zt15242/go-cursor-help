@@ -80,7 +80,7 @@ function Install-CursorModifier {
     # Get latest release
     try {
         $latestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/dacrab/go-cursor-help/releases/latest"
-        $binaryName = "cursor-id-modifier.exe"
+        $binaryName = "cursor-id-modifier_windows_$arch.exe"
         $downloadUrl = $latestRelease.assets | Where-Object { $_.name -eq $binaryName } | Select-Object -ExpandProperty browser_download_url
         
         if (!$downloadUrl) {
