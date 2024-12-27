@@ -15,7 +15,7 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 # Detect system information
 detect_system() {
-    local os arch
+    local os arch suffix
 
     case "$(uname -s)" in
         Linux*)  os="linux";;
@@ -24,13 +24,18 @@ detect_system() {
     esac
 
     case "$(uname -m)" in
-        x86_64)  arch="amd64";;
-        aarch64) arch="arm64";;
-        arm64)   arch="arm64";;
+        x86_64)  
+            arch="x64"
+            [ "$os" = "darwin" ] && suffix="_intel"
+            ;;
+        aarch64|arm64) 
+            arch="arm64"
+            [ "$os" = "darwin" ] && suffix="_apple_silicon"
+            ;;
         *)       echo "Unsupported architecture"; exit 1;;
     esac
 
-    echo "$os $arch"
+    echo "$os $arch $suffix"
 }
 
 # Download with progress using curl or wget
@@ -65,7 +70,7 @@ main() {
     echo -e "${BLUE}Starting installation...${NC}"
     
     # Detect system
-    read -r OS ARCH <<< "$(detect_system)"
+    read -r OS ARCH SUFFIX <<< "$(detect_system)"
     echo -e "${GREEN}Detected: $OS $ARCH${NC}"
     
     # Set installation directory
@@ -76,8 +81,9 @@ main() {
     setup_install_dir "$INSTALL_DIR"
     
     # Download latest release
-    LATEST_URL="https://api.github.com/repos/dacrab/cursor-id-modifier/releases/latest"
-    DOWNLOAD_URL=$(curl -s "$LATEST_URL" | grep "browser_download_url.*${OS}_${ARCH}" | cut -d '"' -f 4)
+    LATEST_URL="https://api.github.com/repos/dacrab/go-cursor-help/releases/latest"
+    BINARY_NAME="cursor-id-modifier_${OS}_${ARCH}${SUFFIX}"
+    DOWNLOAD_URL=$(curl -s "$LATEST_URL" | grep "browser_download_url.*${BINARY_NAME}" | cut -d '"' -f 4)
     
     if [ -z "$DOWNLOAD_URL" ]; then
         echo -e "${RED}Error: Could not find download URL for $OS $ARCH${NC}"

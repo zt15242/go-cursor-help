@@ -37,9 +37,9 @@ trap {
 # Detect system architecture
 function Get-SystemArch {
     if ([Environment]::Is64BitOperatingSystem) {
-        return "amd64"
+        return "x64"
     } else {
-        return "386"
+        return "x86"
     }
 }
 
@@ -79,11 +79,12 @@ function Install-CursorModifier {
     
     # Get latest release
     try {
-        $latestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/dacrab/cursor-id-modifier/releases/latest"
-        $downloadUrl = $latestRelease.assets | Where-Object { $_.name -match "windows_$arch" } | Select-Object -ExpandProperty browser_download_url
+        $latestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/dacrab/go-cursor-help/releases/latest"
+        $binaryName = "cursor-id-modifier.exe"
+        $downloadUrl = $latestRelease.assets | Where-Object { $_.name -eq $binaryName } | Select-Object -ExpandProperty browser_download_url
         
         if (!$downloadUrl) {
-            throw "Could not find download URL for windows_$arch"
+            throw "Could not find download URL for $binaryName"
         }
     }
     catch {
