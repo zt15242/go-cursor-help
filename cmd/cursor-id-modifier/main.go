@@ -156,6 +156,9 @@ func main() {
 		log.Warn("Failed to clear screen:", err)
 	}
 
+	// Show logo
+	display.ShowLogo()
+
 	// Read existing config
 	text := lang.GetText()
 	display.ShowProgress(text.ReadingConfig)

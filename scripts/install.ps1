@@ -117,7 +117,21 @@ function Install-CursorModifier {
     }
     
     Write-Host "${Green}Installation completed successfully!${Reset}"
-    Write-Host "${Blue}You can now run: cursor-id-modifier${Reset}"
+    Write-Host "${Blue}Running cursor-id-modifier...${Reset}"
+    
+    # Run the program
+    try {
+        $env:AUTOMATED_MODE = "1"
+        & "$InstallDir\cursor-id-modifier.exe"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "${Red}Failed to run cursor-id-modifier${Reset}"
+            exit 1
+        }
+    }
+    catch {
+        Write-Host "${Red}Failed to run cursor-id-modifier: $_${Reset}"
+        exit 1
+    }
 }
 
 # Run installation

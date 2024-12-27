@@ -99,7 +99,14 @@ main() {
     sudo mv "$TMP_DIR/cursor-id-modifier" "$INSTALL_DIR/"
     
     echo -e "${GREEN}Installation completed successfully!${NC}"
-    echo -e "${BLUE}You can now run: cursor-id-modifier${NC}"
+    echo -e "${BLUE}Running cursor-id-modifier...${NC}"
+    
+    # Run the program
+    export AUTOMATED_MODE=1
+    if ! cursor-id-modifier; then
+        echo -e "${RED}Failed to run cursor-id-modifier${NC}"
+        exit 1
+    fi
 }
 
 main
