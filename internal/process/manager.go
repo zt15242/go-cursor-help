@@ -1,12 +1,10 @@
 package process
 
 import (
-	"context"
 	"fmt"
 	"os/exec"
 	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -14,17 +12,23 @@ import (
 
 // Config holds process manager configuration
 type Config struct {
-	RetryAttempts int
-	RetryDelay    time.Duration
-	Timeout       time.Duration
+	MaxAttempts     int
+	RetryDelay      time.Duration
+	ProcessPatterns []string
 }
 
 // DefaultConfig returns the default configuration
 func DefaultConfig() *Config {
 	return &Config{
-		RetryAttempts: 3,
-		RetryDelay:    time.Second,
-		Timeout:       30 * time.Second,
+		MaxAttempts: 3,
+		RetryDelay:  time.Second,
+		ProcessPatterns: []string{
+			"Cursor.exe",         // Windows
+			"Cursor",             // Linux/macOS binary
+			"cursor",             // Linux/macOS process
+			"cursor-helper",      // Helper process
+			"cursor-id-modifier", // Our tool
+		},
 	}
 }
 
@@ -32,7 +36,6 @@ func DefaultConfig() *Config {
 type Manager struct {
 	config *Config
 	log    *logrus.Logger
-	mu     sync.Mutex
 }
 
 // NewManager creates a new process manager
@@ -49,114 +52,109 @@ func NewManager(config *Config, log *logrus.Logger) *Manager {
 	}
 }
 
-// KillCursorProcesses attempts to kill all Cursor processes
-func (m *Manager) KillCursorProcesses() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	ctx, cancel := context.WithTimeout(context.Background(), m.config.Timeout)
-	defer cancel()
-
-	for attempt := 0; attempt < m.config.RetryAttempts; attempt++ {
-		m.log.Debugf("Attempt %d/%d to kill Cursor processes", attempt+1, m.config.RetryAttempts)
-
-		if err := m.killProcess(ctx); err != nil {
-			m.log.Warnf("Failed to kill processes on attempt %d: %v", attempt+1, err)
-			time.Sleep(m.config.RetryDelay)
-			continue
-		}
-		return nil
-	}
-
-	return fmt.Errorf("failed to kill all Cursor processes after %d attempts", m.config.RetryAttempts)
-}
-
 // IsCursorRunning checks if any Cursor process is running
 func (m *Manager) IsCursorRunning() bool {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	processes, err := m.listCursorProcesses()
+	processes, err := m.getCursorProcesses()
 	if err != nil {
-		m.log.Warnf("Failed to list Cursor processes: %v", err)
+		m.log.Warn("Failed to get Cursor processes:", err)
 		return false
 	}
-
 	return len(processes) > 0
 }
 
-func (m *Manager) killProcess(ctx context.Context) error {
-	if runtime.GOOS == "windows" {
-		return m.killWindowsProcess(ctx)
-	}
-	return m.killUnixProcess(ctx)
-}
-
-func (m *Manager) killWindowsProcess(ctx context.Context) error {
-	// First try graceful termination
-	if err := exec.CommandContext(ctx, "taskkill", "/IM", "Cursor.exe").Run(); err != nil {
-		m.log.Debugf("Graceful termination failed: %v", err)
-	}
-
-	time.Sleep(m.config.RetryDelay)
-
-	// Force kill if still running
-	if err := exec.CommandContext(ctx, "taskkill", "/F", "/IM", "Cursor.exe").Run(); err != nil {
-		return fmt.Errorf("failed to force kill Cursor process: %w", err)
-	}
-
-	return nil
-}
-
-func (m *Manager) killUnixProcess(ctx context.Context) error {
-	processes, err := m.listCursorProcesses()
-	if err != nil {
-		return fmt.Errorf("failed to list processes: %w", err)
-	}
-
-	for _, pid := range processes {
-		if err := m.forceKillProcess(ctx, pid); err != nil {
-			m.log.Warnf("Failed to kill process %s: %v", pid, err)
-			continue
+// KillCursorProcesses attempts to kill all Cursor processes
+func (m *Manager) KillCursorProcesses() error {
+	for attempt := 1; attempt <= m.config.MaxAttempts; attempt++ {
+		processes, err := m.getCursorProcesses()
+		if err != nil {
+			return fmt.Errorf("failed to get processes: %w", err)
 		}
+
+		if len(processes) == 0 {
+			return nil
+		}
+
+		for _, proc := range processes {
+			if err := m.killProcess(proc); err != nil {
+				m.log.Warnf("Failed to kill process %s: %v", proc, err)
+			}
+		}
+
+		time.Sleep(m.config.RetryDelay)
+	}
+
+	if m.IsCursorRunning() {
+		return fmt.Errorf("failed to kill all Cursor processes after %d attempts", m.config.MaxAttempts)
 	}
 
 	return nil
 }
 
-func (m *Manager) forceKillProcess(ctx context.Context, pid string) error {
-	// Try graceful termination first
-	if err := exec.CommandContext(ctx, "kill", pid).Run(); err == nil {
-		m.log.Debugf("Process %s terminated gracefully", pid)
-		time.Sleep(2 * time.Second)
-		return nil
+func (m *Manager) getCursorProcesses() ([]string, error) {
+	var cmd *exec.Cmd
+	var processes []string
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("tasklist", "/FO", "CSV", "/NH")
+	case "darwin":
+		cmd = exec.Command("ps", "-ax")
+	case "linux":
+		cmd = exec.Command("ps", "-A")
+	default:
+		return nil, fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
 
-	// Force kill if still running
-	if err := exec.CommandContext(ctx, "kill", "-9", pid).Run(); err != nil {
-		return fmt.Errorf("failed to force kill process %s: %w", pid, err)
-	}
-
-	m.log.Debugf("Process %s force killed", pid)
-	return nil
-}
-
-func (m *Manager) listCursorProcesses() ([]string, error) {
-	cmd := exec.Command("ps", "aux")
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute ps command: %w", err)
+		return nil, fmt.Errorf("failed to execute command: %w", err)
 	}
 
-	var pids []string
-	for _, line := range strings.Split(string(output), "\n") {
-		if strings.Contains(strings.ToLower(line), "apprun") {
-			fields := strings.Fields(line)
-			if len(fields) > 1 {
-				pids = append(pids, fields[1])
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		for _, pattern := range m.config.ProcessPatterns {
+			if strings.Contains(strings.ToLower(line), strings.ToLower(pattern)) {
+				// Extract PID based on OS
+				pid := m.extractPID(line)
+				if pid != "" {
+					processes = append(processes, pid)
+				}
 			}
 		}
 	}
 
-	return pids, nil
+	return processes, nil
+}
+
+func (m *Manager) extractPID(line string) string {
+	switch runtime.GOOS {
+	case "windows":
+		// Windows CSV format: "ImageName","PID",...
+		parts := strings.Split(line, ",")
+		if len(parts) >= 2 {
+			return strings.Trim(parts[1], "\"")
+		}
+	case "darwin", "linux":
+		// Unix format: PID TTY TIME CMD
+		parts := strings.Fields(line)
+		if len(parts) >= 1 {
+			return parts[0]
+		}
+	}
+	return ""
+}
+
+func (m *Manager) killProcess(pid string) error {
+	var cmd *exec.Cmd
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("taskkill", "/F", "/PID", pid)
+	case "darwin", "linux":
+		cmd = exec.Command("kill", "-9", pid)
+	default:
+		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+	}
+
+	return cmd.Run()
 }
