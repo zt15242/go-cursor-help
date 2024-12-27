@@ -96,12 +96,12 @@ release:
     
     **Linux/macOS**:
     ```bash
-    curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/main/scripts/install.sh | sudo bash && cursor-id-modifier
+    curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.sh | sudo bash
     ```
     
     **Windows** (PowerShell Admin):
     ```powershell
-    irm https://raw.githubusercontent.com/dacrab/go-cursor-help/main/scripts/install.ps1 | iex; cursor-id-modifier
+    irm https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.ps1 | iex
     ```
 
 snapshot:

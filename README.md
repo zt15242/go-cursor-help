@@ -2,9 +2,9 @@
 
 <div align="center">
 
-[![Release](https://img.shields.io/github/v/release/dacrab/cursor-id-modifier?style=flat-square&logo=github&color=blue)](https://github.com/dacrab/cursor-id-modifier/releases/latest)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square&logo=bookstack)](https://github.com/dacrab/cursor-id-modifier/blob/main/LICENSE)
-[![Stars](https://img.shields.io/github/stars/dacrab/cursor-id-modifier?style=flat-square&logo=github)](https://github.com/dacrab/cursor-id-modifier/stargazers)
+[![Release](https://img.shields.io/github/v/release/dacrab/go-cursor-help?style=flat-square&logo=github&color=blue)](https://github.com/dacrab/go-cursor-help/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square&logo=bookstack)](https://github.com/dacrab/go-cursor-help/blob/master/LICENSE)
+[![Stars](https://img.shields.io/github/stars/dacrab/go-cursor-help?style=flat-square&logo=github)](https://github.com/dacrab/go-cursor-help/stargazers)
 
 [🌟 English](#english) | [🌏 中文](#chinese)
 
@@ -62,7 +62,7 @@ this is a mistake.
 <summary><b>Linux/macOS</b>: Copy and paste in terminal</summary>
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.sh | sudo bash && cursor-id-modifier
+curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
 </details>
 
@@ -70,7 +70,7 @@ curl -fsSL https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scri
 <summary><b>Windows</b>: Copy and paste in PowerShell (Admin)</summary>
 
 ```powershell
-irm https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.ps1 | iex; cursor-id-modifier
+irm https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.ps1 | iex
 ```
 </details>
 
@@ -80,7 +80,7 @@ That's it! The script will:
 
 ### 📦 Manual Installation
 
-> Download the appropriate file for your system from [releases](https://github.com/dacrab/cursor-id-modifier/releases/latest)
+> Download the appropriate file for your system from [releases](https://github.com/dacrab/go-cursor-help/releases/latest)
 
 <details>
 <summary>Windows Packages</summary>
@@ -180,7 +180,7 @@ this is a mistake.
 <summary><b>Linux/macOS</b>: 在终端中复制粘贴</summary>
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.sh | sudo bash && cursor-id-modifier
+curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
 </details>
 
@@ -188,7 +188,7 @@ curl -fsSL https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scri
 <summary><b>Windows</b>: 在PowerShell（管理员）中复制粘贴</summary>
 
 ```powershell
-irm https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.ps1 | iex; cursor-id-modifier
+irm https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.ps1 | iex
 ```
 </details>
 
