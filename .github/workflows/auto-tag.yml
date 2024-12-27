@@ -8,7 +8,8 @@ on:
     paths-ignore:
       - '**.md'
       - '.gitignore'
-      - '.github/**'
+      - '.github/workflows/**'
+      - 'LICENSE'
 
 jobs:
   auto-tag:
@@ -19,6 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
           
       - name: Get latest tag
         id: get_latest_tag
@@ -38,5 +40,7 @@ jobs:
       - name: Create new tag
         run: |
           new_tag=${{ steps.get_latest_tag.outputs.version }}
-          git tag $new_tag
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git tag -a $new_tag -m "Release $new_tag"
           git push origin $new_tag 
