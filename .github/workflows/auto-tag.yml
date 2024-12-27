@@ -45,4 +45,9 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git tag -a $new_tag -m "Release $new_tag"
-          git push origin $new_tag 
+          git push origin $new_tag
+
+  release:
+    needs: auto-tag
+    uses: ./.github/workflows/release.yml
+    secrets: inherit 
