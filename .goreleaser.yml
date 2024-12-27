@@ -55,6 +55,16 @@ checksum:
 
 changelog:
   sort: asc
+  use: github
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Others
+      order: 999
   filters:
     exclude:
       - '^docs:'
@@ -64,6 +74,9 @@ changelog:
       - Merge branch
 
 release:
+  github:
+    owner: dacrab
+    name: go-cursor-help
   draft: false
   prerelease: auto
   mode: replace
@@ -77,18 +90,18 @@ release:
     
     See [CHANGELOG](CHANGELOG.md) for more details.
   footer: |
-    **Full Changelog**: https://github.com/dacrab/cursor-id-modifier/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/dacrab/go-cursor-help/compare/{{ .PreviousTag }}...{{ .Tag }}
     
     ## Quick Installation
     
     **Linux/macOS**:
     ```bash
-    curl -fsSL https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.sh | sudo bash && cursor-id-modifier
+    curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/main/scripts/install.sh | sudo bash && cursor-id-modifier
     ```
     
     **Windows** (PowerShell Admin):
     ```powershell
-    irm https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.ps1 | iex; cursor-id-modifier
+    irm https://raw.githubusercontent.com/dacrab/go-cursor-help/main/scripts/install.ps1 | iex; cursor-id-modifier
     ```
 
 snapshot:
