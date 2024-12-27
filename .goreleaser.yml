@@ -25,22 +25,6 @@ builds:
       - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
 
-    # Build matrix
-    matrix:
-      # Special builds for macOS
-      - goos: [darwin]
-        goarch: [amd64]
-        tags: ["intel"]
-      - goos: [darwin]
-        goarch: [arm64]
-        tags: ["apple_silicon"]
-      # Windows builds
-      - goos: [windows]
-        goarch: [amd64, "386"]
-      # Linux builds
-      - goos: [linux]
-        goarch: [amd64, arm64, "386"]
-
 archives:
   - format: tar.gz
     format_overrides:
@@ -49,20 +33,16 @@ archives:
     name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
-      {{- .Os }}_
-      {{- .Arch }}
-      {{- with .Tags }}_{{ . }}{{ end }}
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x64{{ end }}
+      {{- if eq .Arch "386" }}x86{{ end }}
+      {{- if eq .Arch "arm64" }}arm64{{ end }}
+      {{- if and (eq .Os "darwin") (eq .Arch "amd64") }}_intel{{ end }}
+      {{- if and (eq .Os "darwin") (eq .Arch "arm64") }}_apple_silicon{{ end }}
     files:
       - README.md
       - LICENSE
       - scripts/*    # Include installation scripts
-    replacements:
-      darwin: macOS
-      linux: Linux
-      windows: Windows
-      386: x86
-      amd64: x64
-      arm64: arm64
 
 checksum:
   name_template: 'checksums.txt'
