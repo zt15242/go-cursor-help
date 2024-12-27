@@ -1,6 +1,6 @@
 # Compiled binary
-cursor-id-modifier
-cursor-id-modifier.exe
+/cursor-id-modifier
+/cursor-id-modifier.exe
 
 # Build output directories
 bin/
