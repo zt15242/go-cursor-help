@@ -9,7 +9,33 @@ permissions:
   contents: write
 
 jobs:
-  goreleaser:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        arch: [amd64, arm64]
+        exclude:
+          - os: windows-latest
+            arch: arm64
+          - os: ubuntu-latest
+            arch: arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+          
+      - name: Run tests
+        run: go test -v ./...
+
+  release:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,7 +46,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
+          go-version: '1.21'
+          cache: true
           check-latest: true
+
+      - name: Install dependencies
+        run: go mod tidy
 
       - name: Set Repository Variables
         run: |
@@ -35,3 +66,56 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CGO_ENABLED: 0
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: dist/*
+          retention-days: 5
+
+      - name: Generate changelog
+        if: success()
+        run: |
+          echo "# 🚀 Cursor ID Modifier ${{ github.ref_name }}" > ${{ github.workspace }}-CHANGELOG.txt
+          echo "" >> ${{ github.workspace }}-CHANGELOG.txt
+          
+          echo "## ✨ Supported Platforms" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "### 🪟 Windows" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "- Windows x64 (64-bit)" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "- Windows x86 (32-bit)" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "### 🍎 macOS" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "- macOS Intel (x64)" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "- macOS Apple Silicon (M1/M2)" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "### 🐧 Linux" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "- Linux x64 (64-bit)" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "- Linux x86 (32-bit)" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "- Linux ARM64" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "" >> ${{ github.workspace }}-CHANGELOG.txt
+          
+          echo "## 📦 Quick Start" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "### Linux/macOS" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "\`\`\`bash" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "curl -fsSL https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.sh | sudo bash && cursor-id-modifier" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "\`\`\`" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "### Windows (PowerShell Admin)" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "\`\`\`powershell" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "irm https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.ps1 | iex; cursor-id-modifier" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "\`\`\`" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "" >> ${{ github.workspace }}-CHANGELOG.txt
+          
+          echo "## 🔄 Changes" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "* 📦 Release version: ${{ github.ref_name }}" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "* 📝 Full changelog: https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}" >> ${{ github.workspace }}-CHANGELOG.txt
+          
+          echo "" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "## 🔍 Download Files" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "- Windows: \`cursor-id-modifier_${{ github.ref_name }}_Windows_[x64/x86].zip\`" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "- macOS: \`cursor-id-modifier_${{ github.ref_name }}_macOS_[x64/arm64]_[intel/apple_silicon].tar.gz\`" >> ${{ github.workspace }}-CHANGELOG.txt
+          echo "- Linux: \`cursor-id-modifier_${{ github.ref_name }}_Linux_[x64/x86/arm64].tar.gz\`" >> ${{ github.workspace }}-CHANGELOG.txt

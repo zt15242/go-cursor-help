@@ -1,56 +1,110 @@
-project_name: cursor-id-modifier
-
 before:
   hooks:
     - go mod tidy
 
 builds:
-  - env:
+  - main: ./cmd/cursor-id-modifier
+    binary: cursor-id-modifier
+    env:
       - CGO_ENABLED=0
-    ldflags:
-      - -s -w -X main.version={{.Version}}
     goos:
       - linux
       - windows
       - darwin
     goarch:
-      - amd64
-      - arm64
-    mod_timestamp: '{{ .CommitTimestamp }}'
+      - amd64      # Intel 64-bit
+      - arm64      # Apple Silicon/ARM64
+      - "386"      # Intel 32-bit
+    ignore:
+      - goos: darwin
+        goarch: "386"    # No 32-bit support for macOS
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
     flags:
       - -trimpath
-    binary: cursor_id_modifier_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+
+    # Build matrix
+    matrix:
+      # Special builds for macOS
+      - goos: [darwin]
+        goarch: [amd64]
+        tags: ["intel"]
+      - goos: [darwin]
+        goarch: [arm64]
+        tags: ["apple_silicon"]
+      # Windows builds
+      - goos: [windows]
+        goarch: [amd64, "386"]
+      # Linux builds
+      - goos: [linux]
+        goarch: [amd64, arm64, "386"]
 
 archives:
-  - format: binary
-    name_template: "{{ .Binary }}"
-    allow_different_binary_count: true
+  - format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- .Arch }}
+      {{- with .Tags }}_{{ . }}{{ end }}
+    files:
+      - README.md
+      - LICENSE
+      - scripts/*    # Include installation scripts
+    replacements:
+      darwin: macOS
+      linux: Linux
+      windows: Windows
+      386: x86
+      amd64: x64
+      arm64: arm64
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
 
 changelog:
-  use: github
   sort: asc
-  groups:
-    - title: Features
-      regexp: "^.*feat[(\\w)]*:+.*$"
-      order: 0
-    - title: 'Bug Fixes'
-      regexp: "^.*fix[(\\w)]*:+.*$"
-      order: 1
-    - title: Others
-      order: 999
   filters:
     exclude:
       - '^docs:'
       - '^test:'
       - '^ci:'
-      - '^chore:'
       - Merge pull request
       - Merge branch
 
 release:
-  github:
-    owner: '{{ .Env.GITHUB_REPOSITORY_OWNER }}'
-    name: '{{ .Env.GITHUB_REPOSITORY_NAME }}'
   draft: false
   prerelease: auto
   mode: replace
+  header: |
+    ## Cursor ID Modifier {{ .Version }}
+    
+    ### Supported Platforms
+    - Windows: x64, x86
+    - macOS: Intel (x64), Apple Silicon (M1/M2)
+    - Linux: x64, x86, ARM64
+    
+    See [CHANGELOG](CHANGELOG.md) for more details.
+  footer: |
+    **Full Changelog**: https://github.com/dacrab/cursor-id-modifier/compare/{{ .PreviousTag }}...{{ .Tag }}
+    
+    ## Quick Installation
+    
+    **Linux/macOS**:
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.sh | sudo bash && cursor-id-modifier
+    ```
+    
+    **Windows** (PowerShell Admin):
+    ```powershell
+    irm https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.ps1 | iex; cursor-id-modifier
+    ```
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"

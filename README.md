@@ -2,9 +2,9 @@
 
 <div align="center">
 
-[![Release](https://img.shields.io/github/v/release/yuaotian/go-cursor-help?style=flat-square&logo=github&color=blue)](https://github.com/yuaotian/go-cursor-help/releases/latest)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square&logo=bookstack)](https://github.com/yuaotian/go-cursor-help/blob/main/LICENSE)
-[![Stars](https://img.shields.io/github/stars/yuaotian/go-cursor-help?style=flat-square&logo=github)](https://github.com/yuaotian/go-cursor-help/stargazers)
+[![Release](https://img.shields.io/github/v/release/dacrab/cursor-id-modifier?style=flat-square&logo=github&color=blue)](https://github.com/dacrab/cursor-id-modifier/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square&logo=bookstack)](https://github.com/dacrab/cursor-id-modifier/blob/main/LICENSE)
+[![Stars](https://img.shields.io/github/stars/dacrab/cursor-id-modifier?style=flat-square&logo=github)](https://github.com/dacrab/cursor-id-modifier/stargazers)
 
 [English](#-english) | [中文](#-chinese)
 
@@ -27,73 +27,59 @@ this is a mistake.
 
 ### 💻 System Support
 
-**Windows** ✅ x64  
-**macOS** ✅ Intel & M-series  
-**Linux** ✅ x64 & ARM64
+**Windows** ✅
+- x64 (64-bit)
+- x86 (32-bit)
 
-### 📥 Installation
+**macOS** ✅
+- Intel (x64)
+- Apple Silicon (M1/M2)
 
-#### Automatic Installation (Recommended)
+**Linux** ✅
+- x64 (64-bit)
+- x86 (32-bit)
+- ARM64
 
-**Linux/macOS**
+### 📥 One-Click Solution
+
+**Linux/macOS**: Copy and paste in terminal:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.sh | sudo bash && cursor-id-modifier
 ```
 
-**Windows** (Run PowerShell as Admin)
+**Windows**: Copy and paste in PowerShell (Admin):
 ```powershell
-irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.ps1 | iex; cursor-id-modifier
 ```
 
-The installation script will automatically:
-- Request necessary privileges (sudo/admin)
-- Close any running Cursor instances
-- Backup existing configuration
-- Install the tool
-- Add it to system PATH
-- Clean up temporary files
+That's it! The script will:
+1. Install the tool automatically
+2. Reset your Cursor trial immediately
 
-#### Manual Installation
+### 🔧 Manual Installation
 
-1. Download the latest release for your system from the [releases page](https://github.com/yuaotian/go-cursor-help/releases)
-2. Extract and run with administrator/root privileges:
-   ```bash
-   # Linux/macOS
-   chmod +x ./cursor_id_modifier_*    # Add execute permission
-   sudo ./cursor_id_modifier_*
+Download the appropriate file for your system from [releases](https://github.com/dacrab/cursor-id-modifier/releases/latest):
 
-   # Windows (PowerShell Admin)
-   .\cursor_id_modifier_*.exe
-   ```
+**Windows**:
+- 64-bit: `cursor-id-modifier_vX.X.X_Windows_x64.zip`
+- 32-bit: `cursor-id-modifier_vX.X.X_Windows_x86.zip`
 
-#### Manual Configuration Method
+**macOS**:
+- Intel: `cursor-id-modifier_vX.X.X_macOS_x64_intel.tar.gz`
+- M1/M2: `cursor-id-modifier_vX.X.X_macOS_arm64_apple_silicon.tar.gz`
 
-1. Close Cursor completely
-2. Navigate to the configuration file location:
-   - Windows: `%APPDATA%\Cursor\User\globalStorage\storage.json`
-   - macOS: `~/Library/Application Support/Cursor/User/globalStorage/storage.json`
-   - Linux: `~/.config/Cursor/User/globalStorage/storage.json`
-3. Create a backup of `storage.json`
-4. Edit `storage.json` and update these fields with new random UUIDs:
-   ```json
-   {
-     "telemetry.machineId": "generate-new-uuid",
-     "telemetry.macMachineId": "generate-new-uuid",
-     "telemetry.devDeviceId": "generate-new-uuid",
-     "telemetry.sqmId": "generate-new-uuid",
-     "lastModified": "2024-01-01T00:00:00.000Z",
-     "version": "1.0.1"
-   }
-   ```
-5. Save the file and restart Cursor
+**Linux**:
+- 64-bit: `cursor-id-modifier_vX.X.X_Linux_x64.tar.gz`
+- 32-bit: `cursor-id-modifier_vX.X.X_Linux_x86.tar.gz`
+- ARM64: `cursor-id-modifier_vX.X.X_Linux_arm64.tar.gz`
 
 ### 🔧 Technical Details
 
 #### Configuration Files
 The program modifies Cursor's `storage.json` config file located at:
-- Windows: `%APPDATA%\Cursor\User\globalStorage\`
-- macOS: `~/Library/Application Support/Cursor/User/globalStorage/`
-- Linux: `~/.config/Cursor/User/globalStorage/`
+- Windows: `%APPDATA%\Cursor\User\globalStorage\storage.json`
+- macOS: `~/Library/Application Support/Cursor/User/globalStorage/storage.json`
+- Linux: `~/.config/Cursor/User/globalStorage/storage.json`
 
 #### Modified Fields
 The tool generates new unique identifiers for:
@@ -103,10 +89,9 @@ The tool generates new unique identifiers for:
 - `telemetry.sqmId`
 
 #### Safety Features
-- Automatic backup of existing configuration
-- Safe process termination
-- Atomic file operations
-- Error handling and rollback
+- ✅ Safe process termination
+- ✅ Atomic file operations
+- ✅ Error handling and recovery
 
 ---
 
@@ -125,65 +110,25 @@ this is a mistake.
 
 ### 💻 系统支持
 
-**Windows** ✅ x64  
-**macOS** ✅ Intel和M系列  
-**Linux** ✅ x64和ARM64
+**Windows** ✅ x64 & x86  
+**macOS** ✅ Intel & M-series  
+**Linux** ✅ x64 & ARM64
 
-### 📥 安装方法
+### 📥 一键解决
 
-#### 自动安装（推荐）
-
-**Linux/macOS**
+**Linux/macOS**: 在终端中复制粘贴：
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.sh | sudo bash && cursor-id-modifier
 ```
 
-**Windows** (以管理员身份运行PowerShell)
+**Windows**: 在PowerShell（管理员）中复制粘贴：
 ```powershell
-irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/dacrab/cursor-id-modifier/main/scripts/install.ps1 | iex; cursor-id-modifier
 ```
 
-安装脚本会自动：
-- 请求必要的权限（sudo/管理员）
-- 关闭所有运行中的Cursor实例
-- 备份现有配置
-- 安装工具
-- 添加到系统PATH
-- 清理临时文件
-
-#### 手动安装
-
-1. 从[发布页面](https://github.com/yuaotian/go-cursor-help/releases)下载适合您系统的最新版本
-2. 解压并以管理员/root权限运行：
-   ```bash
-   # Linux/macOS
-   chmod +x ./cursor_id_modifier_*    # 添加执行权限
-   sudo ./cursor_id_modifier_*
-
-   # Windows (PowerShell 管理员)
-   .\cursor_id_modifier_*.exe
-   ```
-
-#### 手动配置方法
-
-1. 完全关闭 Cursor
-2. 找到配置文件位置：
-   - Windows: `%APPDATA%\Cursor\User\globalStorage\storage.json`
-   - macOS: `~/Library/Application Support/Cursor/User/globalStorage/storage.json`
-   - Linux: `~/.config/Cursor/User/globalStorage/storage.json`
-3. 备份 `storage.json`
-4. 编辑 `storage.json` 并更新以下字段（使用新的随机UUID）：
-   ```json
-   {
-     "telemetry.machineId": "生成新的uuid",
-     "telemetry.macMachineId": "生成新的uuid",
-     "telemetry.devDeviceId": "生成新的uuid",
-     "telemetry.sqmId": "生成新的uuid",
-     "lastModified": "2024-01-01T00:00:00.000Z",
-     "version": "1.0.1"
-   }
-   ```
-5. 保存文件并重启 Cursor
+就这样！脚本会：
+1. 自动安装工具
+2. 立即重置Cursor试用期
 
 ### 🔧 技术细节
 
@@ -201,10 +146,9 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 - `telemetry.sqmId`
 
 #### 安全特性
-- 自动备份现有配置
-- 安全的进程终止
-- 原子文件操作
-- 错误处理和回滚
+- ✅ 安全的进程终止
+- ✅ 原子文件操作
+- ✅ 错误处理和恢复
 
 ## ⭐ Star History or Repobeats
 
