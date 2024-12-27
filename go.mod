@@ -1,4 +1,4 @@
-module cursor-id-modifier
+module github.com/dacrab/go-cursor-help
 
 go 1.21
 
