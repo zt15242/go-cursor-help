@@ -89,9 +89,9 @@ function Install-CursorModifier {
         # Look for Windows binary with our architecture
         $possibleNames = @(
             "cursor-id-modifier_windows_$($arch).exe",
-            "cursor-id-modifier_windows_$($arch).exe.exe",
+            "cursor-id-modifier_windows_$($arch).exe",
             "cursor-id-modifier_Windows_$($arch).exe",
-            "cursor-id-modifier_Windows_$($arch).exe.exe"
+            "cursor-id-modifier_Windows_$($arch).exe"
         )
         
         $asset = $null
