@@ -1,15 +1,30 @@
-# Auto-elevate to admin rights if not already running as admin
+# Check for admin rights and handle elevation
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 if (-NOT $isAdmin) {
+    # Detect PowerShell version and path
+    $pwshPath = if (Get-Command "pwsh" -ErrorAction SilentlyContinue) {
+        (Get-Command "pwsh").Source  # PowerShell 7+
+    } elseif (Test-Path "$env:ProgramFiles\PowerShell\7\pwsh.exe") {
+        "$env:ProgramFiles\PowerShell\7\pwsh.exe"
+    } else {
+        "powershell.exe"  # Windows PowerShell
+    }
+    
     try {
-        Write-Host "Requesting administrator privileges..." -ForegroundColor Cyan
-        $argList = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-        Start-Process powershell.exe -Verb RunAs -ArgumentList $argList -Wait
+        Write-Host "`nRequesting administrator privileges..." -ForegroundColor Cyan
+        $scriptPath = $MyInvocation.MyCommand.Path
+        $argList = "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
+        Start-Process -FilePath $pwshPath -Verb RunAs -ArgumentList $argList -Wait
         exit
     }
     catch {
-        Write-Host "Failed to get admin rights. Please run as Administrator." -ForegroundColor Red
-        Write-Host "Press any key to exit..."
+        Write-Host "`nError: Administrator privileges required" -ForegroundColor Red
+        Write-Host "Please run this script from an Administrator PowerShell window" -ForegroundColor Yellow
+        Write-Host "`nTo do this:" -ForegroundColor Cyan
+        Write-Host "1. Press Win + X" -ForegroundColor White
+        Write-Host "2. Click 'Windows Terminal (Admin)' or 'PowerShell (Admin)'" -ForegroundColor White
+        Write-Host "3. Run the installation command again" -ForegroundColor White
+        Write-Host "`nPress enter to exit..."
         $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
         exit 1
     }
@@ -33,7 +48,7 @@ function Cleanup {
 trap {
     Write-Host "Error: $_" -ForegroundColor Red
     Cleanup
-    Write-Host "Press any key to exit..."
+    Write-Host "Press enter to exit..."
     $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
     exit 1
 }
@@ -165,12 +180,14 @@ try {
 catch {
     Write-Host "Installation failed: $_" -ForegroundColor Red
     Cleanup
-    Write-Host "Press any key to exit..."
+    Write-Host "Press enter to exit..."
     $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
     exit 1
 }
 finally {
     Cleanup
-    Write-Host "Press any key to exit..." -ForegroundColor Green
-    $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Press enter to exit..." -ForegroundColor Green
+        $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+    }
 }

@@ -63,10 +63,16 @@ this is a mistake.
 curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
 
-**Windows**: Copy and paste in PowerShell (Admin)
+**Windows**: Copy and paste in PowerShell
 ```powershell
 irm https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.ps1 | iex
 ```
+
+#### Windows Installation Features:
+- 🔍 Automatically detects and uses PowerShell 7 if available
+- 🛡️ Requests administrator privileges via UAC prompt
+- 📝 Falls back to Windows PowerShell if PS7 isn't found
+- 💡 Provides manual instructions if elevation fails
 
 That's it! The script will:
 1. ✨ Install the tool automatically
@@ -175,14 +181,46 @@ this is a mistake.
 curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
 
-**Windows**: 在PowerShell（管理员）中复制粘贴
+**Windows**: 在PowerShell中复制粘贴
 ```powershell
 irm https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.ps1 | iex
 ```
 
-就这样！脚本会：
+#### Windows 安装特性:
+- 🔍 自动检测并使用 PowerShell 7（如果可用）
+- 🛡️ 通过 UAC 提示请求管理员权限
+- 📝 如果没有 PS7 则使用 Windows PowerShell
+- 💡 如果提权失败会提供手动说明
+
+That's it! The script will:
 1. ✨ 自动安装工具
 2. 🔄 立即重置Cursor试用期
+
+### 📦 Manual Installation
+
+> Download the appropriate file for your system from [releases](https://github.com/dacrab/go-cursor-help/releases/latest)
+
+<details>
+<summary>Windows Packages</summary>
+
+- 64-bit: `cursor-id-modifier_windows_x64.exe`
+- 32-bit: `cursor-id-modifier_windows_x86.exe`
+</details>
+
+<details>
+<summary>macOS Packages</summary>
+
+- Intel: `cursor-id-modifier_darwin_x64_intel`
+- M1/M2: `cursor-id-modifier_darwin_arm64_apple_silicon`
+</details>
+
+<details>
+<summary>Linux Packages</summary>
+
+- 64-bit: `cursor-id-modifier_linux_x64`
+- 32-bit: `cursor-id-modifier_linux_x86`
+- ARM64: `cursor-id-modifier_linux_arm64`
+</details>
 
 ### 🔧 技术细节
 
