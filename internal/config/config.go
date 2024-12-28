@@ -32,10 +32,7 @@ func NewManager(username string) (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get config path: %w", err)
 	}
-
-	return &Manager{
-		configPath: configPath,
-	}, nil
+	return &Manager{configPath: configPath}, nil
 }
 
 // ReadConfig reads the existing configuration
@@ -69,22 +66,23 @@ func (m *Manager) SaveConfig(config *StorageConfig, readOnly bool) error {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	// Set file permissions
-	if err := os.Chmod(m.configPath, 0666); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to set file permissions: %w", err)
+	// Prepare updated configuration
+	updatedConfig := m.prepareUpdatedConfig(config)
+
+	// Write configuration
+	if err := m.writeConfigFile(updatedConfig, readOnly); err != nil {
+		return err
 	}
 
-	// Read existing config to preserve other fields
-	var originalFile map[string]interface{}
-	originalFileContent, err := os.ReadFile(m.configPath)
-	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to read original file: %w", err)
-	} else if err == nil {
-		if err := json.Unmarshal(originalFileContent, &originalFile); err != nil {
-			return fmt.Errorf("failed to parse original file: %w", err)
-		}
-	} else {
-		originalFile = make(map[string]interface{})
+	return nil
+}
+
+// prepareUpdatedConfig merges existing config with updates
+func (m *Manager) prepareUpdatedConfig(config *StorageConfig) map[string]interface{} {
+	// Read existing config
+	originalFile := make(map[string]interface{})
+	if data, err := os.ReadFile(m.configPath); err == nil {
+		json.Unmarshal(data, &originalFile)
 	}
 
 	// Update fields
@@ -95,15 +93,20 @@ func (m *Manager) SaveConfig(config *StorageConfig, readOnly bool) error {
 	originalFile["lastModified"] = time.Now().UTC().Format(time.RFC3339)
 	originalFile["version"] = "1.0.1"
 
+	return originalFile
+}
+
+// writeConfigFile handles the atomic write of the config file
+func (m *Manager) writeConfigFile(config map[string]interface{}, readOnly bool) error {
 	// Marshal with indentation
-	newFileContent, err := json.MarshalIndent(originalFile, "", "    ")
+	content, err := json.MarshalIndent(config, "", "    ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
 	// Write to temporary file
 	tmpPath := m.configPath + ".tmp"
-	if err := os.WriteFile(tmpPath, newFileContent, 0666); err != nil {
+	if err := os.WriteFile(tmpPath, content, 0666); err != nil {
 		return fmt.Errorf("failed to write temporary file: %w", err)
 	}
 
@@ -126,8 +129,8 @@ func (m *Manager) SaveConfig(config *StorageConfig, readOnly bool) error {
 
 	// Sync directory
 	if dir, err := os.Open(filepath.Dir(m.configPath)); err == nil {
+		defer dir.Close()
 		dir.Sync()
-		dir.Close()
 	}
 
 	return nil

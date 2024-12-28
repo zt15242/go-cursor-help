@@ -9,13 +9,6 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 # Set TLS to 1.2
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# Colors for output
-$Red = "`e[31m"
-$Green = "`e[32m"
-$Blue = "`e[36m"
-$Yellow = "`e[33m"
-$Reset = "`e[0m"
-
 # Create temporary directory
 $TmpDir = Join-Path $env:TEMP ([System.Guid]::NewGuid().ToString())
 New-Item -ItemType Directory -Path $TmpDir | Out-Null
@@ -29,7 +22,7 @@ function Cleanup {
 
 # Error handler
 trap {
-    Write-Host "${Red}Error: $_${Reset}"
+    Write-Host "Error: $_" -ForegroundColor Red
     Cleanup
     exit 1
 }
@@ -44,7 +37,7 @@ function Get-SystemArch {
 }
 
 # Download with progress
-function Download-WithProgress {
+function Get-FileWithProgress {
     param (
         [string]$Url,
         [string]$OutputFile
@@ -58,18 +51,18 @@ function Download-WithProgress {
         return $true
     }
     catch {
-        Write-Host "${Red}Failed to download: $_${Reset}"
+        Write-Host "Failed to download: $_" -ForegroundColor Red
         return $false
     }
 }
 
 # Main installation function
 function Install-CursorModifier {
-    Write-Host "${Blue}Starting installation...${Reset}"
+    Write-Host "Starting installation..." -ForegroundColor Cyan
     
     # Detect architecture
     $arch = Get-SystemArch
-    Write-Host "${Green}Detected architecture: $arch${Reset}"
+    Write-Host "Detected architecture: $arch" -ForegroundColor Green
     
     # Set installation directory
     $InstallDir = "$env:ProgramFiles\CursorModifier"
@@ -80,28 +73,36 @@ function Install-CursorModifier {
     # Get latest release
     try {
         $latestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/dacrab/go-cursor-help/releases/latest"
+        Write-Host "Found latest release: $($latestRelease.tag_name)" -ForegroundColor Cyan
+        
+        # Updated binary name format to match actual assets
         $binaryName = "cursor-id-modifier_windows_$arch.exe"
-        $downloadUrl = $latestRelease.assets | Where-Object { $_.name -eq $binaryName } | Select-Object -ExpandProperty browser_download_url
+        Write-Host "Looking for asset: $binaryName" -ForegroundColor Cyan
+        
+        $asset = $latestRelease.assets | Where-Object { $_.name -eq $binaryName }
+        $downloadUrl = $asset.browser_download_url
         
         if (!$downloadUrl) {
+            Write-Host "Available assets:" -ForegroundColor Yellow
+            $latestRelease.assets | ForEach-Object { Write-Host $_.name }
             throw "Could not find download URL for $binaryName"
         }
     }
     catch {
-        Write-Host "${Red}Failed to get latest release: $_${Reset}"
+        Write-Host "Failed to get latest release: $_" -ForegroundColor Red
         exit 1
     }
     
     # Download binary
-    Write-Host "${Blue}Downloading latest release...${Reset}"
+    Write-Host "Downloading latest release from $downloadUrl..." -ForegroundColor Cyan
     $binaryPath = Join-Path $TmpDir "cursor-id-modifier.exe"
     
-    if (!(Download-WithProgress -Url $downloadUrl -OutputFile $binaryPath)) {
+    if (!(Get-FileWithProgress -Url $downloadUrl -OutputFile $binaryPath)) {
         exit 1
     }
     
     # Install binary
-    Write-Host "${Blue}Installing...${Reset}"
+    Write-Host "Installing..." -ForegroundColor Cyan
     try {
         Copy-Item -Path $binaryPath -Destination "$InstallDir\cursor-id-modifier.exe" -Force
         
@@ -112,24 +113,23 @@ function Install-CursorModifier {
         }
     }
     catch {
-        Write-Host "${Red}Failed to install: $_${Reset}"
+        Write-Host "Failed to install: $_" -ForegroundColor Red
         exit 1
     }
     
-    Write-Host "${Green}Installation completed successfully!${Reset}"
-    Write-Host "${Blue}Running cursor-id-modifier...${Reset}"
+    Write-Host "Installation completed successfully!" -ForegroundColor Green
+    Write-Host "Running cursor-id-modifier..." -ForegroundColor Cyan
     
     # Run the program
     try {
-        $env:AUTOMATED_MODE = "1"
         & "$InstallDir\cursor-id-modifier.exe"
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "${Red}Failed to run cursor-id-modifier${Reset}"
+            Write-Host "Failed to run cursor-id-modifier" -ForegroundColor Red
             exit 1
         }
     }
     catch {
-        Write-Host "${Red}Failed to run cursor-id-modifier: $_${Reset}"
+        Write-Host "Failed to run cursor-id-modifier: $_" -ForegroundColor Red
         exit 1
     }
 }
@@ -140,4 +140,6 @@ try {
 }
 finally {
     Cleanup
+    Write-Host "Press any key to continue..."
+    $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
 }

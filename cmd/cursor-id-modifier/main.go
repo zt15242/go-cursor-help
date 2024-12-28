@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strings"
-	"time"
 
 	"github.com/dacrab/go-cursor-help/internal/config"
 	"github.com/dacrab/go-cursor-help/internal/lang"
@@ -21,6 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Global variables
 var (
 	version     = "dev"
 	setReadOnly = flag.Bool("r", false, "set storage.json to read-only mode")
@@ -29,7 +29,51 @@ var (
 )
 
 func main() {
-	// Initialize error recovery
+	setupErrorRecovery()
+	handleFlags()
+	setupLogger()
+
+	username := getCurrentUser()
+	log.Debug("Running as user:", username)
+
+	// Initialize components
+	display := ui.NewDisplay(nil)
+	configManager := initConfigManager(username)
+	generator := idgen.NewGenerator()
+	processManager := process.NewManager(nil, log)
+
+	// Check and handle privileges
+	if err := handlePrivileges(display); err != nil {
+		return
+	}
+
+	// Setup display
+	setupDisplay(display)
+
+	text := lang.GetText()
+
+	// Handle Cursor processes
+	if err := handleCursorProcesses(display, processManager); err != nil {
+		return
+	}
+
+	// Handle configuration
+	oldConfig := readExistingConfig(display, configManager, text)
+	newConfig := generateNewConfig(display, generator, oldConfig, text)
+
+	if err := saveConfiguration(display, configManager, newConfig); err != nil {
+		return
+	}
+
+	// Show completion messages
+	showCompletionMessages(display)
+
+	if os.Getenv("AUTOMATED_MODE") != "1" {
+		waitExit()
+	}
+}
+
+func setupErrorRecovery() {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Errorf("Panic recovered: %v\n", r)
@@ -37,68 +81,77 @@ func main() {
 			waitExit()
 		}
 	}()
+}
 
-	// Parse flags
+func handleFlags() {
 	flag.Parse()
-
-	// Show version if requested
 	if *showVersion {
 		fmt.Printf("Cursor ID Modifier v%s\n", version)
-		return
+		os.Exit(0)
 	}
+}
 
-	// Initialize logger
+func setupLogger() {
 	log.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
+		FullTimestamp:          true,
+		DisableLevelTruncation: true,
+		PadLevelText:           true,
 	})
+	log.SetLevel(logrus.InfoLevel)
+}
 
-	// Get current user
-	username := os.Getenv("SUDO_USER")
-	if username == "" {
-		user, err := user.Current()
-		if err != nil {
-			log.Fatal(err)
-		}
-		username = user.Username
+func getCurrentUser() string {
+	if username := os.Getenv("SUDO_USER"); username != "" {
+		return username
 	}
 
-	// Initialize components
-	display := ui.NewDisplay(nil)
-	procManager := process.NewManager(process.DefaultConfig(), log)
+	user, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return user.Username
+}
+
+func initConfigManager(username string) *config.Manager {
 	configManager, err := config.NewManager(username)
 	if err != nil {
 		log.Fatal(err)
 	}
-	generator := idgen.NewGenerator()
+	return configManager
+}
 
-	// Check privileges
+func handlePrivileges(display *ui.Display) error {
 	isAdmin, err := checkAdminPrivileges()
 	if err != nil {
 		log.Error(err)
 		waitExit()
-		return
+		return err
 	}
 
 	if !isAdmin {
 		if runtime.GOOS == "windows" {
-			message := "\nRequesting administrator privileges..."
-			if lang.GetCurrentLanguage() == lang.CN {
-				message = "\n请求管理员权限..."
-			}
-			fmt.Println(message)
-			if err := selfElevate(); err != nil {
-				log.Error(err)
-				display.ShowPrivilegeError(
-					lang.GetText().PrivilegeError,
-					lang.GetText().RunAsAdmin,
-					lang.GetText().RunWithSudo,
-					lang.GetText().SudoExample,
-				)
-				waitExit()
-				return
-			}
-			return
+			return handleWindowsPrivileges(display)
 		}
+		display.ShowPrivilegeError(
+			lang.GetText().PrivilegeError,
+			lang.GetText().RunWithSudo,
+			lang.GetText().SudoExample,
+		)
+		waitExit()
+		return fmt.Errorf("insufficient privileges")
+	}
+	return nil
+}
+
+func handleWindowsPrivileges(display *ui.Display) error {
+	message := "\nRequesting administrator privileges..."
+	if lang.GetCurrentLanguage() == lang.CN {
+		message = "\n请求管理员权限..."
+	}
+	fmt.Println(message)
+
+	if err := selfElevate(); err != nil {
+		log.Error(err)
 		display.ShowPrivilegeError(
 			lang.GetText().PrivilegeError,
 			lang.GetText().RunAsAdmin,
@@ -106,159 +159,126 @@ func main() {
 			lang.GetText().SudoExample,
 		)
 		waitExit()
-		return
+		return err
 	}
+	return nil
+}
 
-	// Ensure Cursor is closed
-	if err := ensureCursorClosed(display, procManager); err != nil {
-		message := "\nError: Please close Cursor manually before running this program."
-		if lang.GetCurrentLanguage() == lang.CN {
-			message = "\n错误：请在运行此程序之前手动关闭 Cursor。"
-		}
-		display.ShowError(message)
-		waitExit()
-		return
-	}
-
-	// Kill any remaining Cursor processes
-	if procManager.IsCursorRunning() {
-		text := lang.GetText()
-		display.ShowProcessStatus(text.ClosingProcesses)
-
-		if err := procManager.KillCursorProcesses(); err != nil {
-			fmt.Println()
-			message := "Warning: Could not close all Cursor instances. Please close them manually."
-			if lang.GetCurrentLanguage() == lang.CN {
-				message = "警告：无法关闭所有 Cursor 实例，请手动关闭。"
-			}
-			display.ShowWarning(message)
-			waitExit()
-			return
-		}
-
-		if procManager.IsCursorRunning() {
-			fmt.Println()
-			message := "\nWarning: Cursor is still running. Please close it manually."
-			if lang.GetCurrentLanguage() == lang.CN {
-				message = "\n警告：Cursor 仍在运行，请手动关闭。"
-			}
-			display.ShowWarning(message)
-			waitExit()
-			return
-		}
-
-		display.ShowProcessStatus(text.ProcessesClosed)
-		fmt.Println()
-	}
-
-	// Clear screen
+func setupDisplay(display *ui.Display) {
 	if err := display.ClearScreen(); err != nil {
 		log.Warn("Failed to clear screen:", err)
 	}
-
-	// Show logo
 	display.ShowLogo()
+	fmt.Println()
+}
 
-	// Read existing config
-	text := lang.GetText()
+func handleCursorProcesses(display *ui.Display, processManager *process.Manager) error {
+	if os.Getenv("AUTOMATED_MODE") == "1" {
+		log.Debug("Running in automated mode, skipping Cursor process closing")
+		return nil
+	}
+
+	display.ShowProgress("Closing Cursor...")
+	log.Debug("Attempting to close Cursor processes")
+
+	if err := processManager.KillCursorProcesses(); err != nil {
+		log.Error("Failed to close Cursor:", err)
+		display.StopProgress()
+		display.ShowError("Failed to close Cursor. Please close it manually and try again.")
+		waitExit()
+		return err
+	}
+
+	if processManager.IsCursorRunning() {
+		log.Error("Cursor processes still detected after closing")
+		display.StopProgress()
+		display.ShowError("Failed to close Cursor completely. Please close it manually and try again.")
+		waitExit()
+		return fmt.Errorf("cursor still running")
+	}
+
+	log.Debug("Successfully closed all Cursor processes")
+	display.StopProgress()
+	fmt.Println()
+	return nil
+}
+
+func readExistingConfig(display *ui.Display, configManager *config.Manager, text lang.TextResource) *config.StorageConfig {
+	fmt.Println()
 	display.ShowProgress(text.ReadingConfig)
-
 	oldConfig, err := configManager.ReadConfig()
 	if err != nil {
 		log.Warn("Failed to read existing config:", err)
 		oldConfig = nil
 	}
+	display.StopProgress()
+	fmt.Println()
+	return oldConfig
+}
 
-	// Generate new IDs
+func generateNewConfig(display *ui.Display, generator *idgen.Generator, oldConfig *config.StorageConfig, text lang.TextResource) *config.StorageConfig {
 	display.ShowProgress(text.GeneratingIds)
+	newConfig := &config.StorageConfig{}
 
-	machineID, err := generator.GenerateMachineID()
-	if err != nil {
+	if machineID, err := generator.GenerateMachineID(); err != nil {
 		log.Fatal("Failed to generate machine ID:", err)
+	} else {
+		newConfig.TelemetryMachineId = machineID
 	}
 
-	macMachineID, err := generator.GenerateMacMachineID()
-	if err != nil {
+	if macMachineID, err := generator.GenerateMacMachineID(); err != nil {
 		log.Fatal("Failed to generate MAC machine ID:", err)
+	} else {
+		newConfig.TelemetryMacMachineId = macMachineID
 	}
 
-	deviceID, err := generator.GenerateDeviceID()
-	if err != nil {
+	if deviceID, err := generator.GenerateDeviceID(); err != nil {
 		log.Fatal("Failed to generate device ID:", err)
-	}
-
-	// Create new config
-	newConfig := &config.StorageConfig{
-		TelemetryMachineId:    machineID,
-		TelemetryMacMachineId: macMachineID,
-		TelemetryDevDeviceId:  deviceID,
+	} else {
+		newConfig.TelemetryDevDeviceId = deviceID
 	}
 
 	if oldConfig != nil && oldConfig.TelemetrySqmId != "" {
 		newConfig.TelemetrySqmId = oldConfig.TelemetrySqmId
+	} else if sqmID, err := generator.GenerateMacMachineID(); err != nil {
+		log.Fatal("Failed to generate SQM ID:", err)
 	} else {
-		sqmID, err := generator.GenerateMacMachineID()
-		if err != nil {
-			log.Fatal("Failed to generate SQM ID:", err)
-		}
 		newConfig.TelemetrySqmId = sqmID
 	}
 
-	// Save config
+	display.StopProgress()
+	fmt.Println()
+	return newConfig
+}
+
+func saveConfiguration(display *ui.Display, configManager *config.Manager, newConfig *config.StorageConfig) error {
+	display.ShowProgress("Saving configuration...")
 	if err := configManager.SaveConfig(newConfig, *setReadOnly); err != nil {
 		log.Error(err)
 		waitExit()
-		return
+		return err
 	}
+	display.StopProgress()
+	fmt.Println()
+	return nil
+}
 
-	// Show success
-	display.ShowSuccess(text.SuccessMessage, text.RestartMessage)
-	message := "\nOperation completed!"
+func showCompletionMessages(display *ui.Display) {
+	display.ShowSuccess(lang.GetText().SuccessMessage, lang.GetText().RestartMessage)
+	fmt.Println()
+
+	message := "Operation completed!"
 	if lang.GetCurrentLanguage() == lang.CN {
-		message = "\n操作完成！"
+		message = "操作完成！"
 	}
 	display.ShowInfo(message)
-
-	if os.Getenv("AUTOMATED_MODE") != "1" {
-		waitExit()
-	}
+	fmt.Println()
 }
 
 func waitExit() {
-	if os.Getenv("AUTOMATED_MODE") == "1" {
-		return
-	}
-
-	fmt.Println(lang.GetText().PressEnterToExit)
+	fmt.Print(lang.GetText().PressEnterToExit)
 	os.Stdout.Sync()
 	bufio.NewReader(os.Stdin).ReadString('\n')
-}
-
-func ensureCursorClosed(display *ui.Display, procManager *process.Manager) error {
-	maxAttempts := 3
-	text := lang.GetText()
-
-	display.ShowProcessStatus(text.CheckingProcesses)
-
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		if !procManager.IsCursorRunning() {
-			display.ShowProcessStatus(text.ProcessesClosed)
-			fmt.Println()
-			return nil
-		}
-
-		message := fmt.Sprintf("Please close Cursor before continuing. Attempt %d/%d\n%s",
-			attempt, maxAttempts, text.PleaseWait)
-		if lang.GetCurrentLanguage() == lang.CN {
-			message = fmt.Sprintf("请在继续之前关闭 Cursor。尝试 %d/%d\n%s",
-				attempt, maxAttempts, text.PleaseWait)
-		}
-		display.ShowProcessStatus(message)
-
-		time.Sleep(5 * time.Second)
-	}
-
-	return fmt.Errorf("cursor is still running")
 }
 
 func checkAdminPrivileges() (bool, error) {

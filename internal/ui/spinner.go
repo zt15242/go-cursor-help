@@ -10,8 +10,8 @@ import (
 
 // SpinnerConfig defines spinner configuration
 type SpinnerConfig struct {
-	Frames []string
-	Delay  time.Duration
+	Frames []string        // Animation frames for the spinner
+	Delay  time.Duration   // Delay between frame updates
 }
 
 // DefaultSpinnerConfig returns the default spinner configuration
@@ -43,6 +43,8 @@ func NewSpinner(config *SpinnerConfig) *Spinner {
 	}
 }
 
+// State management
+
 // SetMessage sets the spinner message
 func (s *Spinner) SetMessage(message string) {
 	s.mu.Lock()
@@ -50,7 +52,16 @@ func (s *Spinner) SetMessage(message string) {
 	s.message = message
 }
 
-// Start starts the spinner animation
+// IsActive returns whether the spinner is currently active
+func (s *Spinner) IsActive() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.active
+}
+
+// Control methods
+
+// Start begins the spinner animation
 func (s *Spinner) Start() {
 	s.mu.Lock()
 	if s.active {
@@ -63,7 +74,7 @@ func (s *Spinner) Start() {
 	go s.run()
 }
 
-// Stop stops the spinner animation
+// Stop halts the spinner animation
 func (s *Spinner) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -75,19 +86,20 @@ func (s *Spinner) Stop() {
 	s.active = false
 	close(s.stopCh)
 	s.stopCh = make(chan struct{})
-	fmt.Println()
+	fmt.Print("\r") // Clear the spinner line
 }
 
-// IsActive returns whether the spinner is currently active
-func (s *Spinner) IsActive() bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.active
-}
+// Internal methods
 
 func (s *Spinner) run() {
 	ticker := time.NewTicker(s.config.Delay)
 	defer ticker.Stop()
+
+	cyan := color.New(color.FgCyan, color.Bold)
+	message := s.message
+
+	// Print initial state
+	fmt.Printf("\r %s %s", cyan.Sprint(s.config.Frames[0]), message)
 
 	for {
 		select {
@@ -100,11 +112,11 @@ func (s *Spinner) run() {
 				return
 			}
 			frame := s.config.Frames[s.current%len(s.config.Frames)]
-			message := s.message
 			s.current++
 			s.mu.RUnlock()
 
-			fmt.Printf("\r%s %s", color.CyanString(frame), message)
+			fmt.Printf("\r %s", cyan.Sprint(frame))
+			fmt.Printf("\033[%dG%s", 4, message) // Move cursor and print message
 		}
 	}
 }

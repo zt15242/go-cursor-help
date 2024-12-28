@@ -58,21 +58,15 @@ this is a mistake.
 
 ### 🚀 One-Click Solution
 
-<details>
-<summary><b>Linux/macOS</b>: Copy and paste in terminal</summary>
-
+**Linux/macOS**: Copy and paste in terminal
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
-</details>
 
-<details>
-<summary><b>Windows</b>: Copy and paste in PowerShell (Admin)</summary>
-
+**Windows**: Copy and paste in PowerShell (Admin)
 ```powershell
 irm https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.ps1 | iex
 ```
-</details>
 
 That's it! The script will:
 1. ✨ Install the tool automatically
@@ -85,23 +79,23 @@ That's it! The script will:
 <details>
 <summary>Windows Packages</summary>
 
-- 64-bit: `cursor-id-modifier_vX.X.X_Windows_x64.zip`
-- 32-bit: `cursor-id-modifier_vX.X.X_Windows_x86.zip`
+- 64-bit: `cursor-id-modifier_windows_x64.exe`
+- 32-bit: `cursor-id-modifier_windows_x86.exe`
 </details>
 
 <details>
 <summary>macOS Packages</summary>
 
-- Intel: `cursor-id-modifier_vX.X.X_macOS_x64_intel.tar.gz`
-- M1/M2: `cursor-id-modifier_vX.X.X_macOS_arm64_apple_silicon.tar.gz`
+- Intel: `cursor-id-modifier_darwin_x64_intel`
+- M1/M2: `cursor-id-modifier_darwin_arm64_apple_silicon`
 </details>
 
 <details>
 <summary>Linux Packages</summary>
 
-- 64-bit: `cursor-id-modifier_vX.X.X_Linux_x64.tar.gz`
-- 32-bit: `cursor-id-modifier_vX.X.X_Linux_x86.tar.gz`
-- ARM64: `cursor-id-modifier_vX.X.X_Linux_arm64.tar.gz`
+- 64-bit: `cursor-id-modifier_linux_x64`
+- 32-bit: `cursor-id-modifier_linux_x86`
+- ARM64: `cursor-id-modifier_linux_arm64`
 </details>
 
 ### 🔧 Technical Details
@@ -176,21 +170,15 @@ this is a mistake.
 
 ### 🚀 一键解决
 
-<details>
-<summary><b>Linux/macOS</b>: 在终端中复制粘贴</summary>
-
+**Linux/macOS**: 在终端中复制粘贴
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
-</details>
 
-<details>
-<summary><b>Windows</b>: 在PowerShell（管理员）中复制粘贴</summary>
-
+**Windows**: 在PowerShell（管理员）中复制粘贴
 ```powershell
 irm https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.ps1 | iex
 ```
-</details>
 
 就这样！脚本会：
 1. ✨ 自动安装工具
