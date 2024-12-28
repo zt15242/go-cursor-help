@@ -33,6 +33,7 @@ mkdir "..\bin" 2>nul
 set "os=%~1"
 set "arch=%~2"
 set "ext="
+if "%os%"=="windows" set "ext=.exe"
 
 echo %GREEN%!EN_MESSAGES[5]! %os%/%arch%%RESET%
 

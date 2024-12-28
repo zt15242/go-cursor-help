@@ -37,7 +37,6 @@ archives:
       {{- if eq .Arch "arm64" }}arm64{{ end }}
       {{- if and (eq .Os "darwin") (eq .Arch "amd64") }}_intel{{ end }}
       {{- if and (eq .Os "darwin") (eq .Arch "arm64") }}_apple_silicon{{ end }}
-      {{- if eq .Os "windows" }}.exe{{ end }}
 
 checksum:
   name_template: 'checksums.txt'
