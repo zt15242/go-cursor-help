@@ -1,9 +1,18 @@
 # Auto-elevate to admin rights if not already running as admin
-if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Host "Requesting administrator privileges..."
-    $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -ExecutionFromElevated"
-    Start-Process powershell.exe -ArgumentList $arguments -Verb RunAs
-    Exit
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+if (-NOT $isAdmin) {
+    try {
+        Write-Host "Requesting administrator privileges..." -ForegroundColor Cyan
+        $argList = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+        Start-Process powershell.exe -Verb RunAs -ArgumentList $argList -Wait
+        exit
+    }
+    catch {
+        Write-Host "Failed to get admin rights. Please run as Administrator." -ForegroundColor Red
+        Write-Host "Press any key to exit..."
+        $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+        exit 1
+    }
 }
 
 # Set TLS to 1.2
@@ -24,6 +33,8 @@ function Cleanup {
 trap {
     Write-Host "Error: $_" -ForegroundColor Red
     Cleanup
+    Write-Host "Press any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
     exit 1
 }
 
@@ -75,18 +86,31 @@ function Install-CursorModifier {
         $latestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/dacrab/go-cursor-help/releases/latest"
         Write-Host "Found latest release: $($latestRelease.tag_name)" -ForegroundColor Cyan
         
-        # Updated binary name format to match actual assets
-        $binaryName = "cursor-id-modifier_windows_$arch.exe"
-        Write-Host "Looking for asset: $binaryName" -ForegroundColor Cyan
+        # Look for Windows binary with our architecture
+        $possibleNames = @(
+            "cursor-id-modifier_windows_$($arch).exe",
+            "cursor-id-modifier_windows_$($arch).exe.exe",
+            "cursor-id-modifier_Windows_$($arch).exe",
+            "cursor-id-modifier_Windows_$($arch).exe.exe"
+        )
         
-        $asset = $latestRelease.assets | Where-Object { $_.name -eq $binaryName }
-        $downloadUrl = $asset.browser_download_url
-        
-        if (!$downloadUrl) {
-            Write-Host "Available assets:" -ForegroundColor Yellow
-            $latestRelease.assets | ForEach-Object { Write-Host $_.name }
-            throw "Could not find download URL for $binaryName"
+        $asset = $null
+        foreach ($name in $possibleNames) {
+            Write-Host "Checking for asset: $name" -ForegroundColor Cyan
+            $asset = $latestRelease.assets | Where-Object { $_.name -eq $name }
+            if ($asset) {
+                Write-Host "Found matching asset: $($asset.name)" -ForegroundColor Green
+                break
+            }
         }
+        
+        if (!$asset) {
+            Write-Host "`nAvailable assets:" -ForegroundColor Yellow
+            $latestRelease.assets | ForEach-Object { Write-Host "- $($_.name)" }
+            throw "Could not find appropriate Windows binary for $arch architecture"
+        }
+        
+        $downloadUrl = $asset.browser_download_url
     }
     catch {
         Write-Host "Failed to get latest release: $_" -ForegroundColor Red
@@ -94,7 +118,7 @@ function Install-CursorModifier {
     }
     
     # Download binary
-    Write-Host "Downloading latest release from $downloadUrl..." -ForegroundColor Cyan
+    Write-Host "`nDownloading latest release..." -ForegroundColor Cyan
     $binaryPath = Join-Path $TmpDir "cursor-id-modifier.exe"
     
     if (!(Get-FileWithProgress -Url $downloadUrl -OutputFile $binaryPath)) {
@@ -138,8 +162,15 @@ function Install-CursorModifier {
 try {
     Install-CursorModifier
 }
+catch {
+    Write-Host "Installation failed: $_" -ForegroundColor Red
+    Cleanup
+    Write-Host "Press any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+    exit 1
+}
 finally {
     Cleanup
-    Write-Host "Press any key to continue..."
+    Write-Host "Press any key to exit..." -ForegroundColor Green
     $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
 }

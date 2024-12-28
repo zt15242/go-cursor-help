@@ -20,7 +20,7 @@ detect_system() {
     case "$(uname -s)" in
         Linux*)  os="linux";;
         Darwin*) os="darwin";;
-        *)       echo "Unsupported OS"; exit 1;;
+        *)       echo -e "${RED}Unsupported OS${NC}"; exit 1;;
     esac
 
     case "$(uname -m)" in
@@ -32,7 +32,11 @@ detect_system() {
             arch="arm64"
             [ "$os" = "darwin" ] && suffix="_apple_silicon"
             ;;
-        *)       echo "Unsupported architecture"; exit 1;;
+        i386|i686)
+            arch="x86"
+            [ "$os" = "darwin" ] && { echo -e "${RED}32-bit not supported on macOS${NC}"; exit 1; }
+            ;;
+        *)       echo -e "${RED}Unsupported architecture${NC}"; exit 1;;
     esac
 
     echo "$os $arch $suffix"
@@ -48,7 +52,7 @@ download() {
     elif command -v wget >/dev/null 2>&1; then
         wget --show-progress -q "$url" -O "$output"
     else
-        echo "Error: curl or wget is required"
+        echo -e "${RED}Error: curl or wget is required${NC}"
         exit 1
     fi
 }
@@ -59,10 +63,40 @@ setup_install_dir() {
     
     if [ ! -d "$install_dir" ]; then
         mkdir -p "$install_dir" || {
-            echo "Failed to create installation directory"
+            echo -e "${RED}Failed to create installation directory${NC}"
             exit 1
         }
     fi
+}
+
+# Find matching asset from release
+find_asset() {
+    local json="$1"
+    local os="$2"
+    local arch="$3"
+    local suffix="$4"
+    
+    # Try possible binary names
+    local binary_names=(
+        "cursor-id-modifier_${os}_${arch}${suffix}"          # lowercase os
+        "cursor-id-modifier_$(tr '[:lower:]' '[:upper:]' <<< ${os:0:1})${os:1}_${arch}${suffix}"  # capitalized os
+    )
+    
+    local url=""
+    for name in "${binary_names[@]}"; do
+        echo -e "${BLUE}Looking for asset: $name${NC}"
+        url=$(echo "$json" | grep -o "\"browser_download_url\": \"[^\"]*${name}\"" | cut -d'"' -f4)
+        if [ -n "$url" ]; then
+            echo -e "${GREEN}Found matching asset: $name${NC}"
+            echo "$url"
+            return 0
+        fi
+    done
+    
+    # If no match found, show available assets
+    echo -e "${YELLOW}Available assets:${NC}"
+    echo "$json" | grep "\"name\":" | cut -d'"' -f4
+    return 1
 }
 
 # Main installation function
@@ -80,13 +114,16 @@ main() {
     # Setup installation directory
     setup_install_dir "$INSTALL_DIR"
     
-    # Download latest release
+    # Get latest release info
+    echo -e "${BLUE}Fetching latest release information...${NC}"
     LATEST_URL="https://api.github.com/repos/dacrab/go-cursor-help/releases/latest"
-    BINARY_NAME="cursor-id-modifier_${OS}_${ARCH}${SUFFIX}"
-    DOWNLOAD_URL=$(curl -s "$LATEST_URL" | grep "browser_download_url.*${BINARY_NAME}" | cut -d '"' -f 4)
+    RELEASE_JSON=$(curl -s "$LATEST_URL")
+    
+    # Find matching asset
+    DOWNLOAD_URL=$(find_asset "$RELEASE_JSON" "$OS" "$ARCH" "$SUFFIX")
     
     if [ -z "$DOWNLOAD_URL" ]; then
-        echo -e "${RED}Error: Could not find download URL for $OS $ARCH${NC}"
+        echo -e "${RED}Error: Could not find appropriate binary for $OS $ARCH${NC}"
         exit 1
     fi
     

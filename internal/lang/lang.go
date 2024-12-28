@@ -13,7 +13,7 @@ type Language string
 const (
 	// CN represents Chinese language
 	CN Language = "cn"
-	// EN represents English language 
+	// EN represents English language
 	EN Language = "en"
 )
 
@@ -151,7 +151,7 @@ var texts = map[Language]TextResource{
 		RunAsAdmin:         "请右键点击程序，选择「以管理员身份运行」",
 		RunWithSudo:        "请使用 sudo 命令运行此程序",
 		SudoExample:        "示例: sudo %s",
-		PressEnterToExit:   "按回车键退出程序...",
+		PressEnterToExit:   "\n按回车键退出程序...",
 		SetReadOnlyMessage: "设置 storage.json 为只读模式, 这将导致 workspace 记录信息丢失等问题",
 
 		// Info messages
@@ -178,7 +178,7 @@ var texts = map[Language]TextResource{
 		RunAsAdmin:         "Please right-click and select 'Run as Administrator'",
 		RunWithSudo:        "Please run this program with sudo",
 		SudoExample:        "Example: sudo %s",
-		PressEnterToExit:   "Press Enter to exit...",
+		PressEnterToExit:   "\nPress Enter to exit...",
 		SetReadOnlyMessage: "Set storage.json to read-only mode, which will cause issues such as lost workspace records",
 
 		// Info messages

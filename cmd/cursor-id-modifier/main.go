@@ -272,7 +272,6 @@ func showCompletionMessages(display *ui.Display) {
 		message = "操作完成！"
 	}
 	display.ShowInfo(message)
-	fmt.Println()
 }
 
 func waitExit() {
