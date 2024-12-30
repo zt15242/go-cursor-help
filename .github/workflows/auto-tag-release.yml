@@ -156,7 +156,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --timeout 60m --debug
+          args: release --clean --timeout 60m --snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.get_latest_tag.outputs.version }}
@@ -166,6 +166,8 @@ jobs:
           GOROOT: ${{ env.GOROOT }}
           GOCACHE: ${{ github.workspace }}/.cache/go-build
           GOMODCACHE: ${{ github.workspace }}/go/pkg/mod
+          GORELEASER_DEBUG: 1
+          GORELEASER_CURRENT_TAG: ${{ steps.get_latest_tag.outputs.version }}
 
       # 添加错误检查步骤
       - name: Check GoReleaser Output
