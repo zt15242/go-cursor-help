@@ -86,8 +86,11 @@ main() {
     echo -e "${BLUE}Fetching latest release information...${NC}"
     LATEST_URL="https://api.github.com/repos/yuaotian/go-cursor-help/releases/latest"
     
+    # Get latest version and remove 'v' prefix
+    VERSION=$(curl -s "$LATEST_URL" | grep "tag_name" | cut -d'"' -f4 | sed 's/^v//')
+    
     # Construct binary name
-    BINARY_NAME="cursor-id-modifier_${latestRelease.tag_name}_${OS}_${ARCH}"
+    BINARY_NAME="cursor-id-modifier_${VERSION}_${OS}_${ARCH}"
     echo -e "${BLUE}Looking for asset: $BINARY_NAME${NC}"
     
     # Get download URL directly
