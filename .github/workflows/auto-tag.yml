@@ -1,0 +1,53 @@
+name: Auto Tag
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.gitignore'
+
+jobs:
+  auto-tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      new_tag: ${{ steps.get_latest_tag.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Get latest tag
+        id: get_latest_tag
+        run: |
+          git fetch --tags
+          latest_tag=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
+          if [ -z "$latest_tag" ]; then
+            echo "version=v0.1.0" >> $GITHUB_OUTPUT
+          else
+            major=$(echo $latest_tag | cut -d. -f1)
+            minor=$(echo $latest_tag | cut -d. -f2)
+            patch=$(echo $latest_tag | cut -d. -f3)
+            new_patch=$((patch + 1))
+            echo "version=$major.$minor.$new_patch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create new tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          new_tag=${{ steps.get_latest_tag.outputs.version }}
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git tag -a $new_tag -m "Release $new_tag"
+          git push origin $new_tag
+
+  release:
+    needs: auto-tag
+    uses: ./.github/workflows/release.yml
+    secrets: inherit 

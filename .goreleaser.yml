@@ -1,14 +1,13 @@
-project_name: cursor-id-modifier
-
 before:
   hooks:
     - go mod tidy
 
 builds:
-  - env:
+  - id: cursor-id-modifier
+    main: ./cmd/cursor-id-modifier/main.go
+    binary: cursor-id-modifier
+    env:
       - CGO_ENABLED=0
-    ldflags:
-      - -s -w -X main.version={{.Version}}
     goos:
       - linux
       - windows
@@ -16,24 +15,41 @@ builds:
     goarch:
       - amd64
       - arm64
-    mod_timestamp: '{{ .CommitTimestamp }}'
+      - "386"
+    ignore:
+      - goos: darwin
+        goarch: "386"
+    ldflags:
+      - -s -w
+      - -X 'main.version={{.Version}}'
     flags:
       - -trimpath
-    binary: cursor_id_modifier_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    mod_timestamp: '{{ .CommitTimestamp }}'
 
 archives:
-  - format: binary
-    name_template: "{{ .Binary }}"
-    allow_different_binary_count: true
+  - id: binary
+    format: binary
+    name_template: >-
+      {{ .Binary }}_
+      {{- .Os }}_
+      {{- if eq .Arch "amd64" }}x64{{ end }}
+      {{- if eq .Arch "386" }}x86{{ end }}
+      {{- if eq .Arch "arm64" }}arm64{{ end }}
+      {{- if and (eq .Os "darwin") (eq .Arch "amd64") }}_intel{{ end }}
+      {{- if and (eq .Os "darwin") (eq .Arch "arm64") }}_apple_silicon{{ end }}
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
 
 changelog:
-  use: github
   sort: asc
+  use: github
   groups:
     - title: Features
       regexp: "^.*feat[(\\w)]*:+.*$"
       order: 0
-    - title: 'Bug Fixes'
+    - title: 'Bug fixes'
       regexp: "^.*fix[(\\w)]*:+.*$"
       order: 1
     - title: Others
@@ -43,14 +59,39 @@ changelog:
       - '^docs:'
       - '^test:'
       - '^ci:'
-      - '^chore:'
       - Merge pull request
       - Merge branch
 
 release:
   github:
-    owner: '{{ .Env.GITHUB_REPOSITORY_OWNER }}'
-    name: '{{ .Env.GITHUB_REPOSITORY_NAME }}'
+    owner: dacrab
+    name: go-cursor-help
   draft: false
   prerelease: auto
   mode: replace
+  header: |
+    ## Cursor ID Modifier {{ .Version }}
+    
+    ### Supported Platforms
+    - Windows: x64, x86
+    - macOS: Intel (x64), Apple Silicon (M1/M2)
+    - Linux: x64, x86, ARM64
+    
+    See [CHANGELOG](CHANGELOG.md) for more details.
+  footer: |
+    **Full Changelog**: https://github.com/dacrab/go-cursor-help/compare/{{ .PreviousTag }}...{{ .Tag }}
+    
+    ## Quick Installation
+    
+    **Linux/macOS**:
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.sh | sudo bash
+    ```
+    
+    **Windows** (PowerShell Admin):
+    ```powershell
+    irm https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.ps1 | iex
+    ```
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
