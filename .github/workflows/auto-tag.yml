@@ -6,22 +6,24 @@ on:
       - master
       - main
     paths-ignore:
-      - '**.md'
-      - 'LICENSE'
-      - '.gitignore'
+      - "**.md"
+      - "LICENSE"
+      - ".gitignore"
 
 jobs:
   auto-tag:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
+      pull-requests: write
     outputs:
       new_tag: ${{ steps.get_latest_tag.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          
+
       - name: Get latest tag
         id: get_latest_tag
         run: |
@@ -50,4 +52,9 @@ jobs:
   release:
     needs: auto-tag
     uses: ./.github/workflows/release.yml
-    secrets: inherit 
+    permissions:
+      contents: write
+      packages: write
+      issues: write
+      pull-requests: write
+    secrets: inherit
