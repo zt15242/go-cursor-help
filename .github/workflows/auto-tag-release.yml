@@ -133,12 +133,6 @@ jobs:
             exit 1
           fi
 
-      # 添加 Go 工作目录设置
-      - name: Set Go Work Directory
-        run: |
-          echo "GOPATH=${{ github.workspace }}/go" >> $GITHUB_ENV
-          echo "${{ github.workspace }}/go/bin" >> $GITHUB_PATH
-
       # 添加依赖检查步骤
       - name: Check Dependencies
         run: |
@@ -157,6 +151,15 @@ jobs:
           echo "GOARCH=${GOARCH:-$(go env GOARCH)}" >> $GITHUB_ENV
           echo "GO111MODULE=on" >> $GITHUB_ENV
 
+      # 添加清理步骤
+      - name: Cleanup workspace
+        run: |
+          rm -rf /tmp/go/
+          rm -rf .cache/
+          rm -rf dist/
+          git clean -fdx
+          git status
+
       # 修改 GoReleaser 步骤
       - name: Run GoReleaser
         if: ${{ startsWith(github.ref, 'refs/tags/v') || (success() && steps.get_latest_tag.outputs.version != '') }}
@@ -169,10 +172,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.get_latest_tag.outputs.version }}
           CGO_ENABLED: 0
-          GOPATH: ${{ github.workspace }}/go
+          GOPATH: /tmp/go
           GOROOT: ${{ env.GOROOT }}
-          GOCACHE: ${{ github.workspace }}/.cache/go-build
-          GOMODCACHE: ${{ github.workspace }}/go/pkg/mod
+          GOCACHE: /tmp/.cache/go-build
+          GOMODCACHE: /tmp/go/pkg/mod
           GORELEASER_DEBUG: 1
           GORELEASER_CURRENT_TAG: ${{ steps.get_latest_tag.outputs.version }}
           # 添加额外的构建信息

@@ -8,6 +8,8 @@ dist/
 
 # Go specific
 go.sum
+go/
+.cache/
 
 # IDE and editor files
 .vscode/
