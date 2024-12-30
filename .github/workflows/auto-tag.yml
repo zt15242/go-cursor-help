@@ -37,7 +37,7 @@ jobs:
             new_patch=$((patch + 1))
             new_version="$major.$minor.$new_patch"
           fi
-          echo "version=$new_version" >> $GITHUB_OUTPUT
+          echo "version=$new_version" >> "$GITHUB_OUTPUT"
           echo "Generated version: $new_version"
 
       - name: Validate version
@@ -62,13 +62,28 @@ jobs:
 
       - name: Debug output
         run: |
-          echo "Version output: ${{ steps.get_latest_tag.outputs.version }}"
-          echo "Job outputs: ${{ toJSON(needs.auto-tag.outputs) }}"
-          echo "::debug::Version value: ${{ steps.get_latest_tag.outputs.version }}"
+          echo "Step outputs:"
+          echo "  version: ${{ steps.get_latest_tag.outputs.version }}"
+          echo "Job outputs:"
+          echo "  all: ${{ toJSON(job.outputs) }}"
+          echo "  direct: ${{ job.outputs.version }}"
+          echo "Needs outputs:"
+          echo "  all: ${{ toJSON(needs) }}"
+          echo "::debug::Raw version value: ${{ steps.get_latest_tag.outputs.version }}"
+
+      - name: Verify outputs
+        run: |
+          echo "GITHUB_OUTPUT contents:"
+          cat $GITHUB_OUTPUT
+          echo "---"
+          echo "Direct version value: ${{ steps.get_latest_tag.outputs.version }}"
 
   release:
     needs: auto-tag
-    if: success() && needs.auto-tag.outputs.version != ''
+    if: |
+      always() &&
+      needs.auto-tag.result == 'success' &&
+      needs.auto-tag.outputs.version != ''
     uses: ./.github/workflows/release.yml
     with:
       version: ${{ needs.auto-tag.outputs.version }}
