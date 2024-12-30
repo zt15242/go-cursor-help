@@ -49,9 +49,6 @@ jobs:
 
   release:
     needs: auto-tag
+    if: success()
     uses: ./.github/workflows/release.yml
-    permissions: write-all
-    secrets:
-      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      PASSPHRASE: ${{ secrets.PASSPHRASE }}
+    secrets: inherit
