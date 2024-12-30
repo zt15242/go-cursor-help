@@ -15,18 +15,22 @@ permissions: write-all
 jobs:
   auto-tag:
     runs-on: ubuntu-22.04
+    timeout-minutes: 10
     outputs:
       version: ${{ steps.get_latest_tag.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: Get latest tag
         id: get_latest_tag
         run: |
-          set -e
-          git fetch --tags || exit 1
+          set -euo pipefail
+          git fetch --tags --force || {
+            echo "::error::Failed to fetch tags"
+            exit 1
+          }
           latest_tag=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
           if [ -z "$latest_tag" ]; then
             new_version="v0.1.0"
@@ -42,10 +46,18 @@ jobs:
 
       - name: Validate version
         run: |
+          set -euo pipefail
           new_tag="${{ steps.get_latest_tag.outputs.version }}"
           echo "Validating version: $new_tag"
           if [[ ! $new_tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Invalid version format: $new_tag"
+            exit 1
+          fi
+          major=$(echo $new_tag | cut -d. -f1 | tr -d 'v')
+          minor=$(echo $new_tag | cut -d. -f2)
+          patch=$(echo $new_tag | cut -d. -f3)
+          if [[ $major -gt 99 || $minor -gt 99 || $patch -gt 999 ]]; then
+            echo "::error::Version numbers out of valid range"
             exit 1
           fi
           echo "Version validation passed"
