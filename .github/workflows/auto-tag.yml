@@ -25,7 +25,8 @@ jobs:
       - name: Get latest tag
         id: get_latest_tag
         run: |
-          git fetch --tags
+          set -e
+          git fetch --tags || exit 1
           latest_tag=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
           if [ -z "$latest_tag" ]; then
             echo "version=v0.1.0" >> $GITHUB_OUTPUT
@@ -35,6 +36,14 @@ jobs:
             patch=$(echo $latest_tag | cut -d. -f3)
             new_patch=$((patch + 1))
             echo "version=$major.$minor.$new_patch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate version
+        run: |
+          new_tag=${{ steps.get_latest_tag.outputs.version }}
+          if [[ ! $new_tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version format: $new_tag"
+            exit 1
           fi
 
       - name: Create new tag
@@ -49,8 +58,10 @@ jobs:
 
   release:
     needs: auto-tag
-    if: success()
-    uses: ./.github/workflows/release.yml@${{ github.sha }}
+    if: |
+      success() && 
+      needs.auto-tag.outputs.new_tag != ''
+    uses: ./.github/workflows/release.yml
     with:
       version: ${{ needs.auto-tag.outputs.new_tag }}
     secrets: inherit
