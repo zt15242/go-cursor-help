@@ -26,13 +26,6 @@ jobs:
           lfs: true
           submodules: recursive
 
-      - name: Debug Files
-        run: |
-          pwd
-          ls -la
-          echo "Current directory contents:"
-          ls -R
-
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -42,10 +35,10 @@ jobs:
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v5
+        if: "${{ secrets.GPG_PRIVATE_KEY != '' }}"
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
-        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
