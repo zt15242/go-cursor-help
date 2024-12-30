@@ -64,7 +64,7 @@ jobs:
 
       - name: Create new tag
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           new_tag=${{ steps.get_latest_tag.outputs.version }}
           git config --global user.name 'github-actions[bot]'
@@ -90,13 +90,27 @@ jobs:
           echo "---"
           echo "Direct version value: ${{ steps.get_latest_tag.outputs.version }}"
 
+      - name: Debug Release Trigger
+        run: |
+          echo "Auto-tag completed successfully"
+          echo "Version to be released: ${{ steps.get_latest_tag.outputs.version }}"
+          echo "Checking release conditions:"
+          echo "  - Version not empty: ${{ steps.get_latest_tag.outputs.version != '' }}"
+          echo "  - Current job status: ${{ job.status }}"
+
   release:
     needs: auto-tag
+    permissions:
+      contents: write
+      packages: write
+      actions: write
     if: |
-      always() &&
       needs.auto-tag.result == 'success' &&
       needs.auto-tag.outputs.version != ''
     uses: ./.github/workflows/release.yml
     with:
       version: ${{ needs.auto-tag.outputs.version }}
-    secrets: inherit
+    secrets:
+      RELEASE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      PASSPHRASE: ${{ secrets.PASSPHRASE }}

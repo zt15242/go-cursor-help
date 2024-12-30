@@ -21,7 +21,10 @@ on:
     tags:
       - "v*"
 
-permissions: write-all
+permissions:
+  contents: write
+  packages: write
+  actions: write
 
 jobs:
   goreleaser:
@@ -29,6 +32,23 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     steps:
+      - name: Check Permissions
+        run: |
+          echo "Checking required permissions..."
+          TOKEN="${{ secrets.RELEASE_TOKEN }}"
+          if [ -z "$TOKEN" ]; then
+            echo "::error::RELEASE_TOKEN is not set"
+            exit 1
+          fi
+          echo "Token permissions check passed"
+
+      - name: Debug Workflow Trigger
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Version input: ${{ inputs.version }}"
+          echo "Token exists: ${{ secrets.RELEASE_TOKEN != '' }}"
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
