@@ -13,6 +13,17 @@ on:
       - "**.md"
       - "LICENSE"
       - ".gitignore"
+  workflow_call:
+    inputs:
+      gpg_private_key:
+        required: false
+        type: string
+        description: "GPG private key for signing releases"
+      skip_signing:
+        required: false
+        type: boolean
+        default: false
+        description: "Skip GPG signing of releases"
 
 permissions:
   contents: write
@@ -130,7 +141,7 @@ jobs:
         if: |
           (startsWith(github.ref, 'refs/tags/v') || 
           (success() && steps.get_latest_tag.outputs.version != '')) &&
-          secrets.GPG_PRIVATE_KEY != ''
+          !inputs.skip_signing
         uses: crazy-max/ghaction-import-gpg@v5
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -191,7 +202,7 @@ jobs:
         if: |
           (startsWith(github.ref, 'refs/tags/v') || 
           (success() && steps.get_latest_tag.outputs.version != '')) &&
-          secrets.GPG_PRIVATE_KEY == ''
+          (inputs.skip_signing || steps.import_gpg.outcome == 'skipped')
         uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser
@@ -247,3 +258,18 @@ jobs:
         if: failure()
         run: |
           echo "::error::Release process failed"
+
+      # 添加构建摘要步骤
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Go Version: $(go version)" >> $GITHUB_STEP_SUMMARY
+          echo "- Release Version: ${VERSION:-N/A}" >> $GITHUB_STEP_SUMMARY
+          echo "- GPG Signing: ${{ steps.import_gpg.outcome == 'success' && 'Enabled' || 'Disabled' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Build Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+
+          if [ -d "dist" ]; then
+            echo "### Generated Artifacts" >> $GITHUB_STEP_SUMMARY
+            ls -lh dist/ | awk '{print "- "$9" ("$5")"}' >> $GITHUB_STEP_SUMMARY
+          fi
