@@ -15,14 +15,10 @@ on:
       - ".gitignore"
   workflow_call:
     inputs:
-      gpg_private_key:
-        required: false
-        type: string
-        description: "GPG private key for signing releases"
       skip_signing:
         required: false
         type: boolean
-        default: false
+        default: true
         description: "Skip GPG signing of releases"
 
 permissions:
