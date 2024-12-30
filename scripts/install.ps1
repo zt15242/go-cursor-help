@@ -56,9 +56,9 @@ trap {
 # Detect system architecture
 function Get-SystemArch {
     if ([Environment]::Is64BitOperatingSystem) {
-        return "x64"
+        return "x86_64"
     } else {
-        return "x86"
+        return "i386"
     }
 }
 
@@ -103,10 +103,8 @@ function Install-CursorModifier {
         
         # Look for Windows binary with our architecture
         $possibleNames = @(
-            "cursor-id-modifier_windows_$($arch).exe",
-            "cursor-id-modifier_windows_$($arch).exe",
-            "cursor-id-modifier_Windows_$($arch).exe",
-            "cursor-id-modifier_Windows_$($arch).exe"
+            "cursor-id-modifier_$($latestRelease.tag_name)_windows_$($arch).exe",
+            "cursor-id-modifier_windows_$($arch).exe"
         )
         
         $asset = $null

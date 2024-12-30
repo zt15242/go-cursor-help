@@ -33,21 +33,18 @@ detect_system() {
 
     case "$(uname -m)" in
         x86_64)  
-            arch="x64"
-            [ "$os" = "darwin" ] && suffix="_intel"
+            arch="x86_64"
             ;;
         aarch64|arm64) 
             arch="arm64"
-            [ "$os" = "darwin" ] && suffix="_apple_silicon"
             ;;
         i386|i686)
-            arch="x86"
-            [ "$os" = "darwin" ] && { echo -e "${RED}32-bit not supported on macOS${NC}"; exit 1; }
+            arch="i386"
             ;;
         *)       echo -e "${RED}Unsupported architecture${NC}"; exit 1;;
     esac
 
-    echo "$os $arch $suffix"
+    echo "$os $arch"
 }
 
 # Download with progress
@@ -90,14 +87,16 @@ main() {
     LATEST_URL="https://api.github.com/repos/yuaotian/go-cursor-help/releases/latest"
     
     # Construct binary name
-    BINARY_NAME="cursor-id-modifier_${OS}_${ARCH}${SUFFIX}"
+    BINARY_NAME="cursor-id-modifier_${latestRelease.tag_name}_${OS}_${ARCH}"
     echo -e "${BLUE}Looking for asset: $BINARY_NAME${NC}"
     
     # Get download URL directly
-    DOWNLOAD_URL=$(curl -s "$LATEST_URL" | tr -d '\n' | grep -o "\"browser_download_url\": \"[^\"]*${BINARY_NAME}[^\"]*\"" | cut -d'"' -f4)
+    DOWNLOAD_URL=$(curl -s "$LATEST_URL" | grep -o "\"browser_download_url\": \"[^\"]*${BINARY_NAME}[^\"]*\"" | cut -d'"' -f4)
     
     if [ -z "$DOWNLOAD_URL" ]; then
         echo -e "${RED}Error: Could not find appropriate binary for $OS $ARCH${NC}"
+        echo -e "${YELLOW}Available assets:${NC}"
+        curl -s "$LATEST_URL" | grep "browser_download_url" | cut -d'"' -f4
         exit 1
     fi
     
