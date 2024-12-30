@@ -16,7 +16,7 @@ jobs:
   auto-tag:
     runs-on: ubuntu-22.04
     outputs:
-      new_tag: ${{ steps.get_latest_tag.outputs.version }}
+      version: ${{ steps.get_latest_tag.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,22 +29,26 @@ jobs:
           git fetch --tags || exit 1
           latest_tag=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
           if [ -z "$latest_tag" ]; then
-            echo "version=v0.1.0" >> $GITHUB_OUTPUT
+            new_version="v0.1.0"
           else
             major=$(echo $latest_tag | cut -d. -f1)
             minor=$(echo $latest_tag | cut -d. -f2)
             patch=$(echo $latest_tag | cut -d. -f3)
             new_patch=$((patch + 1))
-            echo "version=$major.$minor.$new_patch" >> $GITHUB_OUTPUT
+            new_version="$major.$minor.$new_patch"
           fi
+          echo "version=$new_version" >> $GITHUB_OUTPUT
+          echo "Generated version: $new_version"
 
       - name: Validate version
         run: |
-          new_tag=${{ steps.get_latest_tag.outputs.version }}
+          new_tag="${{ steps.get_latest_tag.outputs.version }}"
+          echo "Validating version: $new_tag"
           if [[ ! $new_tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Invalid version format: $new_tag"
+            echo "::error::Invalid version format: $new_tag"
             exit 1
           fi
+          echo "Version validation passed"
 
       - name: Create new tag
         env:
@@ -56,12 +60,16 @@ jobs:
           git tag -a $new_tag -m "Release $new_tag"
           git push origin $new_tag
 
+      - name: Debug output
+        run: |
+          echo "Version output: ${{ steps.get_latest_tag.outputs.version }}"
+          echo "Job outputs: ${{ toJSON(needs.auto-tag.outputs) }}"
+          echo "::debug::Version value: ${{ steps.get_latest_tag.outputs.version }}"
+
   release:
     needs: auto-tag
-    if: |
-      success() && 
-      needs.auto-tag.outputs.new_tag != ''
+    if: success() && needs.auto-tag.outputs.version != ''
     uses: ./.github/workflows/release.yml
     with:
-      version: ${{ needs.auto-tag.outputs.new_tag }}
+      version: ${{ needs.auto-tag.outputs.version }}
     secrets: inherit
