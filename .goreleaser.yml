@@ -1,6 +1,7 @@
 before:
   hooks:
     - go mod tidy
+    - go mod download
 
 builds:
   - id: cursor-id-modifier
@@ -35,75 +36,11 @@ archives:
       {{- if eq .Arch "amd64" }}x64{{ end }}
       {{- if eq .Arch "386" }}x86{{ end }}
       {{- if eq .Arch "arm64" }}arm64{{ end }}
-      {{- if and (eq .Os "darwin") (eq .Arch "amd64") }}_intel{{ end }}
-      {{- if and (eq .Os "darwin") (eq .Arch "arm64") }}_apple_silicon{{ end }}
 
 checksum:
   name_template: 'checksums.txt'
   algorithm: sha256
 
-# signs:
-#   - cmd: gpg
-#     args:
-#       - "--batch"
-#       - "--local-user"
-#       - "{{ .Env.GPG_FINGERPRINT }}"
-#       - "--output"
-#       - "${signature}"
-#       - "--detach-sign"
-#       - "${artifact}"
-#     artifacts: all
-
 changelog:
   sort: asc
   use: github
-  groups:
-    - title: Features
-      regexp: "^.*feat[(\\w)]*:+.*$"
-      order: 0
-    - title: 'Bug fixes'
-      regexp: "^.*fix[(\\w)]*:+.*$"
-      order: 1
-    - title: Others
-      order: 999
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-      - '^ci:'
-      - Merge pull request
-      - Merge branch
-
-release:
-  github:
-    owner: dacrab
-    name: go-cursor-help
-  draft: false
-  prerelease: auto
-  mode: replace
-  header: |
-    ## Cursor ID Modifier {{ .Version }}
-    
-    ### Supported Platforms
-    - Windows: x64, x86
-    - macOS: Intel (x64), Apple Silicon (M1/M2)
-    - Linux: x64, x86, ARM64
-    
-    See [CHANGELOG](CHANGELOG.md) for more details.
-  footer: |
-    **Full Changelog**: https://github.com/dacrab/go-cursor-help/compare/{{ .PreviousTag }}...{{ .Tag }}
-    
-    ## Quick Installation
-    
-    **Linux/macOS**:
-    ```bash
-    curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.sh | sudo bash
-    ```
-    
-    **Windows** (PowerShell Admin):
-    ```powershell
-    irm https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.ps1 | iex
-    ```
-
-snapshot:
-  name_template: "{{ incpatch .Version }}-next"

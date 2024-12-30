@@ -162,7 +162,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --timeout 60m --skip-sign
+          args: release --clean --timeout 60m --skip-sign --debug
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.get_latest_tag.outputs.version }}
@@ -172,6 +172,23 @@ jobs:
           GOROOT: ${{ env.GOROOT }}
           GOCACHE: ${{ github.workspace }}/.cache/go-build
           GOMODCACHE: ${{ github.workspace }}/go/pkg/mod
+
+      # 添加错误检查步骤
+      - name: Check GoReleaser Output
+        if: failure()
+        run: |
+          echo "::group::GoReleaser Debug Info"
+          cat dist/artifacts.json || true
+          echo "::endgroup::"
+
+          echo "::group::GoReleaser Config"
+          cat .goreleaser.yml
+          echo "::endgroup::"
+
+          echo "::group::Environment Info"
+          go version
+          go env
+          echo "::endgroup::"
 
       - name: Set Release Version
         if: startsWith(github.ref, 'refs/tags/v')
@@ -214,14 +231,14 @@ jobs:
         run: |
           echo "::error::Release process failed"
 
-      # 添加构建摘要步骤
+      # 修改构建摘要步骤
       - name: Build Summary
         if: always()
         run: |
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Go Version: $(go version)" >> $GITHUB_STEP_SUMMARY
           echo "- Release Version: ${VERSION:-N/A}" >> $GITHUB_STEP_SUMMARY
-          echo "- GPG Signing: ${{ steps.import_gpg.outcome == 'success' && 'Enabled' || 'Disabled' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- GPG Signing: Disabled" >> $GITHUB_STEP_SUMMARY
           echo "- Build Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
 
           if [ -d "dist" ]; then
