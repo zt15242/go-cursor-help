@@ -13,15 +13,39 @@ on:
 permissions: write-all
 
 jobs:
+  pre_job:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5.3.1
+        with:
+          cancel_others: "true"
+          concurrent_skipping: "same_content"
+
   auto-tag:
-    runs-on: ubuntu-22.04
+    needs: pre_job
+    if: needs.pre_job.outputs.should_skip != 'true'
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
       version: ${{ steps.get_latest_tag.outputs.version }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/git
+          key: ${{ runner.os }}-git-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-git-
 
       - name: Get latest tag
         id: get_latest_tag
@@ -97,6 +121,14 @@ jobs:
           echo "Checking release conditions:"
           echo "  - Version not empty: ${{ steps.get_latest_tag.outputs.version != '' }}"
           echo "  - Current job status: ${{ job.status }}"
+
+      - name: Check workflow status
+        if: always()
+        run: |
+          if [[ "${{ job.status }}" == "failure" ]]; then
+            echo "::error::Auto-tag workflow failed"
+            exit 1
+          fi
 
   release:
     needs: auto-tag
