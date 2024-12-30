@@ -247,11 +247,15 @@ That's it! The script will:
 <details>
 <summary><b>安全特性</b></summary>
 
-- ✅ 安全的进程终止
-- ✅ 原子文件操作
-- ✅ 错误处理和恢复
-</details>
+## 🔔 关注公众号
+#### 获取更多精彩内容
+- 第一时间获取最新版本更新
+- CursorAI使用技巧和最佳实践
+- 利用AI提升编程效率
+- 更多AI工具和开发资源
 
+![微信公众号二维码](img/wx_public_2.png)
+  
 ---
 
 ## ⭐ Project Stats
