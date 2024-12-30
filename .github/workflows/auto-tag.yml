@@ -10,13 +10,11 @@ on:
       - "LICENSE"
       - ".gitignore"
 
+permissions: write-all
+
 jobs:
   auto-tag:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      issues: write
-      pull-requests: write
     outputs:
       new_tag: ${{ steps.get_latest_tag.outputs.version }}
     steps:
@@ -41,7 +39,7 @@ jobs:
 
       - name: Create new tag
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
           new_tag=${{ steps.get_latest_tag.outputs.version }}
           git config --global user.name 'github-actions[bot]'
@@ -52,9 +50,5 @@ jobs:
   release:
     needs: auto-tag
     uses: ./.github/workflows/release.yml
-    permissions:
-      contents: write
-      packages: write
-      issues: write
-      pull-requests: write
+    permissions: write-all
     secrets: inherit

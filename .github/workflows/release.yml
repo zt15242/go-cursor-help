@@ -6,11 +6,7 @@ on:
     tags:
       - "v*"
 
-permissions:
-  contents: write
-  packages: write
-  issues: write
-  pull-requests: write
+permissions: write-all
 
 jobs:
   goreleaser:
@@ -51,5 +47,5 @@ jobs:
           version: v1.21.2
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
