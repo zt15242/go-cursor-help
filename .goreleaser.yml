@@ -95,3 +95,12 @@ release:
 
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
+
+signs:
+  - cmd: gpg
+    args:
+      - "--output"
+      - "${signature}"
+      - "--detach-sign"
+      - "${artifact}"
+    artifacts: checksum

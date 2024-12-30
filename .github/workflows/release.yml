@@ -2,6 +2,13 @@ name: Release
 
 on:
   workflow_call:
+    secrets:
+      RELEASE_TOKEN:
+        required: true
+      GPG_PRIVATE_KEY:
+        required: false
+      PASSPHRASE:
+        required: false
   push:
     tags:
       - "v*"
@@ -38,7 +45,7 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
-        if: ${{ env.GPG_PRIVATE_KEY != '' }}
+        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
