@@ -18,7 +18,7 @@ jobs:
     outputs:
       new_tag: ${{ steps.get_latest_tag.outputs.version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -50,10 +50,7 @@ jobs:
   release:
     needs: auto-tag
     if: success()
-    uses: ./.github/workflows/release.yml
+    uses: ./.github/workflows/release.yml@${{ github.sha }}
     with:
       version: ${{ needs.auto-tag.outputs.new_tag }}
-    secrets:
-      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      PASSPHRASE: ${{ secrets.PASSPHRASE }}
+    secrets: inherit
