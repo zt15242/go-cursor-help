@@ -102,10 +102,11 @@ function Install-CursorModifier {
         Write-Host "Found latest release: $($latestRelease.tag_name)" -ForegroundColor Cyan
         
         # Look for Windows binary with our architecture
+        $version = $latestRelease.tag_name.TrimStart('v')
+        Write-Host "Version: $version" -ForegroundColor Cyan
         $possibleNames = @(
-            "cursor-id-modifier_$($latestRelease.tag_name.TrimStart('v'))_windows_x86_64.exe",
-            "cursor-id-modifier_$($latestRelease.tag_name.TrimStart('v'))_windows_$($arch).exe",
-            "cursor-id-modifier_windows_$($arch).exe"
+            "cursor-id-modifier_${version}_windows_x86_64.exe",
+            "cursor-id-modifier_${version}_windows_$($arch).exe"
         )
         
         $asset = $null

@@ -91,7 +91,7 @@ func (m *Manager) prepareUpdatedConfig(config *StorageConfig) map[string]interfa
 	originalFile["telemetry.machineId"] = config.TelemetryMachineId
 	originalFile["telemetry.devDeviceId"] = config.TelemetryDevDeviceId
 	originalFile["lastModified"] = time.Now().UTC().Format(time.RFC3339)
-	originalFile["version"] = "1.0.1"
+	// originalFile["version"] = "1.0.1"
 
 	return originalFile
 }
