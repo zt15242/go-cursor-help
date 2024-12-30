@@ -15,11 +15,6 @@ on:
       - ".gitignore"
   workflow_call:
     inputs:
-      skip_signing:
-        required: false
-        type: boolean
-        default: true
-        description: "Skip GPG signing of releases"
 
 permissions:
   contents: write
@@ -162,7 +157,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --timeout 60m --skip-sign --debug
+          args: release --clean --timeout 60m --debug
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.get_latest_tag.outputs.version }}
