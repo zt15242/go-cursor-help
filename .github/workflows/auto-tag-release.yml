@@ -128,8 +128,9 @@ jobs:
       - name: Import GPG key
         id: import_gpg
         if: |
-          startsWith(github.ref, 'refs/tags/v') || 
-          (success() && steps.get_latest_tag.outputs.version != '')
+          (startsWith(github.ref, 'refs/tags/v') || 
+          (success() && steps.get_latest_tag.outputs.version != '')) &&
+          secrets.GPG_PRIVATE_KEY != ''
         uses: crazy-max/ghaction-import-gpg@v5
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -139,10 +140,36 @@ jobs:
           git_commit_gpgsign: true
           git_tag_gpgsign: true
 
+      # 在 Run GoReleaser 之前添加配置检查步骤
+      - name: Check GoReleaser config
+        run: |
+          if [ ! -f ".goreleaser.yml" ] && [ ! -f ".goreleaser.yaml" ]; then
+            echo "::error::GoReleaser configuration file not found"
+            exit 1
+          fi
+
+      # 添加 Go 工作目录设置
+      - name: Set Go Work Directory
+        run: |
+          echo "GOPATH=${{ github.workspace }}/go" >> $GITHUB_ENV
+          echo "${{ github.workspace }}/go/bin" >> $GITHUB_PATH
+
+      # 添加依赖检查步骤
+      - name: Check Dependencies
+        run: |
+          go mod verify
+          go mod download
+          # 如果使用 vendor 模式，则执行以下命令
+          if [ -d "vendor" ]; then
+            go mod vendor
+          fi
+
+      # 修改 GoReleaser 步骤的环境变量
       - name: Run GoReleaser
         if: |
-          startsWith(github.ref, 'refs/tags/v') || 
-          (success() && steps.get_latest_tag.outputs.version != '')
+          (startsWith(github.ref, 'refs/tags/v') || 
+          (success() && steps.get_latest_tag.outputs.version != '')) &&
+          (steps.import_gpg.outcome == 'success' || steps.import_gpg.outcome == 'skipped')
         uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser
@@ -152,12 +179,40 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           VERSION: ${{ steps.get_latest_tag.outputs.version }}
+          CGO_ENABLED: 0
+          GOFLAGS: -mod=vendor
+          GOPATH: ${{ github.workspace }}/go
+          GOROOT: ${{ env.GOROOT }}
+          GOCACHE: ${{ github.workspace }}/.cache/go-build
+          GOMODCACHE: ${{ github.workspace }}/go/pkg/mod
+
+      # 修改无 GPG 的 GoReleaser 步骤
+      - name: Run GoReleaser without GPG
+        if: |
+          (startsWith(github.ref, 'refs/tags/v') || 
+          (success() && steps.get_latest_tag.outputs.version != '')) &&
+          secrets.GPG_PRIVATE_KEY == ''
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean --timeout 60m --skip-sign
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.get_latest_tag.outputs.version }}
+          CGO_ENABLED: 0
+          GOFLAGS: -mod=vendor
+          GOPATH: ${{ github.workspace }}/go
+          GOROOT: ${{ env.GOROOT }}
+          GOCACHE: ${{ github.workspace }}/.cache/go-build
+          GOMODCACHE: ${{ github.workspace }}/go/pkg/mod
 
       - name: Set Release Version
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
+      # 改进验证步骤
       - name: Verify Release
         if: |
           startsWith(github.ref, 'refs/tags/v') || 
@@ -168,6 +223,25 @@ jobs:
             echo "::error::Release artifacts not found"
             exit 1
           fi
+          # 验证生成的二进制文件
+          for file in dist/cursor-id-modifier_*; do
+            if [ -f "$file" ]; then
+              echo "Verifying: $file"
+              if [[ "$file" == *.exe ]]; then
+                # Windows 二进制文件检查
+                if ! [ -x "$file" ]; then
+                  echo "::error::$file is not executable"
+                  exit 1
+                fi
+              else
+                # Unix 二进制文件检查
+                if ! [ -x "$file" ]; then
+                  echo "::error::$file is not executable"
+                  exit 1
+                fi
+              fi
+            fi
+          done
 
       - name: Notify on failure
         if: failure()
