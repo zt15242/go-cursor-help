@@ -1,16 +1,21 @@
-name: Auto Tag
+name: Auto Tag & Release
 
 on:
   push:
     branches:
       - master
       - main
+    tags:
+      - "v*"
     paths-ignore:
       - "**.md"
       - "LICENSE"
       - ".gitignore"
 
-permissions: write-all
+permissions:
+  contents: write
+  packages: write
+  actions: write
 
 jobs:
   pre_job:
@@ -24,30 +29,49 @@ jobs:
           cancel_others: "true"
           concurrent_skipping: "same_content"
 
-  auto-tag:
+  auto-tag-release:
     needs: pre_job
-    if: needs.pre_job.outputs.should_skip != 'true'
+    if: |
+      needs.pre_job.outputs.should_skip != 'true' ||
+      startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     outputs:
       version: ${{ steps.get_latest_tag.outputs.version }}
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          lfs: true
+          submodules: recursive
 
-      - uses: actions/cache@v3
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+          check-latest: true
+          cache: true
+
+      - name: Cache
+        uses: actions/cache@v3
         with:
           path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
             ~/.cache/git
-          key: ${{ runner.os }}-git-${{ github.sha }}
+          key: ${{ runner.os }}-build-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-git-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
 
+      # 只在非tag推送时执行自动打tag
       - name: Get latest tag
+        if: "!startsWith(github.ref, 'refs/tags/v')"
         id: get_latest_tag
         run: |
           set -euo pipefail
@@ -69,6 +93,7 @@ jobs:
           echo "Generated version: $new_version"
 
       - name: Validate version
+        if: "!startsWith(github.ref, 'refs/tags/v')"
         run: |
           set -euo pipefail
           new_tag="${{ steps.get_latest_tag.outputs.version }}"
@@ -87,6 +112,7 @@ jobs:
           echo "Version validation passed"
 
       - name: Create new tag
+        if: "!startsWith(github.ref, 'refs/tags/v')"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -96,53 +122,52 @@ jobs:
           git tag -a $new_tag -m "Release $new_tag"
           git push origin $new_tag
 
-      - name: Debug output
-        run: |
-          echo "Step outputs:"
-          echo "  version: ${{ steps.get_latest_tag.outputs.version }}"
-          echo "Job outputs:"
-          echo "  all: ${{ toJSON(job.outputs) }}"
-          echo "  direct: ${{ job.outputs.version }}"
-          echo "Needs outputs:"
-          echo "  all: ${{ toJSON(needs) }}"
-          echo "::debug::Raw version value: ${{ steps.get_latest_tag.outputs.version }}"
+      # Release 相关步骤
+      - name: Import GPG key
+        id: import_gpg
+        if: |
+          startsWith(github.ref, 'refs/tags/v') || 
+          (success() && steps.get_latest_tag.outputs.version != '')
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          git_config_global: true
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
 
-      - name: Verify outputs
-        run: |
-          echo "GITHUB_OUTPUT contents:"
-          cat $GITHUB_OUTPUT
-          echo "---"
-          echo "Direct version value: ${{ steps.get_latest_tag.outputs.version }}"
+      - name: Run GoReleaser
+        if: |
+          startsWith(github.ref, 'refs/tags/v') || 
+          (success() && steps.get_latest_tag.outputs.version != '')
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean --timeout 60m
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          VERSION: ${{ steps.get_latest_tag.outputs.version }}
 
-      - name: Debug Release Trigger
+      - name: Set Release Version
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          echo "Auto-tag completed successfully"
-          echo "Version to be released: ${{ steps.get_latest_tag.outputs.version }}"
-          echo "Checking release conditions:"
-          echo "  - Version not empty: ${{ steps.get_latest_tag.outputs.version != '' }}"
-          echo "  - Current job status: ${{ job.status }}"
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-      - name: Check workflow status
-        if: always()
+      - name: Verify Release
+        if: |
+          startsWith(github.ref, 'refs/tags/v') || 
+          (success() && steps.get_latest_tag.outputs.version != '')
         run: |
-          if [[ "${{ job.status }}" == "failure" ]]; then
-            echo "::error::Auto-tag workflow failed"
+          echo "Verifying release artifacts..."
+          if [ ! -d "dist" ]; then
+            echo "::error::Release artifacts not found"
             exit 1
           fi
 
-  release:
-    needs: auto-tag
-    permissions:
-      contents: write
-      packages: write
-      actions: write
-    if: |
-      needs.auto-tag.result == 'success' &&
-      needs.auto-tag.outputs.version != ''
-    uses: ./.github/workflows/release.yml
-    with:
-      version: ${{ needs.auto-tag.outputs.version }}
-    secrets:
-      RELEASE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      PASSPHRASE: ${{ secrets.PASSPHRASE }}
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Release process failed"
