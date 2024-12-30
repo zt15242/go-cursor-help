@@ -3,8 +3,8 @@ name: Release
 on:
   workflow_call:
     inputs:
-      tag:
-        description: "The tag to release"
+      version:
+        description: "Version to release"
         required: true
         type: string
     secrets:
@@ -22,7 +22,7 @@ permissions: write-all
 
 jobs:
   goreleaser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -53,3 +53,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          VERSION: ${{ inputs.version }}

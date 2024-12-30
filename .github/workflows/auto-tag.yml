@@ -14,7 +14,7 @@ permissions: write-all
 
 jobs:
   auto-tag:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       new_tag: ${{ steps.get_latest_tag.outputs.version }}
     steps:
@@ -52,7 +52,7 @@ jobs:
     if: success()
     uses: ./.github/workflows/release.yml
     with:
-      tag: ${{ needs.auto-tag.outputs.new_tag }}
+      version: ${{ needs.auto-tag.outputs.new_tag }}
     secrets:
       RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
