@@ -3,17 +3,17 @@ name: Release
 on:
   workflow_call:
     inputs:
-      gpg_private_key:
-        description: "GPG private key to sign releases"
-        required: false
+      tag:
+        description: "The tag to release"
+        required: true
         type: string
     secrets:
       RELEASE_TOKEN:
         required: true
       GPG_PRIVATE_KEY:
-        required: false
+        required: true
       PASSPHRASE:
-        required: false
+        required: true
   push:
     tags:
       - "v*"
@@ -40,9 +40,8 @@ jobs:
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v5
-        if: inputs.gpg_private_key != ''
         with:
-          gpg_private_key: ${{ inputs.gpg_private_key }}
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
 
       - name: Run GoReleaser
