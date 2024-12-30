@@ -48,6 +48,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced error troubleshooting guide
 
 ---
-*For more details about the changes, please refer to the [commit history](https://github.com/dacrab/go-cursor-help/commits/main).*
+*For more details about the changes, please refer to the [commit history](https://github.com/yuaotian/go-cursor-help/commits/main).*
 
-[0.1.22]: https://github.com/dacrab/go-cursor-help/releases/tag/v0.1.23 
+[0.1.22]: https://github.com/yuaotian/go-cursor-help/releases/tag/v0.1.23 

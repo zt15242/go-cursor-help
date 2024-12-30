@@ -1,4 +1,4 @@
-module github.com/dacrab/go-cursor-help
+module github.com/yuaotian/go-cursor-help
 
 go 1.21
 

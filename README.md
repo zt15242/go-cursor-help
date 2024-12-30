@@ -2,9 +2,9 @@
 
 <div align="center">
 
-[![Release](https://img.shields.io/github/v/release/dacrab/go-cursor-help?style=flat-square&logo=github&color=blue)](https://github.com/dacrab/go-cursor-help/releases/latest)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square&logo=bookstack)](https://github.com/dacrab/go-cursor-help/blob/master/LICENSE)
-[![Stars](https://img.shields.io/github/stars/dacrab/go-cursor-help?style=flat-square&logo=github)](https://github.com/dacrab/go-cursor-help/stargazers)
+[![Release](https://img.shields.io/github/v/release/yuaotian/go-cursor-help?style=flat-square&logo=github&color=blue)](https://github.com/yuaotian/go-cursor-help/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square&logo=bookstack)](https://github.com/yuaotian/go-cursor-help/blob/master/LICENSE)
+[![Stars](https://img.shields.io/github/stars/yuaotian/go-cursor-help?style=flat-square&logo=github)](https://github.com/yuaotian/go-cursor-help/stargazers)
 
 [🌟 English](#english) | [🌏 中文](#chinese)
 
@@ -60,12 +60,12 @@ this is a mistake.
 
 **Linux/macOS**: Copy and paste in terminal
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
 
 **Windows**: Copy and paste in PowerShell
 ```powershell
-irm https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
 ```
 
 #### Windows Installation Features:
@@ -80,7 +80,7 @@ That's it! The script will:
 
 ### 📦 Manual Installation
 
-> Download the appropriate file for your system from [releases](https://github.com/dacrab/go-cursor-help/releases/latest)
+> Download the appropriate file for your system from [releases](https://github.com/yuaotian/go-cursor-help/releases/latest)
 
 <details>
 <summary>Windows Packages</summary>
@@ -178,12 +178,12 @@ this is a mistake.
 
 **Linux/macOS**: 在终端中复制粘贴
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
 
 **Windows**: 在PowerShell中复制粘贴
 ```powershell
-irm https://raw.githubusercontent.com/dacrab/go-cursor-help/master/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
 ```
 
 #### Windows 安装特性:
@@ -198,7 +198,7 @@ That's it! The script will:
 
 ### 📦 Manual Installation
 
-> Download the appropriate file for your system from [releases](https://github.com/dacrab/go-cursor-help/releases/latest)
+> Download the appropriate file for your system from [releases](https://github.com/yuaotian/go-cursor-help/releases/latest)
 
 <details>
 <summary>Windows Packages</summary>

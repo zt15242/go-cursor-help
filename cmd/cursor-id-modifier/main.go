@@ -11,11 +11,11 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/dacrab/go-cursor-help/internal/config"
-	"github.com/dacrab/go-cursor-help/internal/lang"
-	"github.com/dacrab/go-cursor-help/internal/process"
-	"github.com/dacrab/go-cursor-help/internal/ui"
-	"github.com/dacrab/go-cursor-help/pkg/idgen"
+	"github.com/yuaotian/go-cursor-help/internal/config"
+	"github.com/yuaotian/go-cursor-help/internal/lang"
+	"github.com/yuaotian/go-cursor-help/internal/process"
+	"github.com/yuaotian/go-cursor-help/internal/ui"
+	"github.com/yuaotian/go-cursor-help/pkg/idgen"
 
 	"github.com/sirupsen/logrus"
 )

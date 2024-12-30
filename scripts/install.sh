@@ -87,7 +87,7 @@ main() {
     
     # Get latest release info
     echo -e "${BLUE}Fetching latest release information...${NC}"
-    LATEST_URL="https://api.github.com/repos/dacrab/go-cursor-help/releases/latest"
+    LATEST_URL="https://api.github.com/repos/yuaotian/go-cursor-help/releases/latest"
     
     # Construct binary name
     BINARY_NAME="cursor-id-modifier_${OS}_${ARCH}${SUFFIX}"
