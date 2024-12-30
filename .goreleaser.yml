@@ -1,7 +1,10 @@
+version: 2
+
 before:
   hooks:
     - go mod tidy
-    - go mod download
+    - go mod vendor
+    - go mod verify
 
 builds:
   - id: cursor-id-modifier
@@ -23,9 +26,31 @@ builds:
     ldflags:
       - -s -w
       - -X 'main.version={{.Version}}'
+      - -X 'main.commit={{.Commit}}'
+      - -X 'main.date={{.Date}}'
     flags:
       - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
+
+# 添加构建时的项目设置
+project_name: cursor-id-modifier
+
+# 添加构建验证
+builds_verify:
+  - skip: false
+    cmd: "{{.Binary}} --version"
+
+# 改进发布配置
+release:
+  draft: true
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Release {{.Tag}} ({{.Date}})
+    
+    See [CHANGELOG.md](CHANGELOG.md) for details.
+  footer: |
+    **Full Changelog**: https://github.com/owner/repo/compare/{{ .PreviousTag }}...{{ .Tag }}
 
 archives:
   - id: binary

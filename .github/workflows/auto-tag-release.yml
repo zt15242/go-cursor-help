@@ -149,6 +149,14 @@ jobs:
             go mod vendor
           fi
 
+      # 添加构建环境准备步骤
+      - name: Prepare Build Environment
+        run: |
+          echo "Building version: ${VERSION:-development}"
+          echo "GOOS=${GOOS:-$(go env GOOS)}" >> $GITHUB_ENV
+          echo "GOARCH=${GOARCH:-$(go env GOARCH)}" >> $GITHUB_ENV
+          echo "GO111MODULE=on" >> $GITHUB_ENV
+
       # 修改 GoReleaser 步骤
       - name: Run GoReleaser
         if: ${{ startsWith(github.ref, 'refs/tags/v') || (success() && steps.get_latest_tag.outputs.version != '') }}
@@ -156,18 +164,38 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --timeout 60m --snapshot
+          args: release --clean --timeout 60m
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.get_latest_tag.outputs.version }}
           CGO_ENABLED: 0
-          GOFLAGS: -mod=vendor
           GOPATH: ${{ github.workspace }}/go
           GOROOT: ${{ env.GOROOT }}
           GOCACHE: ${{ github.workspace }}/.cache/go-build
           GOMODCACHE: ${{ github.workspace }}/go/pkg/mod
           GORELEASER_DEBUG: 1
           GORELEASER_CURRENT_TAG: ${{ steps.get_latest_tag.outputs.version }}
+          # 添加额外的构建信息
+          BUILD_TIME: ${{ steps.get_latest_tag.outputs.version }}
+          BUILD_COMMIT: ${{ github.sha }}
+
+      # 优化 vendor 同步步骤
+      - name: Sync vendor directory
+        run: |
+          echo "Syncing vendor directory..."
+          go mod tidy
+          go mod vendor
+          go mod verify
+          # 验证 vendor 目录
+          if [ -d "vendor" ]; then
+            echo "Verifying vendor directory..."
+            go mod verify
+            # 检查是否有未跟踪的文件
+            if [ -n "$(git status --porcelain vendor/)" ]; then
+              echo "Warning: Vendor directory has uncommitted changes"
+              git status vendor/
+            fi
+          fi
 
       # 添加错误检查步骤
       - name: Check GoReleaser Output
