@@ -12,6 +12,7 @@ builds:
     binary: cursor-id-modifier
     env:
       - CGO_ENABLED=0
+      - GO111MODULE=on
     goos:
       - linux
       - windows
@@ -26,31 +27,12 @@ builds:
     ldflags:
       - -s -w
       - -X 'main.version={{.Version}}'
-      - -X 'main.commit={{.Commit}}'
-      - -X 'main.date={{.Date}}'
+      - -X 'main.commit={{.ShortCommit}}'
+      - -X 'main.date={{.CommitDate}}'
+      - -X 'main.builtBy=goreleaser'
     flags:
       - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
-
-# 添加构建时的项目设置
-project_name: cursor-id-modifier
-
-# 添加构建验证
-builds_verify:
-  - skip: false
-    cmd: "{{.Binary}} --version"
-
-# 改进发布配置
-release:
-  draft: true
-  prerelease: auto
-  mode: replace
-  header: |
-    ## Release {{.Tag}} ({{.Date}})
-    
-    See [CHANGELOG.md](CHANGELOG.md) for details.
-  footer: |
-    **Full Changelog**: https://github.com/owner/repo/compare/{{ .PreviousTag }}...{{ .Tag }}
 
 archives:
   - id: binary
@@ -61,11 +43,50 @@ archives:
       {{- if eq .Arch "amd64" }}x64{{ end }}
       {{- if eq .Arch "386" }}x86{{ end }}
       {{- if eq .Arch "arm64" }}arm64{{ end }}
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
 
 checksum:
   name_template: 'checksums.txt'
   algorithm: sha256
 
+release:
+  draft: true
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Release {{.Tag}} ({{.Date}})
+    
+    See [CHANGELOG.md](CHANGELOG.md) for details.
+  footer: |
+    **Full Changelog**: https://github.com/owner/repo/compare/{{ .PreviousTag }}...{{ .Tag }}
+  extra_files:
+    - glob: 'LICENSE*'
+    - glob: 'README*'
+    - glob: 'CHANGELOG*'
+
 changelog:
   sort: asc
   use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - Merge pull request
+      - Merge branch
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Others
+      order: 999
+
+project_name: cursor-id-modifier
