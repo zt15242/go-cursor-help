@@ -240,7 +240,7 @@ func generateNewConfig(display *ui.Display, generator *idgen.Generator, oldConfi
 
 	if oldConfig != nil && oldConfig.TelemetrySqmId != "" {
 		newConfig.TelemetrySqmId = oldConfig.TelemetrySqmId
-	} else if sqmID, err := generator.GenerateMacMachineID(); err != nil {
+	} else if sqmID, err := generator.GenerateSQMID(); err != nil {
 		log.Fatal("Failed to generate SQM ID:", err)
 	} else {
 		newConfig.TelemetrySqmId = sqmID
