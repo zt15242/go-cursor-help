@@ -35,10 +35,25 @@ func (g *Generator) generateRandomHex(length int) (string, error) {
 // Public methods
 // -------------
 
-// GenerateMachineID generates a new 32-byte machine ID
+// GenerateMachineID generates a new machine ID with auth0|user_ prefix
 func (g *Generator) GenerateMachineID() (string, error) {
 	g.simulateWork()
-	return g.generateRandomHex(32)
+
+	// 生成随机部分 (25字节，将产生50个十六进制字符)
+	randomPart, err := g.generateRandomHex(25)
+	if err != nil {
+		return "", err
+	}
+
+	// 构建完整的ID: "auth0|user_" + random
+	prefix := "auth0|user_"
+	fullID := fmt.Sprintf("%x%x%s",
+		[]byte(prefix), // 转换前缀为十六进制
+		[]byte("0"),    // 添加一个字符
+		randomPart,     // 随机部分
+	)
+
+	return fullID, nil
 }
 
 // GenerateMacMachineID generates a new 64-byte MAC machine ID
