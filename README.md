@@ -71,13 +71,13 @@ curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cu
 ```powershell
 irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
 ```
-**国内用户代理下载执行**
+**国内用户快速安装**
 ```powershell
-1、
+# 下载重置脚本
 curl -o "%TEMP%\cursor_reset.bat" "https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.bat"
-2、
+
+# 执行重置脚本
 start "" "%TEMP%\cursor_reset.bat"
-```
 
 #### Windows Installation Features:
 - 🔍 Automatically detects and uses PowerShell 7 if available
@@ -221,13 +221,13 @@ c
 ```powershell
 irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
 ```
-**国内用户代理下载执行**
+**国内用户快速安装**
 ```powershell
-1、
+# 下载重置脚本
 curl -o "%TEMP%\cursor_reset.bat" "https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.bat"
-2、
+
+# 执行重置脚本
 start "" "%TEMP%\cursor_reset.bat"
-```
 
 #### Windows 安装特性:
 - 🔍 自动检测并使用 PowerShell 7（如果可用）
