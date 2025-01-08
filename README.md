@@ -27,6 +27,14 @@ to prevent abuse. Please let us know if you believe
 this is a mistake.
 ```
 
+> If you see this message:
+```text
+You've reached your trial request limit.
+```
+> This means you've reached the usage limit during the VIP free trial period. Solutions:
+> - Log out and register a new account
+> - Switch to a different account
+
 ### 💻 System Support
 
 <table>
@@ -167,7 +175,15 @@ to prevent abuse. Please let us know if you believe
 this is a mistake.
 ```
 
-## 🔔 联系方式
+> 如果看到以下提示：
+```text
+You've reached your trial request limit.
+```
+> 这表示在VIP免费试用期间已达到使用次数限制。解决方案：
+> - 注销当前账号并重新注册
+> - 更换新的账号
+
+## 联系方式
 
 <div align="center">
 <table>
