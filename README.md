@@ -64,7 +64,8 @@ curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scri
 ```
 **国内Linux/macOS用户代理下载执行**
 ```bash
-curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
+curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/run/cursor_mac_id_modifier.sh | sudo 
+```
 
 **Windows**: Copy and paste in PowerShell
 ```powershell
