@@ -128,6 +128,7 @@ backup_config() {
 
 # 生成随机 ID
 generate_random_id() {
+    # 生成32字节(64个十六进制字符)的随机数
     openssl rand -hex 32
 }
 
@@ -138,7 +139,13 @@ generate_uuid() {
 
 # 生成新的配置
 generate_new_config() {
-    local machine_id="auth0|user_$(generate_random_id)"
+    # 将 auth0|user_ 转换为字节数组的十六进制
+    local prefix_hex=$(echo -n "auth0|user_" | xxd -p)
+    # 生成随机部分
+    local random_part=$(generate_random_id)
+    # 拼接前缀的十六进制和随机部分
+    local machine_id="${prefix_hex}${random_part}"
+    
     local mac_machine_id=$(generate_random_id)
     local device_id=$(generate_uuid | tr '[:upper:]' '[:lower:]')
     local sqm_id="{$(generate_uuid | tr '[:lower:]' '[:upper:]')}"

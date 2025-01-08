@@ -110,9 +110,26 @@ if (Test-Path $STORAGE_FILE) {
 # 生成新的 ID
 Write-Host "$GREEN[信息]$NC 正在生成新的 ID..."
 
+# 生成随机字节数组并转换为十六进制字符串的函数
+function Get-RandomHex {
+    param (
+        [int]$length
+    )
+    $bytes = New-Object byte[] $length
+    $rng = [System.Security.Cryptography.RNGCryptoServiceProvider]::new()
+    $rng.GetBytes($bytes)
+    $rng.Dispose()
+    return -join ($bytes | ForEach-Object { '{0:x2}' -f $_ })
+}
+
 $UUID = [System.Guid]::NewGuid().ToString()
-$MACHINE_ID = -join ((1..32) | ForEach-Object { '{0:x2}' -f (Get-Random -Max 256) })
-$MAC_MACHINE_ID = -join ((1..32) | ForEach-Object { '{0:x2}' -f (Get-Random -Max 256) })
+# 将 auth0|user_ 转换为字节数组的十六进制
+$prefixBytes = [System.Text.Encoding]::UTF8.GetBytes("auth0|user_")
+$prefixHex = -join ($prefixBytes | ForEach-Object { '{0:x2}' -f $_ })
+# 生成32字节(64个十六进制字符)的随机数作为 machineId 的随机部分
+$randomPart = Get-RandomHex -length 32
+$MACHINE_ID = "$prefixHex$randomPart"
+$MAC_MACHINE_ID = Get-RandomHex -length 32
 $SQM_ID = "{$([System.Guid]::NewGuid().ToString().ToUpper())}"
 
 # 创建或更新配置文件
