@@ -72,7 +72,7 @@ curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scri
 ```
 **国内Linux/macOS用户代理下载执行**
 ```bash
-curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
+curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
 ```
 
 **Windows**: Copy and paste in PowerShell
@@ -81,7 +81,7 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 ```
 **国内用户快速安装**
 ```powershell
-irm  https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
+irm  https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
 ```
 [Administrator Terminal Guide(English)](#admin-terminal-en) |[管理员终端说明(中文)](#admin-terminal-zh)
 ### 💻 How to Open Windows Administrator Terminal {#admin-terminal-en}
@@ -240,7 +240,7 @@ curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scri
 ```
 **国内Linux/macOS用户代理下载执行**
 ```bash
-curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
+curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
 ```
 
 **Windows**: 在PowerShell中复制粘贴执行
@@ -249,7 +249,7 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 ```
 **国内用户快速安装**
 ```powershell
-irm  https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
+irm  https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
 ```
 
  [管理员终端说明(中文)](#admin-terminal-zh)|[Administrator Terminal Guide(English)](#admin-terminal-en)
