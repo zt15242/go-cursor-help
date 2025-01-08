@@ -236,8 +236,8 @@ main() {
     
     echo
     log_info "操作完成！"
-    show_follow_info
     show_file_tree
+    show_follow_info
     log_info "请重启 Cursor 以应用新的配置"
     echo
 }

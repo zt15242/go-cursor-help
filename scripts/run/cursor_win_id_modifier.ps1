@@ -160,12 +160,7 @@ Write-Host "$BLUE[调试]$NC macMachineId: $MAC_MACHINE_ID"
 Write-Host "$BLUE[调试]$NC devDeviceId: $UUID"
 Write-Host "$BLUE[调试]$NC sqmId: $SQM_ID"
 
-# 显示公众号信息
-Write-Host ""
-Write-Host "$GREEN================================$NC"
-Write-Host "$YELLOW  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识  $NC"
-Write-Host "$GREEN================================$NC"
-Write-Host ""
+
 
 # 显示文件树结构
 Write-Host ""
@@ -185,7 +180,12 @@ if ($backupFiles) {
     Write-Host "│       └── (空)"
 }
 Write-Host ""
-
+# 显示公众号信息
+Write-Host ""
+Write-Host "$GREEN================================$NC"
+Write-Host "$YELLOW  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识  $NC"
+Write-Host "$GREEN================================$NC"
+Write-Host ""
 Write-Host "$GREEN[信息]$NC 请重启 Cursor 以应用新的配置"
 Write-Host ""
 
