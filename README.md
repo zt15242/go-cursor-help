@@ -64,7 +64,7 @@ curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scri
 ```
 **国内Linux/macOS用户代理下载执行**
 ```bash
-curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo 
+curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo 
 ```
 
 **Windows**: Copy and paste in PowerShell
@@ -74,7 +74,7 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 **国内用户代理下载执行**
 ```powershell
 1、
-curl -o "%TEMP%\cursor_reset.bat" "https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.bat"
+curl -o "%TEMP%\cursor_reset.bat" "https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.bat"
 2、
 start "" "%TEMP%\cursor_reset.bat"
 ```
@@ -224,7 +224,7 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 **国内用户代理下载执行**
 ```powershell
 1、
-curl -o "%TEMP%\cursor_reset.bat" "https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.bat"
+curl -o "%TEMP%\cursor_reset.bat" "https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.bat"
 2、
 start "" "%TEMP%\cursor_reset.bat"
 ```
