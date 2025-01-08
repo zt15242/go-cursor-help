@@ -64,7 +64,7 @@ curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scri
 ```
 **国内Linux/macOS用户代理下载执行**
 ```bash
-curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/run/cursor_mac_id_modifier.sh | sudo 
+curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo 
 ```
 
 **Windows**: Copy and paste in PowerShell
@@ -215,10 +215,7 @@ this is a mistake.
 ```bash
 curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
-**国内Linux/macOS用户代理下载执行**
-```bash
-curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
-```
+c
 
 **Windows**: 在PowerShell中复制粘贴
 ```powershell
