@@ -149,35 +149,29 @@ to prevent abuse. Please let us know if you believe
 this is a mistake.
 ```
 
-## 🔔 联系方式与社区
+## 🔔 联系方式
 
+<div align="center">
 <table>
 <tr>
-<td width="50%">
-
-### 微信交流群
-![微信群二维码](img/wx_group.png)
-
-> 如群二维码过期，请加我微信拉你进群:  
-> **JavaRookie666**
-
-![作者微信](img/wx_me.png)
-
+<td align="center">
+<b>个人微信</b><br>
+<img src="img/wx_me.png" width="150" alt="作者微信"><br>
+<b>JavaRookie666</b>
 </td>
-<td width="50%">
-
-### 关注公众号
-获取更多资源：
-- ⚡️ 第一时间获取最新版本更新
-- 💡 CursorAI使用技巧和最佳实践
-- 🚀 利用AI提升编程效率分享
-- 🔧 更多AI工具和开发资源
-
-![微信公众号](img/wx_public_2.png)
-
+<td align="center">
+<b>微信交流群</b><br>
+<img src="img/wx_group.png" width="150" alt="微信群二维码"><br>
+<small>7天内(1月15日前)有效</small>
+</td>
+<td align="center">
+<b>公众号</b><br>
+<img src="img/wx_public_2.png" width="250" alt="微信公众号"><br>
+<small>获取更多AI开发资源</small>
 </td>
 </tr>
 </table>
+</div>
 
 ### 🚀 系统支持
 
