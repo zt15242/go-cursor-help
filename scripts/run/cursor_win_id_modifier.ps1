@@ -40,7 +40,7 @@ Write-Host @"
 
 "@
 Write-Host "$BLUE================================$NC"
-Write-Host "$GREEN      Cursor ID 修改工具$NC"
+Write-Host "$GREEN      Cursor ID 修改工具          $NC"
 Write-Host "$BLUE================================$NC"
 Write-Host ""
 
@@ -146,7 +146,7 @@ Write-Host "$BLUE[调试]$NC sqmId: $SQM_ID"
 # 显示公众号信息
 Write-Host ""
 Write-Host "$GREEN================================$NC"
-Write-Host "$YELLOW  关注公众号【煎饼果子AI】一起交流更多Cursor技巧和AI知识  $NC"
+Write-Host "$YELLOW  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识  $NC"
 Write-Host "$GREEN================================$NC"
 Write-Host ""
 

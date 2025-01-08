@@ -200,7 +200,7 @@ show_file_tree() {
 show_follow_info() {
     echo
     echo -e "${GREEN}================================${NC}"
-    echo -e "${YELLOW}  关注公众号【煎饼果子AI】一起交流更多Cursor技巧和AI知识 ${NC}"
+    echo -e "${YELLOW}  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识 ${NC}"
     echo -e "${GREEN}================================${NC}"
     echo
 }
@@ -218,7 +218,7 @@ main() {
     ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
     "
     echo -e "${BLUE}================================${NC}"
-    echo -e "${GREEN}      Cursor ID 修改工具${NC}"
+    echo -e "${GREEN}      Cursor ID 修改工具         ${NC}"
     echo -e "${BLUE}================================${NC}"
     echo
     
