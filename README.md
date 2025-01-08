@@ -148,6 +148,21 @@ Please upgrade to pro. We have this limit in place
 to prevent abuse. Please let us know if you believe
 this is a mistake.
 ```
+## 🔔 关注公众号
+
+#### 加微信群
+![微信群二维码](img/wx_group.png)
+> 如果加群失败，请加我的微信，我拉你进群
+> 微信：JavaRookie666
+![微信](img/wx_me.png)
+
+#### 获取更多精彩内容
+- 第一时间获取最新版本更新
+- CursorAI使用技巧和最佳实践
+- 利用AI提升编程效率
+- 更多AI工具和开发资源
+
+![微信公众号二维码](img/wx_public_2.png)
 
 ### 💻 系统支持
 
@@ -247,21 +262,7 @@ That's it! The script will:
 <details>
 <summary><b>安全特性</b></summary>
 
-## 🔔 关注公众号
 
-#### 加微信群
-![微信群二维码](img/wx_group.png)
-> 如果加群失败，请加我的微信，我拉你进群
-> 微信：JavaRookie666
-![微信](img/wx_me.png)
-
-#### 获取更多精彩内容
-- 第一时间获取最新版本更新
-- CursorAI使用技巧和最佳实践
-- 利用AI提升编程效率
-- 更多AI工具和开发资源
-
-![微信公众号二维码](img/wx_public_2.png)
   
 ---
 
