@@ -75,6 +75,16 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 ```powershell
 irm  https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
 ```
+[Administrator Terminal Guide(English)](#admin-terminal-en) |[管理员终端说明(中文)](#admin-terminal-zh)
+### 💻 How to Open Windows Administrator Terminal {#admin-terminal-en}
+
+> **Steps to open administrator terminal on Windows:**
+> 1. Use shortcut key `Win + X`
+> 2. Select from the popup menu:
+>    - "Windows PowerShell (Administrator)"
+>    - "Windows Terminal (Administrator)" 
+>    - "Terminal (Administrator)"
+>    (Options may vary depending on your Windows version)
 
 #### Windows Installation Features:
 - 🔍 Automatically detects and uses PowerShell 7 if available
@@ -225,6 +235,17 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 ```powershell
 irm  https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
 ```
+
+ [管理员终端说明(中文)](#admin-terminal-zh)|[Administrator Terminal Guide(English)](#admin-terminal-en)
+### 💻 如何打开Windows管理员终端 {#admin-terminal-zh}
+
+> **Windows系统打开管理员终端的方法：**
+> 1. 使用快捷键 `Win + X`
+> 2. 在弹出的菜单中选择:
+>    - "Windows PowerShell (管理员)" 
+>    - "Windows Terminal (管理员)"
+>    - "终端(管理员)"
+>    (根据系统版本可能显示不同选项)
 
 #### Windows 安装特性:
 - 🔍 自动检测并使用 PowerShell 7（如果可用）
