@@ -212,7 +212,10 @@ this is a mistake.
 ```bash
 curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
-c
+**国内Linux/macOS用户代理下载执行**
+```bash
+curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
+```
 
 **Windows**: 在PowerShell中复制粘贴执行
 ```powershell
