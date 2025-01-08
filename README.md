@@ -73,11 +73,10 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 ```
 **国内用户快速安装**
 ```powershell
-# 下载重置脚本
-curl -o "%TEMP%\cursor_reset.bat" "https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.bat"
 
-# 执行重置脚本
-start "" "%TEMP%\cursor_reset.bat"
+curl -o "%TEMP%\cursor_reset.bat" "https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 "
+
+
 ```
 
 #### Windows Installation Features:
@@ -225,7 +224,7 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 **国内用户快速安装**
 ```powershell
 # 下载重置脚本
-curl -o "%TEMP%\cursor_reset.bat" "https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.bat"
+curl -o "%TEMP%\cursor_reset.bat" "https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 "
 
 # 执行重置脚本
 start "" "%TEMP%\cursor_reset.bat"
