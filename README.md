@@ -73,10 +73,7 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 ```
 **国内用户快速安装**
 ```powershell
-
-curl -o "%TEMP%\cursor_reset.bat" "https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 "
-
-
+irm  https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
 ```
 
 #### Windows Installation Features:
@@ -217,17 +214,13 @@ curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scri
 ```
 c
 
-**Windows**: 在PowerShell中复制粘贴
+**Windows**: 在PowerShell中复制粘贴执行
 ```powershell
 irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
 ```
 **国内用户快速安装**
 ```powershell
-# 下载重置脚本
-curl -o "%TEMP%\cursor_reset.bat" "https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 "
-
-# 执行重置脚本
-start "" "%TEMP%\cursor_reset.bat"
+irm  https://gh-proxy.com/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
 ```
 
 #### Windows 安装特性:
