@@ -78,6 +78,7 @@ curl -o "%TEMP%\cursor_reset.bat" "https://gh-proxy.com/https://raw.githubuserco
 
 # 执行重置脚本
 start "" "%TEMP%\cursor_reset.bat"
+```
 
 #### Windows Installation Features:
 - 🔍 Automatically detects and uses PowerShell 7 if available
@@ -228,6 +229,7 @@ curl -o "%TEMP%\cursor_reset.bat" "https://gh-proxy.com/https://raw.githubuserco
 
 # 执行重置脚本
 start "" "%TEMP%\cursor_reset.bat"
+```
 
 #### Windows 安装特性:
 - 🔍 自动检测并使用 PowerShell 7（如果可用）
