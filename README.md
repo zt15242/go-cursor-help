@@ -73,7 +73,10 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 ```
 **国内用户代理下载执行**
 ```powershell
-curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/run/cursor_win_id_modifier.bat | cmd
+1、
+curl -o "%TEMP%\cursor_reset.bat" "https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.bat"
+2、
+start "" "%TEMP%\cursor_reset.bat"
 ```
 
 #### Windows Installation Features:
@@ -221,9 +224,12 @@ curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor
 ```powershell
 irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
 ```
-**国内Windows用户代理下载执行**
+**国内用户代理下载执行**
 ```powershell
-curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/run/cursor_win_id_modifier.bat | cmd
+1、
+curl -o "%TEMP%\cursor_reset.bat" "https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.bat"
+2、
+start "" "%TEMP%\cursor_reset.bat"
 ```
 
 #### Windows 安装特性:
