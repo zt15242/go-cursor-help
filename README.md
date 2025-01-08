@@ -62,10 +62,17 @@ this is a mistake.
 ```bash
 curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
+**国内Linux/macOS用户代理下载执行**
+```bash
+curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
 
 **Windows**: Copy and paste in PowerShell
 ```powershell
 irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
+```
+**国内用户代理下载执行**
+```powershell
+curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/run/cursor_win_id_modifier.bat | cmd
 ```
 
 #### Windows Installation Features:
@@ -204,10 +211,18 @@ this is a mistake.
 ```bash
 curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
+**国内Linux/macOS用户代理下载执行**
+```bash
+curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
+```
 
 **Windows**: 在PowerShell中复制粘贴
 ```powershell
 irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
+```
+**国内Windows用户代理下载执行**
+```powershell
+curl -fsSL https://ghgo.xyz/https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/run/cursor_win_id_modifier.bat | cmd
 ```
 
 #### Windows 安装特性:
