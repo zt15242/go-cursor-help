@@ -210,12 +210,12 @@ You've reached your trial request limit.
 </td>
 <td align="center">
 <b>微信赞赏</b><br>
-<img src="img/wx_zsm2.png" width="250" alt="微信赞赏码"><br>
+<img src="img/wx_zsm2.png" width="300" alt="微信赞赏码"><br>
 <small>要到饭咧？啊咧？啊咧？不给也没事~ 请随意打赏</small>
 </td>
 <td align="center">
 <b>支付宝赞赏</b><br>
-<img src="img/alipay.png" width="250" alt="支付宝赞赏码"><br>
+<img src="img/alipay.png" width="300" alt="支付宝赞赏码"><br>
 <small>如果觉得有帮助,来包辣条犒劳一下吧~</small>
 </td>
 </tr>
