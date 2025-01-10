@@ -42,7 +42,7 @@ if [ -z "$CURRENT_USER" ]; then
     exit 1
 fi
 
-# 定义配置文件路径 (Linux 路径)
+# 定义配置文件路径 (修改为 Linux 路径)
 STORAGE_FILE="/home/$CURRENT_USER/.config/Cursor/User/globalStorage/storage.json"
 BACKUP_DIR="/home/$CURRENT_USER/.config/Cursor/User/globalStorage/backups"
 
@@ -66,11 +66,12 @@ check_and_kill_cursor() {
     get_process_details() {
         local process_name="$1"
         log_debug "正在获取 $process_name 进程详细信息："
-        ps aux | grep -i "$process_name" | grep -v grep
+        ps aux | grep -E "/[C]ursor|[C]ursor$" || true
     }
     
     while [ $attempt -le $max_attempts ]; do
-        CURSOR_PIDS=$(pgrep -i "cursor" || true)
+        # 使用更精确的方式查找 Cursor 进程
+        CURSOR_PIDS=$(ps aux | grep -E "/[C]ursor|[C]ursor$" | awk '{print $2}' || true)
         
         if [ -z "$CURSOR_PIDS" ]; then
             log_info "未发现运行中的 Cursor 进程"
@@ -78,36 +79,47 @@ check_and_kill_cursor() {
         fi
         
         log_warn "发现 Cursor 进程正在运行"
-        get_process_details "cursor"
+        get_process_details "Cursor"
         
         log_warn "尝试关闭 Cursor 进程..."
         
-        if [ $attempt -eq $max_attempts ]; then
-            log_warn "尝试强制终止进程..."
-            kill -9 $CURSOR_PIDS 2>/dev/null || true
-        else
-            kill $CURSOR_PIDS 2>/dev/null || true
-        fi
+        # 遍历每个 PID 并尝试终止
+        for pid in $CURSOR_PIDS; do
+            if [ $attempt -eq $max_attempts ]; then
+                log_warn "尝试强制终止进程 PID: ${pid}..."
+                kill -9 "${pid}" 2>/dev/null || true
+            else
+                kill "${pid}" 2>/dev/null || true
+            fi
+        done
         
-        sleep 1
+        sleep 2
         
-        if ! pgrep -i "cursor" > /dev/null; then
+        # 检查是否还有 Cursor 进程在运行
+        if ! ps aux | grep -E "/[C]ursor|[C]ursor$" > /dev/null; then
             log_info "Cursor 进程已成功关闭"
             return 0
         fi
         
         log_warn "等待进程关闭，尝试 $attempt/$max_attempts..."
         ((attempt++))
+        sleep 1
     done
     
     log_error "在 $max_attempts 次尝试后仍无法关闭 Cursor 进程"
-    get_process_details "cursor"
+    get_process_details "Cursor"
     log_error "请手动关闭进程后重试"
     exit 1
 }
 
 # 备份配置文件
 backup_config() {
+    # 检查文件权限
+    if [ -f "$STORAGE_FILE" ] && [ ! -w "$STORAGE_FILE" ]; then
+        log_error "无法写入配置文件，请检查权限"
+        exit 1
+    fi
+    
     if [ ! -f "$STORAGE_FILE" ]; then
         log_warn "配置文件不存在，跳过备份"
         return 0
@@ -140,25 +152,47 @@ generate_uuid() {
 
 # 生成新的配置
 generate_new_config() {
-    local machine_id="auth0|user_$(generate_random_id)"
+    # 错误处理
+    if ! command -v xxd &> /dev/null; then
+        log_error "未找到 xxd 命令，请安装 xxd"
+        exit 1
+    fi
+    
+    if ! command -v uuidgen &> /dev/null; then
+        log_error "未找到 uuidgen 命令，请安装 uuidgen"
+        exit 1
+    fi
+    
+    # 确保目录存在
+    mkdir -p "$(dirname "$STORAGE_FILE")"
+    
+    # 将 auth0|user_ 转换为字节数组的十六进制
+    local prefix_hex=$(echo -n "auth0|user_" | xxd -p)
+    # 生成随机部分
+    local random_part=$(generate_random_id)
+    # 拼接前缀的十六进制和随机部分
+    local machine_id="${prefix_hex}${random_part}"
+    
     local mac_machine_id=$(generate_random_id)
     local device_id=$(generate_uuid | tr '[:upper:]' '[:lower:]')
     local sqm_id="{$(generate_uuid | tr '[:lower:]' '[:upper:]')}"
     
     if [ -f "$STORAGE_FILE" ]; then
-        # 直接修改现有文件 (Linux sed 不需要 '')
-        sed -i "s/\"telemetry\.machineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.machineId\": \"$machine_id\"/" "$STORAGE_FILE"
-        sed -i "s/\"telemetry\.macMachineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.macMachineId\": \"$mac_machine_id\"/" "$STORAGE_FILE"
-        sed -i "s/\"telemetry\.devDeviceId\":[[:space:]]*\"[^\"]*\"/\"telemetry.devDeviceId\": \"$device_id\"/" "$STORAGE_FILE"
-        sed -i "s/\"telemetry\.sqmId\":[[:space:]]*\"[^\"]*\"/\"telemetry.sqmId\": \"$sqm_id\"/" "$STORAGE_FILE"
+        # 直接修改现有文件
+        sed -i -e "s/\"telemetry\.machineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.machineId\": \"$machine_id\"/" "$STORAGE_FILE"
+        sed -i -e "s/\"telemetry\.macMachineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.macMachineId\": \"$mac_machine_id\"/" "$STORAGE_FILE"
+        sed -i -e "s/\"telemetry\.devDeviceId\":[[:space:]]*\"[^\"]*\"/\"telemetry.devDeviceId\": \"$device_id\"/" "$STORAGE_FILE"
+        sed -i -e "s/\"telemetry\.sqmId\":[[:space:]]*\"[^\"]*\"/\"telemetry.sqmId\": \"$sqm_id\"/" "$STORAGE_FILE"
     else
         # 创建新文件
-        echo "{" > "$STORAGE_FILE"
-        echo "    \"telemetry.machineId\": \"$machine_id\"," >> "$STORAGE_FILE"
-        echo "    \"telemetry.macMachineId\": \"$mac_machine_id\"," >> "$STORAGE_FILE"
-        echo "    \"telemetry.devDeviceId\": \"$device_id\"," >> "$STORAGE_FILE"
-        echo "    \"telemetry.sqmId\": \"$sqm_id\"" >> "$STORAGE_FILE"
-        echo "}" >> "$STORAGE_FILE"
+        cat > "$STORAGE_FILE" << EOF
+{
+    "telemetry.machineId": "$machine_id",
+    "telemetry.macMachineId": "$mac_machine_id",
+    "telemetry.devDeviceId": "$device_id",
+    "telemetry.sqmId": "$sqm_id"
+}
+EOF
     fi
 
     chmod 644 "$STORAGE_FILE"
@@ -185,7 +219,7 @@ show_file_tree() {
     # 列出备份文件
     if [ -d "$BACKUP_DIR" ]; then
         local backup_files=("$BACKUP_DIR"/*)
-        if [ ${#backup_files[@]} -gt 0 ]; then
+        if [ ${#backup_files[@]} -gt 0 ] && [ -e "${backup_files[0]}" ]; then
             for file in "${backup_files[@]}"; do
                 if [ -f "$file" ]; then
                     echo "│       └── $(basename "$file")"
@@ -202,7 +236,7 @@ show_file_tree() {
 show_follow_info() {
     echo
     echo -e "${GREEN}================================${NC}"
-    echo -e "${YELLOW}  关注公众号【煎饼果子AI】一起交流更多Cursor技巧和AI知识 ${NC}"
+    echo -e "${YELLOW}  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识 ${NC}"
     echo -e "${GREEN}================================${NC}"
     echo
 }
