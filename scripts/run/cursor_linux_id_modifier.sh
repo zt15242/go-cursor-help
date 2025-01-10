@@ -179,10 +179,10 @@ generate_new_config() {
     
     if [ -f "$STORAGE_FILE" ]; then
         # 直接修改现有文件
-        sed -i "s/\"telemetry\.machineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.machineId\": \"$machine_id\"/" "$STORAGE_FILE"
-        sed -i "s/\"telemetry\.macMachineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.macMachineId\": \"$mac_machine_id\"/" "$STORAGE_FILE"
-        sed -i "s/\"telemetry\.devDeviceId\":[[:space:]]*\"[^\"]*\"/\"telemetry.devDeviceId\": \"$device_id\"/" "$STORAGE_FILE"
-        sed -i "s/\"telemetry\.sqmId\":[[:space:]]*\"[^\"]*\"/\"telemetry.sqmId\": \"$sqm_id\"/" "$STORAGE_FILE"
+        sed -i "s|\"telemetry\.machineId\":[[:space:]]*\"[^\"]*\"|\"telemetry.machineId\": \"$machine_id\"|" "$STORAGE_FILE"
+        sed -i "s|\"telemetry\.macMachineId\":[[:space:]]*\"[^\"]*\"|\"telemetry.macMachineId\": \"$mac_machine_id\"|" "$STORAGE_FILE"
+        sed -i "s|\"telemetry\.devDeviceId\":[[:space:]]*\"[^\"]*\"|\"telemetry.devDeviceId\": \"$device_id\"|" "$STORAGE_FILE"
+        sed -i "s|\"telemetry\.sqmId\":[[:space:]]*\"[^\"]*\"|\"telemetry.sqmId\": \"$sqm_id\"|" "$STORAGE_FILE"
     else
         # 创建新文件
         cat > "$STORAGE_FILE" << EOF
