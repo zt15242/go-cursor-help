@@ -195,18 +195,23 @@ You've reached your trial request limit.
 <tr>
 <td align="center">
 <b>个人微信</b><br>
-<img src="img/wx_me.png" width="150" alt="作者微信"><br>
-<b>JavaRookie666</b>
+<img src="img/wx_me.png" width="250" alt="作者微信"><br>
+<b>微信：JavaRookie666</b>
 </td>
 <td align="center">
 <b>微信交流群</b><br>
-<img src="img/wx_group.png" width="150" alt="微信群二维码"><br>
-<small>7天内(1月15日前)有效</small>
+<img src="img/wx_group.png" width="250" alt="微信群二维码"><br>
+<small>7天内(1月15日前)有效，群满可以加公众号关注最新动态</small>
 </td>
 <td align="center">
 <b>公众号</b><br>
 <img src="img/wx_public_2.png" width="250" alt="微信公众号"><br>
 <small>获取更多AI开发资源</small>
+</td>
+<td align="center">
+<b>微信赞赏码</b><br>
+<img src="img/wx_zsm.jpg" width="250" alt="微信赞赏码"><br>
+<small>要到饭咧？啊咧？啊咧？不给也没事~ 请随意打赏</small>
 </td>
 </tr>
 </table>
