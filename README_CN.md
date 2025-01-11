@@ -73,30 +73,40 @@ You've reached your trial request limit.
 </tr>
 </table>
 
-### 🚀 一键解决
+### 🚀 一键解决方案
 
-**Linux/macOS**: 在终端中复制粘贴
+<details open>
+<summary><b>海外用户</b></summary>
+
+**Linux/macOS**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
-**国内Linux/macOS用户代理下载执行**
-- **macOS**:
+
+**Windows**
+```powershell
+irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
+```
+</details>
+
+<details open>
+<summary><b>国内用户（推荐）</b></summary>
+
+**macOS**
 ```bash
 curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
 ```
-- **Linux**:
+
+**Linux**
 ```bash
 curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_linux_id_modifier.sh | sudo bash
 ```
 
-**Windows**: 在PowerShell中复制粘贴执行
+**Windows**
 ```powershell
-irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
+irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
 ```
-**国内用户快速安装**
-```powershell
-irm  https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
-```
+</details>
 
 ### 💻 如何打开Windows管理员终端
 

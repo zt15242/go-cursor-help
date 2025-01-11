@@ -80,15 +80,38 @@ If the above solutions don't work, try:
 
 ### 🚀 One-Click Solution
 
-**Linux/macOS**: Copy and paste in terminal
+<details open>
+<summary><b>Global Users</b></summary>
+
+**Linux/macOS**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
 
-**Windows**: Copy and paste in PowerShell
+**Windows**
 ```powershell
 irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
 ```
+</details>
+
+<details open>
+<summary><b>China Users (Recommended)</b></summary>
+
+**macOS**
+```bash
+curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
+```
+
+**Linux**
+```bash
+curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_linux_id_modifier.sh | sudo bash
+```
+
+**Windows**
+```powershell
+irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
+```
+</details>
 
 ### 💻 How to Open Windows Administrator Terminal
 
