@@ -191,7 +191,6 @@ The tool generates new unique identifiers for:
 ---
 
 ### 📚 Recommended Reading
-
 - [Cursor Issues Collection and Solutions](https://mp.weixin.qq.com/s/PIqIxrdPgXJ38PP7uVE2lg)
 - [AI Universal Development Assistant Prompt Guide](https://mp.weixin.qq.com/s/PRPz-qVkFJSgkuEKkTdzwg)
 
