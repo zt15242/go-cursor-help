@@ -177,6 +177,17 @@ irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaoti
 </details>
 
 <details>
+<summary><b>手动禁用自动更新</b></summary>
+
+Windows用户可以手动禁用自动更新功能：
+1. 关闭所有Cursor进程
+2. 删除目录：`C:\Users\用户名\AppData\Local\cursor-updater`
+3. 创建同名文件：`cursor-updater`（不带扩展名）
+
+macOS/Linux用户可以尝试在系统中找到类似的`cursor-updater`目录进行相同操作。
+</details>
+
+<details>
 <summary><b>安全特性</b></summary>
 
 - ✅ 安全的进程终止

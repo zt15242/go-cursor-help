@@ -160,8 +160,6 @@ Write-Host "$BLUE[调试]$NC macMachineId: $MAC_MACHINE_ID"
 Write-Host "$BLUE[调试]$NC devDeviceId: $UUID"
 Write-Host "$BLUE[调试]$NC sqmId: $SQM_ID"
 
-
-
 # 显示文件树结构
 Write-Host ""
 Write-Host "$GREEN[信息]$NC 文件结构:"
@@ -179,7 +177,46 @@ if ($backupFiles) {
 } else {
     Write-Host "│       └── (空)"
 }
+
+# 询问是否要禁用自动更新
 Write-Host ""
+Write-Host "$YELLOW[询问]$NC 是否要禁用 Cursor 自动更新功能？"
+Write-Host "0) 否 - 保持默认设置 (按回车键)"
+Write-Host "1) 是 - 禁用自动更新"
+$choice = Read-Host "请输入选项 (1 或直接回车)"
+
+if ($choice -eq "1") {
+    Write-Host ""
+    Write-Host "$GREEN[信息]$NC 正在处理自动更新..."
+    $updaterPath = "$env:LOCALAPPDATA\cursor-updater"
+
+    if (Test-Path $updaterPath) {
+        try {
+            # 强制删除目录
+            Remove-Item -Path $updaterPath -Force -Recurse -ErrorAction Stop
+            Write-Host "$GREEN[信息]$NC 成功删除 cursor-updater 目录"
+            
+            # 创建同名文件
+            New-Item -Path $updaterPath -ItemType File -Force | Out-Null
+            Write-Host "$GREEN[信息]$NC 成功创建阻止文件"
+        }
+        catch {
+            Write-Host "$RED[错误]$NC 处理 cursor-updater 时出错: $_"
+        }
+    }
+    else {
+        # 直接创建阻止文件
+        New-Item -Path $updaterPath -ItemType File -Force | Out-Null
+        Write-Host "$GREEN[信息]$NC 成功创建阻止文件"
+    }
+}
+elseif ($choice -ne "") {
+    Write-Host "$YELLOW[信息]$NC 保持默认设置，不进行更改"
+}
+else {
+    Write-Host "$YELLOW[信息]$NC 保持默认设置，不进行更改"
+}
+
 # 显示公众号信息
 Write-Host ""
 Write-Host "$GREEN================================$NC"

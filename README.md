@@ -182,6 +182,17 @@ The tool generates new unique identifiers for:
 </details>
 
 <details>
+<summary><b>Manual Auto-Update Disable</b></summary>
+
+Windows users can manually disable the auto-update feature:
+1. Close all Cursor processes
+2. Delete directory: `C:\Users\username\AppData\Local\cursor-updater`
+3. Create a file with the same name: `cursor-updater` (without extension)
+
+macOS/Linux users can try to locate similar `cursor-updater` directory in their system and perform the same operation.
+</details>
+
+<details>
 <summary><b>Safety Features</b></summary>
 
 - ✅ Safe process termination
