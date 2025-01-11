@@ -217,6 +217,11 @@ irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaoti
 </tr>
 </table>
 </div>
+---
+### 📚 推荐阅读
+
+- [Cursor异常问题收集和解决方案](https://mp.weixin.qq.com/s/PIqIxrdPgXJ38PP7uVE2lg)
+- [AI通用开发助手提示词指南](https://mp.weixin.qq.com/s/PRPz-qVkFJSgkuEKkTdzwg)
 
 ---
 
