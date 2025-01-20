@@ -16,7 +16,7 @@
 
 ### 📝 问题描述
 
-> 当看到以下提示时重置Cursor试用期：
+> 当看到以下提示时重置 Cursor 试用期：<p align="right"><a href="#issue1"><img src="https://img.shields.io/badge/Move%20to%20Solution-Blue?style=plastic" alt="Back To Top"></a></p>
 
 ```text
 Too many free trial accounts used on this machine.
@@ -25,25 +25,56 @@ to prevent abuse. Please let us know if you believe
 this is a mistake.
 ```
 
-> 如果看到以下提示：这表示在VIP免费试用期间已达到使用次数限制。
+or
+
+<p align="right"><a href="#issue2"><img src="https://img.shields.io/badge/Move%20to%20Solution-green?style=plastic" alt="Back To Top"></a></p>
+
+```text
+❗[New Issue]
+
+Composer relies on custom models that cannot be billed to an API key.
+Please disable API keys and use a Pro or Business subscription.
+Request ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+> 如果看到以下提示：这表示在 VIP 免费试用期间已达到使用次数限制。
+
 ```text
 You've reached your trial request limit.
 ```
+
+<br>
+
+<p id="issue2"></p>
+#### 解决方案 0：完全卸载 Cursor 并重新安装（API 密钥问题）
+
+1. 下载 [Geek.exe 卸载程序[免费]](https://geekuninstaller.com/download)
+2. 完全卸载 Cursor 应用
+3. 重新安装 Cursor 应用
+4. 转到解决方案 1
+
+<br>
+
+<p id="issue1"></p>
 > 临时解决方案：
 
 #### 方案一：快速重置（推荐）
+
 1. 关闭 Cursor 应用
 2. 执行重置机器码脚本（见下方安装说明）
 3. 重新打开 Cursor 即可继续使用
 
 #### 方案二：账号切换
+
 1. 文件 -> Cursor Settings -> 注销当前账号
 2. 关闭 Cursor
 3. 执行重置机器码脚本
 4. 使用新账号重新登录
 
 #### 方案三：网络优化
+
 如果上述方案仍无法解决，可尝试：
+
 - 切换至低延迟节点（推荐区域：日本、新加坡、美国、香港）
 - 确保网络稳定性
 - 清除浏览器缓存后重试
@@ -55,18 +86,21 @@ You've reached your trial request limit.
 <td>
 
 **Windows** ✅
+
 - x64 & x86
 
 </td>
 <td>
 
 **macOS** ✅
+
 - Intel & M-series
 
 </td>
 <td>
 
 **Linux** ✅
+
 - x64 & ARM64
 
 </td>
@@ -79,54 +113,64 @@ You've reached your trial request limit.
 <summary><b>海外用户</b></summary>
 
 **Linux/macOS**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
 
 **Windows**
+
 ```powershell
 irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
 ```
+
 </details>
 
 <details open>
 <summary><b>国内用户（推荐）</b></summary>
 
 **macOS**
+
 ```bash
 curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
 ```
 
 **Linux**
+
 ```bash
 curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_linux_id_modifier.sh | sudo bash
 ```
 
 **Windows**
+
 ```powershell
 irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
 ```
+
 </details>
 
-### 💻 如何打开Windows管理员终端
+### 💻 如何打开 Windows 管理员终端
 
-> **Windows系统打开管理员终端的方法：**
+> **Windows 系统打开管理员终端的方法：**
+>
 > 1. 使用快捷键 `Win + X`
 > 2. 在弹出的菜单中选择:
->    - "Windows PowerShell (管理员)" 
+>    - "Windows PowerShell (管理员)"
 >    - "Windows Terminal (管理员)"
 >    - "终端(管理员)"
->    (根据系统版本可能显示不同选项)
+>      (根据系统版本可能显示不同选项)
 
 #### Windows 安装特性:
+
 - 🔍 自动检测并使用 PowerShell 7（如果可用）
 - 🛡️ 通过 UAC 提示请求管理员权限
 - 📝 如果没有 PS7 则使用 Windows PowerShell
 - 💡 如果提权失败会提供手动说明
 
 完成后，脚本将：
+
 1. ✨ 自动安装工具
-2. 🔄 立即重置Cursor试用期
+2. 🔄 立即重置 Cursor 试用期
 
 ### 📦 手动安装
 
@@ -135,8 +179,8 @@ irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaoti
 <details>
 <summary>Windows 安装包</summary>
 
-- 64位: `cursor-id-modifier_windows_x64.exe`
-- 32位: `cursor-id-modifier_windows_x86.exe`
+- 64 位: `cursor-id-modifier_windows_x64.exe`
+- 32 位: `cursor-id-modifier_windows_x86.exe`
 </details>
 
 <details>
@@ -149,8 +193,8 @@ irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaoti
 <details>
 <summary>Linux 安装包</summary>
 
-- 64位: `cursor-id-modifier_linux_x64`
-- 32位: `cursor-id-modifier_linux_x86`
+- 64 位: `cursor-id-modifier_linux_x64`
+- 32 位: `cursor-id-modifier_linux_x86`
 - ARM64: `cursor-id-modifier_linux_arm64`
 </details>
 
@@ -159,7 +203,7 @@ irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaoti
 <details>
 <summary><b>配置文件</b></summary>
 
-程序修改Cursor的`storage.json`配置文件，位于：
+程序修改 Cursor 的`storage.json`配置文件，位于：
 
 - Windows: `%APPDATA%\Cursor\User\globalStorage\`
 - macOS: `~/Library/Application Support/Cursor/User/globalStorage/`
@@ -170,6 +214,7 @@ irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaoti
 <summary><b>修改字段</b></summary>
 
 工具会生成新的唯一标识符：
+
 - `telemetry.machineId`
 - `telemetry.macMachineId`
 - `telemetry.devDeviceId`
@@ -179,12 +224,14 @@ irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaoti
 <details>
 <summary><b>手动禁用自动更新</b></summary>
 
-Windows用户可以手动禁用自动更新功能：
-1. 关闭所有Cursor进程
+Windows 用户可以手动禁用自动更新功能：
+
+1. 关闭所有 Cursor 进程
 2. 删除目录：`C:\Users\用户名\AppData\Local\cursor-updater`
 3. 创建同名文件：`cursor-updater`（不带扩展名）
 
-macOS/Linux用户可以尝试在系统中找到类似的`cursor-updater`目录进行相同操作。
+macOS/Linux 用户可以尝试在系统中找到类似的`cursor-updater`目录进行相同操作。
+
 </details>
 
 <details>
@@ -232,8 +279,9 @@ macOS/Linux用户可以尝试在系统中找到类似的`cursor-updater`目录�
 ---
 
 ### 📚 推荐阅读
-- [Cursor异常问题收集和解决方案](https://mp.weixin.qq.com/s/pnJrH7Ifx4WZvseeP1fcEA)
-- [AI通用开发助手提示词指南](https://mp.weixin.qq.com/s/PRPz-qVkFJSgkuEKkTdzwg)
+
+- [Cursor 异常问题收集和解决方案](https://mp.weixin.qq.com/s/pnJrH7Ifx4WZvseeP1fcEA)
+- [AI 通用开发助手提示词指南](https://mp.weixin.qq.com/s/PRPz-qVkFJSgkuEKkTdzwg)
 
 ---
 
@@ -263,4 +311,5 @@ furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
-</details> 
+
+</details>

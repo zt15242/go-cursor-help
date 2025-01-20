@@ -16,7 +16,7 @@
 
 ### 📝 Description
 
-> Resets Cursor's free trial limitation when you see:
+> Resets Cursor's free trial limitation when you see: <p align="right"><a href="#issue1"><img src="https://img.shields.io/badge/Move%20to%20Solution-Blue?style=plastic" alt="Back To Top"></a></p>
 
 ```text
 Too many free trial accounts used on this machine.
@@ -25,26 +25,56 @@ to prevent abuse. Please let us know if you believe
 this is a mistake.
 ```
 
+or <p align="right"><a href="#issue2"><img src="https://img.shields.io/badge/Move%20to%20Solution-green?style=plastic" alt="Back To Top"></a></p>
+
+```text
+[New Issue]
+
+Composer relies on custom models that cannot be billed to an API key.
+Please disable API keys and use a Pro or Business subscription.
+Request ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
 > If you see this message:This means you've reached the usage limit during the VIP free trial period.
 
 ```text
 You've reached your trial request limit.
 ```
->  Temporary Solution:
+
+<br>
+
+<p id="issue2"></p>
+
+#### Solution 0: Uninstall Cursor Completely And Reinstall (API key Issue)
+
+1. Download [Geek.exe Uninstaller[Free]](https://geekuninstaller.com/download)
+2. Uninstall Cursor app completely
+3. Re-Install Cursor app
+4. Continue to Solution 1
+
+<br>
+
+<p id="issue1"></p>
+
+> Temporary Solution:
 
 #### Solution 1: Quick Reset (Recommended)
+
 1. Close Cursor application
 2. Run the machine code reset script (see installation instructions below)
 3. Reopen Cursor to continue using
 
 #### Solution 2: Account Switch
+
 1. File -> Cursor Settings -> Sign Out
 2. Close Cursor
 3. Run the machine code reset script
 4. Login with a new account
 
 #### Solution 3: Network Optimization
+
 If the above solutions don't work, try:
+
 - Switch to low-latency nodes (Recommended regions: Japan, Singapore, US, Hong Kong)
 - Ensure network stability
 - Clear browser cache and retry
@@ -56,6 +86,7 @@ If the above solutions don't work, try:
 <td>
 
 **Windows** ✅
+
 - x64 (64-bit)
 - x86 (32-bit)
 
@@ -63,6 +94,7 @@ If the above solutions don't work, try:
 <td>
 
 **macOS** ✅
+
 - Intel (x64)
 - Apple Silicon (M1/M2)
 
@@ -70,6 +102,7 @@ If the above solutions don't work, try:
 <td>
 
 **Linux** ✅
+
 - x64 (64-bit)
 - x86 (32-bit)
 - ARM64
@@ -84,52 +117,62 @@ If the above solutions don't work, try:
 <summary><b>Global Users</b></summary>
 
 **Linux/macOS**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
 ```
 
 **Windows**
+
 ```powershell
 irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
 ```
+
 </details>
 
 <details open>
 <summary><b>China Users (Recommended)</b></summary>
 
 **macOS**
+
 ```bash
 curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
 ```
 
 **Linux**
+
 ```bash
 curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_linux_id_modifier.sh | sudo bash
 ```
 
 **Windows**
+
 ```powershell
 irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
 ```
+
 </details>
 
 ### 💻 How to Open Windows Administrator Terminal
 
 > **Steps to open administrator terminal on Windows:**
+>
 > 1. Use shortcut key `Win + X`
 > 2. Select from the popup menu:
 >    - "Windows PowerShell (Administrator)"
->    - "Windows Terminal (Administrator)" 
+>    - "Windows Terminal (Administrator)"
 >    - "Terminal (Administrator)"
->    (Options may vary depending on your Windows version)
+>      (Options may vary depending on your Windows version)
 
 #### Windows Installation Features:
+
 - 🔍 Automatically detects and uses PowerShell 7 if available
 - 🛡️ Requests administrator privileges via UAC prompt
 - 📝 Falls back to Windows PowerShell if PS7 isn't found
 - 💡 Provides manual instructions if elevation fails
 
 That's it! The script will:
+
 1. ✨ Install the tool automatically
 2. 🔄 Reset your Cursor trial immediately
 
@@ -175,6 +218,7 @@ The program modifies Cursor's `storage.json` config file located at:
 <summary><b>Modified Fields</b></summary>
 
 The tool generates new unique identifiers for:
+
 - `telemetry.machineId`
 - `telemetry.macMachineId`
 - `telemetry.devDeviceId`
@@ -185,11 +229,13 @@ The tool generates new unique identifiers for:
 <summary><b>Manual Auto-Update Disable</b></summary>
 
 Windows users can manually disable the auto-update feature:
+
 1. Close all Cursor processes
 2. Delete directory: `C:\Users\username\AppData\Local\cursor-updater`
 3. Create a file with the same name: `cursor-updater` (without extension)
 
 macOS/Linux users can try to locate similar `cursor-updater` directory in their system and perform the same operation.
+
 </details>
 
 <details>
@@ -203,6 +249,7 @@ macOS/Linux users can try to locate similar `cursor-updater` directory in their 
 ---
 
 ### 📚 Recommended Reading
+
 - [Cursor Issues Collection and Solutions](https://mp.weixin.qq.com/s/pnJrH7Ifx4WZvseeP1fcEA)
 - [AI Universal Development Assistant Prompt Guide](https://mp.weixin.qq.com/s/PRPz-qVkFJSgkuEKkTdzwg)
 
@@ -234,4 +281,5 @@ furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
+
 </details>
