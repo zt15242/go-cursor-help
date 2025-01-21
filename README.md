@@ -49,7 +49,7 @@ You've reached your trial request limit.
 
 <p id="issue2"></p>
 
-#### Solution 0: Uninstall Cursor Completely And Reinstall (API key Issue)
+#### Solution : Uninstall Cursor Completely And Reinstall (API key Issue)
 
 1. Download [Geek.exe Uninstaller[Free]](https://geekuninstaller.com/download)
 2. Uninstall Cursor app completely

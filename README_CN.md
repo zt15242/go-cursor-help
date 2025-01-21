@@ -48,7 +48,8 @@ You've reached your trial request limit.
 <br>
 
 <p id="issue2"></p>
-#### 解决方案 0：完全卸载 Cursor 并重新安装（API 密钥问题）
+
+#### 解决方案 ：完全卸载 Cursor 并重新安装（API 密钥问题）
 
 1. 下载 [Geek.exe 卸载程序[免费]](https://geekuninstaller.com/download)
 2. 完全卸载 Cursor 应用
@@ -58,6 +59,7 @@ You've reached your trial request limit.
 <br>
 
 <p id="issue1"></p>
+
 > 临时解决方案：
 
 #### 方案一：快速重置（推荐）
