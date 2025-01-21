@@ -16,7 +16,9 @@
 
 ### 📝 问题描述
 
-> 当看到以下提示时重置 Cursor 试用期：<p align="right"><a href="#issue1"><img src="https://img.shields.io/badge/Move%20to%20Solution-Blue?style=plastic" alt="Back To Top"></a></p>
+> 当您遇到以下任一提示时:
+
+#### 问题一：试用账号限制 <p align="right"><a href="#issue1"><img src="https://img.shields.io/badge/查看解决方案-Blue?style=plastic" alt="Back To Top"></a></p>
 
 ```text
 Too many free trial accounts used on this machine.
@@ -25,9 +27,7 @@ to prevent abuse. Please let us know if you believe
 this is a mistake.
 ```
 
-or
-
-<p align="right"><a href="#issue2"><img src="https://img.shields.io/badge/Move%20to%20Solution-green?style=plastic" alt="Back To Top"></a></p>
+#### 问题二：API密钥限制 <p align="right"><a href="#issue2"><img src="https://img.shields.io/badge/查看解决方案-green?style=plastic" alt="Back To Top"></a></p>
 
 ```text
 ❗[New Issue]
@@ -37,7 +37,9 @@ Please disable API keys and use a Pro or Business subscription.
 Request ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
-> 如果看到以下提示：这表示在 VIP 免费试用期间已达到使用次数限制。
+#### 问题三：试用请求次数限制
+
+> 这表示在 VIP 免费试用期间已达到使用次数限制:
 
 ```text
 You've reached your trial request limit.

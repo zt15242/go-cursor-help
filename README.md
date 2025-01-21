@@ -16,7 +16,9 @@
 
 ### 📝 Description
 
-> Resets Cursor's free trial limitation when you see: <p align="right"><a href="#issue1"><img src="https://img.shields.io/badge/Move%20to%20Solution-Blue?style=plastic" alt="Back To Top"></a></p>
+> When you encounter any of these messages:
+
+#### Issue 1: Trial Account Limit <p align="right"><a href="#issue1"><img src="https://img.shields.io/badge/Move%20to%20Solution-Blue?style=plastic" alt="Back To Top"></a></p>
 
 ```text
 Too many free trial accounts used on this machine.
@@ -25,7 +27,7 @@ to prevent abuse. Please let us know if you believe
 this is a mistake.
 ```
 
-or <p align="right"><a href="#issue2"><img src="https://img.shields.io/badge/Move%20to%20Solution-green?style=plastic" alt="Back To Top"></a></p>
+#### Issue 2: API Key Limitation <p align="right"><a href="#issue2"><img src="https://img.shields.io/badge/Move%20to%20Solution-green?style=plastic" alt="Back To Top"></a></p>
 
 ```text
 [New Issue]
@@ -35,7 +37,9 @@ Please disable API keys and use a Pro or Business subscription.
 Request ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
-> If you see this message:This means you've reached the usage limit during the VIP free trial period.
+#### Issue 3: Trial Request Limit
+
+> This indicates you've reached the usage limit during the VIP free trial period:
 
 ```text
 You've reached your trial request limit.
