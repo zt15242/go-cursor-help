@@ -160,6 +160,29 @@ irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaoti
 >    - "终端(管理员)"
 >      (根据系统版本可能显示不同选项)
 
+### 🔧 PowerShell 安装指南
+
+如果您的系统没有安装 PowerShell,可以通过以下方法安装:
+
+#### 方法一：使用 Winget 安装（推荐）
+
+1. 打开命令提示符或 PowerShell
+2. 运行以下命令:
+```powershell
+winget install --id Microsoft.PowerShell --source winget
+```
+
+#### 方法二：手动下载安装
+
+1. 下载对应系统的安装包:
+   - [PowerShell-7.4.6-win-x64.msi](https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/PowerShell-7.4.6-win-x64.msi) (64位系统)
+   - [PowerShell-7.4.6-win-x86.msi](https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/PowerShell-7.4.6-win-x86.msi) (32位系统)
+   - [PowerShell-7.4.6-win-arm64.msi](https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/PowerShell-7.4.6-win-arm64.msi) (ARM64系统)
+
+2. 双击下载的安装包,按提示完成安装
+
+> 💡 如果仍然遇到问题,可以参考 [Microsoft 官方安装指南](https://learn.microsoft.com/zh-cn/powershell/scripting/install/installing-powershell-on-windows)
+
 #### Windows 安装特性:
 
 - 🔍 自动检测并使用 PowerShell 7（如果可用）
@@ -254,7 +277,7 @@ macOS/Linux 用户可以尝试在系统中找到类似的`cursor-updater`目录�
 </td>
 <td align="center">
 <b>微信交流群</b><br>
-<img src="img/wx_group.png" width="250" alt="微信群二维码"><br>
+<img src="img/wx_group2.png" width="250" alt="微信群二维码"><br>
 <small>7天内(1月15日前)有效，群满可以加公众号关注最新动态</small>
 </td>
 <td align="center">
