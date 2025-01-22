@@ -135,22 +135,101 @@ $SQM_ID = "{$([System.Guid]::NewGuid().ToString().ToUpper())}"
 # 创建或更新配置文件
 Write-Host "$GREEN[信息]$NC 正在更新配置..."
 
-$config = @{
-    'telemetry.machineId' = $MACHINE_ID
-    'telemetry.macMachineId' = $MAC_MACHINE_ID
-    'telemetry.devDeviceId' = $UUID
-    'telemetry.sqmId' = $SQM_ID
+try {
+    # 确保目录存在
+    $storageDir = Split-Path $STORAGE_FILE -Parent
+    if (-not (Test-Path $storageDir)) {
+        New-Item -ItemType Directory -Path $storageDir -Force | Out-Null
+    }
+
+    # 写入配置
+    $config = @{
+        'telemetry.machineId' = $MACHINE_ID
+        'telemetry.macMachineId' = $MAC_MACHINE_ID
+        'telemetry.devDeviceId' = $UUID
+        'telemetry.sqmId' = $SQM_ID
+    }
+
+    # 使用 System.IO.File 方法写入文件
+    try {
+        $jsonContent = $config | ConvertTo-Json
+        [System.IO.File]::WriteAllText(
+            [System.IO.Path]::GetFullPath($STORAGE_FILE), 
+            $jsonContent, 
+            [System.Text.Encoding]::UTF8
+        )
+        Write-Host "$GREEN[信息]$NC 成功写入配置文件"
+    } catch {
+        throw "写入文件失败: $_"
+    }
+
+    # 尝试设置文件权限
+    try {
+        # 使用当前用户名和域名
+        $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+        $userAccount = "$($env:USERDOMAIN)\$($env:USERNAME)"
+        
+        # 创建新的访问控制列表
+        $acl = New-Object System.Security.AccessControl.FileSecurity
+        
+        # 添加当前用户的完全控制权限
+        $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+            $userAccount,  # 使用域名\用户名格式
+            [System.Security.AccessControl.FileSystemRights]::FullControl,
+            [System.Security.AccessControl.InheritanceFlags]::None,
+            [System.Security.AccessControl.PropagationFlags]::None,
+            [System.Security.AccessControl.AccessControlType]::Allow
+        )
+        
+        try {
+            $acl.AddAccessRule($accessRule)
+            Set-Acl -Path $STORAGE_FILE -AclObject $acl -ErrorAction Stop
+            Write-Host "$GREEN[信息]$NC 成功设置文件权限"
+        } catch {
+            # 如果第一种方法失败，尝试使用 icacls
+            Write-Host "$YELLOW[警告]$NC 使用备选方法设置权限..."
+            $result = Start-Process "icacls.exe" -ArgumentList "`"$STORAGE_FILE`" /grant `"$($env:USERNAME):(F)`"" -Wait -NoNewWindow -PassThru
+            if ($result.ExitCode -eq 0) {
+                Write-Host "$GREEN[信息]$NC 成功使用 icacls 设置文件权限"
+            } else {
+                Write-Host "$YELLOW[警告]$NC 设置文件权限失败，但文件已写入成功"
+            }
+        }
+    } catch {
+        Write-Host "$YELLOW[警告]$NC 设置文件权限失败: $_"
+        Write-Host "$YELLOW[警告]$NC 尝试使用 icacls 命令..."
+        try {
+            $result = Start-Process "icacls.exe" -ArgumentList "`"$STORAGE_FILE`" /grant `"$($env:USERNAME):(F)`"" -Wait -NoNewWindow -PassThru
+            if ($result.ExitCode -eq 0) {
+                Write-Host "$GREEN[信息]$NC 成功使用 icacls 设置文件权限"
+            } else {
+                Write-Host "$YELLOW[警告]$NC 所有权限设置方法都失败，但文件已写入成功"
+            }
+        } catch {
+            Write-Host "$YELLOW[警告]$NC icacls 命令失败: $_"
+        }
+    }
+
+} catch {
+    Write-Host "$RED[错误]$NC 主要操作失败: $_"
+    Write-Host "$YELLOW[尝试]$NC 使用备选方法..."
+    
+    try {
+        # 备选方法：使用 Add-Content
+        $tempFile = [System.IO.Path]::GetTempFileName()
+        $config | ConvertTo-Json | Set-Content -Path $tempFile -Encoding UTF8
+        Copy-Item -Path $tempFile -Destination $STORAGE_FILE -Force
+        Remove-Item -Path $tempFile
+        Write-Host "$GREEN[信息]$NC 使用备选方法成功写入配置"
+    } catch {
+        Write-Host "$RED[错误]$NC 所有尝试都失败了"
+        Write-Host "错误详情: $_"
+        Write-Host "目标文件: $STORAGE_FILE"
+        Write-Host "请确保您有足够的权限访问该文件"
+        Read-Host "按回车键退出"
+        exit 1
+    }
 }
-
-$config | ConvertTo-Json | Set-Content $STORAGE_FILE
-
-# 设置文件权限
-$acl = Get-Acl $STORAGE_FILE
-$rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-    $env:USERNAME, "FullControl", "Allow"
-)
-$acl.SetAccessRule($rule)
-Set-Acl $STORAGE_FILE $acl
 
 # 显示结果
 Write-Host ""
@@ -177,6 +256,15 @@ if ($backupFiles) {
 } else {
     Write-Host "│       └── (空)"
 }
+
+# 显示公众号信息
+Write-Host ""
+Write-Host "$GREEN================================$NC"
+Write-Host "$YELLOW  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识  $NC"
+Write-Host "$GREEN================================$NC"
+Write-Host ""
+Write-Host "$GREEN[信息]$NC 请重启 Cursor 以应用新的配置"
+Write-Host ""
 
 # 询问是否要禁用自动更新
 Write-Host ""
@@ -217,14 +305,7 @@ else {
     Write-Host "$YELLOW[信息]$NC 保持默认设置，不进行更改"
 }
 
-# 显示公众号信息
-Write-Host ""
-Write-Host "$GREEN================================$NC"
-Write-Host "$YELLOW  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识  $NC"
-Write-Host "$GREEN================================$NC"
-Write-Host ""
-Write-Host "$GREEN[信息]$NC 请重启 Cursor 以应用新的配置"
-Write-Host ""
+
 
 Read-Host "按回车键退出"
 exit 0 

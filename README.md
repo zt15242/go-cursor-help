@@ -120,17 +120,27 @@ If the above solutions don't work, try:
 <details open>
 <summary><b>Global Users</b></summary>
 
-**Linux/macOS**
+**macOS**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash 
+```
+
+**Linux**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_linux_id_modifier.sh | sudo bash 
 ```
 
 **Windows**
 
 ```powershell
-irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
 ```
+
+<div align="center">
+<img src="img/run_success.png" alt="Run Success" width="600"/>
+</div>
 
 </details>
 
@@ -140,7 +150,7 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/ins
 **macOS**
 
 ```bash
-curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
+curl -fsSL https://aizaozao.com/accelerate.php/c | sudo bash
 ```
 
 **Linux**

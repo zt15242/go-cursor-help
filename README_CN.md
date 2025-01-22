@@ -114,23 +114,6 @@ You've reached your trial request limit.
 ### 🚀 一键解决方案
 
 <details open>
-<summary><b>海外用户</b></summary>
-
-**Linux/macOS**
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.sh | sudo bash
-```
-
-**Windows**
-
-```powershell
-irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/master/scripts/install.ps1 | iex
-```
-
-</details>
-
-<details open>
 <summary><b>国内用户（推荐）</b></summary>
 
 **macOS**
@@ -150,6 +133,9 @@ curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com
 ```powershell
 irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
 ```
+<div align="center">
+<img src="img/run_success.png" alt="运行成功" width="600"/>
+</div>
 
 </details>
 
