@@ -167,39 +167,44 @@ irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaoti
 
 </details>
 
-### 💻 如何打开 Windows 管理员终端
+<details open>
+<summary><b>Windows Terminal Run and Configuration</b></summary>
 
-> **Windows 系统打开管理员终端的方法：**
+### 🖥️ Opening Windows Admin Terminal
+
+> **How to open an administrator terminal in Windows:**
 >
-> 1. 使用快捷键 `Win + X`
-> 2. 在弹出的菜单中选择:
->    - "Windows PowerShell (管理员)"
->    - "Windows Terminal (管理员)"
->    - "终端(管理员)"
->      (根据系统版本可能显示不同选项)
+> 1. Press `Win + X` shortcut key
+> 2. Select one of the following options:
+>    - "Windows PowerShell (Administrator)" 
+>    - "Windows Terminal (Administrator)"
+>    - "Terminal (Administrator)"
+>    (Options may vary depending on your Windows version)
 
-### 🔧 PowerShell 安装指南
+### 🔧 PowerShell Installation Guide 
 
-如果您的系统没有安装 PowerShell,可以通过以下方法安装:
+If PowerShell is not installed on your system, you can install it using one of these methods:
 
-#### 方法一：使用 Winget 安装（推荐）
+#### Method 1: Install via Winget (Recommended)
 
-1. 打开命令提示符或 PowerShell
-2. 运行以下命令:
+1. Open Command Prompt or PowerShell
+2. Run the following command:
 ```powershell
 winget install --id Microsoft.PowerShell --source winget
 ```
 
-#### 方法二：手动下载安装
+#### Method 2: Manual Installation
 
-1. 下载对应系统的安装包:
-   - [PowerShell-7.4.6-win-x64.msi](https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/PowerShell-7.4.6-win-x64.msi) (64位系统)
-   - [PowerShell-7.4.6-win-x86.msi](https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/PowerShell-7.4.6-win-x86.msi) (32位系统)
-   - [PowerShell-7.4.6-win-arm64.msi](https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/PowerShell-7.4.6-win-arm64.msi) (ARM64系统)
+1. Download the installer for your system:
+   - [PowerShell-7.4.6-win-x64.msi](https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/PowerShell-7.4.6-win-x64.msi) (64-bit systems)
+   - [PowerShell-7.4.6-win-x86.msi](https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/PowerShell-7.4.6-win-x86.msi) (32-bit systems)
+   - [PowerShell-7.4.6-win-arm64.msi](https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/PowerShell-7.4.6-win-arm64.msi) (ARM64 systems)
 
-2. 双击下载的安装包,按提示完成安装
+2. Double-click the downloaded installer and follow the installation prompts
 
-> 💡 如果仍然遇到问题,可以参考 [Microsoft 官方安装指南](https://learn.microsoft.com/zh-cn/powershell/scripting/install/installing-powershell-on-windows)
+> 💡 If you encounter any issues, please refer to the [Microsoft Official Installation Guide](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows)
+
+</details>
 
 #### Windows 安装特性:
 
