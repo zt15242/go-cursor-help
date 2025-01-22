@@ -170,16 +170,39 @@ irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaoti
 <details open>
 <summary><b>Windows Terminal Run and Configuration</b></summary>
 
-### 🖥️ Opening Windows Admin Terminal
+#### How to Open Administrator Terminal in Windows:
 
-> **How to open an administrator terminal in Windows:**
+##### Method 1: Using Win + X Shortcut
+```md
+1. Press Win + X key combination
+2. Select one of these options from the menu:
+   - "Windows PowerShell (Administrator)"
+   - "Windows Terminal (Administrator)"
+   - "Terminal (Administrator)"
+   (Options may vary depending on Windows version)
+```
+
+##### Method 2: Using Win + R Run Command
+```md
+1. Press Win + R key combination
+2. Type powershell or pwsh in the Run dialog
+3. Press Ctrl + Shift + Enter to run as administrator
+   or type in the opened window: Start-Process pwsh -Verb RunAs
+4. Enter the reset script in the administrator terminal:
+
+irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
+```
+
+##### Method 3: Using Search
+>![Search PowerShell](img/pwsh_1.png)
 >
-> 1. Press `Win + X` shortcut key
-> 2. Select one of the following options:
->    - "Windows PowerShell (Administrator)" 
->    - "Windows Terminal (Administrator)"
->    - "Terminal (Administrator)"
->    (Options may vary depending on your Windows version)
+>Type pwsh in the search box, right-click and select "Run as administrator"
+>![Run as Administrator](img/pwsh_2.png)
+
+Enter the reset script in the administrator terminal:
+```powershell
+irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
+```
 
 ### 🔧 PowerShell Installation Guide 
 

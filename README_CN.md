@@ -138,17 +138,42 @@ irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaoti
 </div>
 
 </details>
+<details open>
+<summary><b>Windows 管理员终端运行和手动安装</b></summary>
 
-### 💻 如何打开 Windows 管理员终端
+#### Windows 系统打开管理员终端的方法：
 
-> **Windows 系统打开管理员终端的方法：**
+##### 方法一：使用 Win + X 快捷键
+```md
+1. 按下 Win + X 组合键
+2. 在弹出的菜单中选择以下任一选项:
+   - "Windows PowerShell (管理员)"
+   - "Windows Terminal (管理员)" 
+   - "终端(管理员)"
+   (具体选项因Windows版本而异)
+```
+
+##### 方法二：使用 Win + R 运行命令
+```md
+1. 按下 Win + R 组合键
+2. 在运行框中输入 powershell 或 pwsh
+3. 按 Ctrl + Shift + Enter 以管理员身份运行
+   或在打开的窗口中输入: Start-Process pwsh -Verb RunAs
+4. 在管理员终端中输入以下重置脚本:
+
+irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
+```
+
+##### 方法三：通过搜索启动
+>![搜索 PowerShell](img/pwsh_1.png)
 >
-> 1. 使用快捷键 `Win + X`
-> 2. 在弹出的菜单中选择:
->    - "Windows PowerShell (管理员)"
->    - "Windows Terminal (管理员)"
->    - "终端(管理员)"
->      (根据系统版本可能显示不同选项)
+>在搜索框中输入 pwsh，右键选择"以管理员身份运行"
+>![管理员运行](img/pwsh_2.png)
+
+在管理员终端中输入重置脚本:
+```powershell
+irm https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_win_id_modifier.ps1 | iex
+```
 
 ### 🔧 PowerShell 安装指南
 
@@ -172,6 +197,8 @@ winget install --id Microsoft.PowerShell --source winget
 2. 双击下载的安装包,按提示完成安装
 
 > 💡 如果仍然遇到问题,可以参考 [Microsoft 官方安装指南](https://learn.microsoft.com/zh-cn/powershell/scripting/install/installing-powershell-on-windows)
+
+</details>
 
 #### Windows 安装特性:
 
