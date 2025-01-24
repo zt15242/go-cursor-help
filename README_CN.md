@@ -20,6 +20,52 @@
 >
 > 使用前请确认您的 Cursor 版本。
 
+<details>
+<summary><b>🔒 禁用自动更新功能</b></summary>
+
+> 为防止 Cursor 自动更新到不支持的新版本，您可以选择禁用自动更新功能。
+
+#### 方法一：使用内置脚本（推荐）
+
+在运行重置工具时，脚本会询问是否要禁用自动更新：
+```text
+[询问] 是否要禁用 Cursor 自动更新功能？
+0) 否 - 保持默认设置 (按回车键)
+1) 是 - 禁用自动更新
+```
+
+选择 `1` 即可自动完成禁用操作。
+
+#### 方法二：手动禁用
+
+**Windows:**
+1. 关闭所有 Cursor 进程
+2. 删除目录：`%LOCALAPPDATA%\cursor-updater`
+3. 在相同位置创建同名文件（不带扩展名）
+
+**macOS:**
+```bash
+# 关闭 Cursor
+pkill -f "Cursor"
+# 删除更新目录并创建阻止文件
+rm -rf ~/Library/Application\ Support/cursor-updater
+touch ~/Library/Application\ Support/cursor-updater
+```
+
+**Linux:**
+```bash
+# 关闭 Cursor
+pkill -f "Cursor"
+# 删除更新目录并创建阻止文件
+rm -rf ~/.config/cursor-updater
+touch ~/.config/cursor-updater
+```
+
+> ⚠️ **注意：** 禁用自动更新后，需要手动下载并安装新版本。建议在确认新版本可用后再更新。
+
+
+</details>
+
 ---
 
 ### 📝 问题描述
@@ -289,6 +335,9 @@ macOS/Linux 用户可以尝试在系统中找到类似的`cursor-updater`目录�
 - ✅ 原子文件操作
 - ✅ 错误处理和恢复
 </details>
+
+
+
 
 ## 联系方式
 

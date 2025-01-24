@@ -296,7 +296,7 @@ Write-Host ""
 Write-Host "$YELLOW[询问]$NC 是否要禁用 Cursor 自动更新功能？"
 Write-Host "0) 否 - 保持默认设置 (按回车键)"
 Write-Host "1) 是 - 禁用自动更新"
-$choice = Read-Host "请输入选项 (1 或直接回车)"
+$choice = Read-Host "请输入选项 (1)"
 
 if ($choice -eq "1") {
     Write-Host ""
