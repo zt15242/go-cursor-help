@@ -43,6 +43,9 @@ Write-Host "$BLUE================================$NC"
 Write-Host "$GREEN      Cursor ID 修改工具          $NC"
 Write-Host "$BLUE================================$NC"
 Write-Host ""
+Write-Host "$YELLOW[重要提示]$NC 本工具仅支持 Cursor v0.44.11 及以下版本"
+Write-Host "$YELLOW[重要提示]$NC 最新的 0.45.x 版本暂不支持"
+Write-Host ""
 
 # 检查并关闭 Cursor 进程
 Write-Host "$GREEN[信息]$NC 检查 Cursor 进程..."
@@ -136,31 +139,53 @@ $SQM_ID = "{$([System.Guid]::NewGuid().ToString().ToUpper())}"
 Write-Host "$GREEN[信息]$NC 正在更新配置..."
 
 try {
-    # 确保目录存在
-    $storageDir = Split-Path $STORAGE_FILE -Parent
-    if (-not (Test-Path $storageDir)) {
-        New-Item -ItemType Directory -Path $storageDir -Force | Out-Null
+    # 检查配置文件是否存在
+    if (-not (Test-Path $STORAGE_FILE)) {
+        Write-Host "$RED[错误]$NC 未找到配置文件: $STORAGE_FILE"
+        Write-Host "$YELLOW[提示]$NC 请先安装并运行一次 Cursor 后再使用此脚本"
+        Read-Host "按回车键退出"
+        exit 1
     }
 
-    # 写入配置
-    $config = @{
-        'telemetry.machineId' = $MACHINE_ID
-        'telemetry.macMachineId' = $MAC_MACHINE_ID
-        'telemetry.devDeviceId' = $UUID
-        'telemetry.sqmId' = $SQM_ID
-    }
-
-    # 使用 System.IO.File 方法写入文件
+    # 读取现有配置文件
     try {
-        $jsonContent = $config | ConvertTo-Json
+        $originalContent = Get-Content $STORAGE_FILE -Raw -Encoding UTF8
+        
+        # 将 JSON 字符串转换为 PowerShell 对象
+        $config = $originalContent | ConvertFrom-Json 
+
+        # 备份当前值
+        $oldValues = @{
+            'machineId' = $config.'telemetry.machineId'
+            'macMachineId' = $config.'telemetry.macMachineId'
+            'devDeviceId' = $config.'telemetry.devDeviceId'
+            'sqmId' = $config.'telemetry.sqmId'
+        }
+
+        # 更新特定的值
+        $config.'telemetry.machineId' = $MACHINE_ID
+        $config.'telemetry.macMachineId' = $MAC_MACHINE_ID
+        $config.'telemetry.devDeviceId' = $UUID
+        $config.'telemetry.sqmId' = $SQM_ID
+
+        # 将更新后的对象转换回 JSON 并保存
+        $updatedJson = $config | ConvertTo-Json -Depth 10
         [System.IO.File]::WriteAllText(
             [System.IO.Path]::GetFullPath($STORAGE_FILE), 
-            $jsonContent, 
+            $updatedJson, 
             [System.Text.Encoding]::UTF8
         )
-        Write-Host "$GREEN[信息]$NC 成功写入配置文件"
+        Write-Host "$GREEN[信息]$NC 成功更新配置文件"
     } catch {
-        throw "写入文件失败: $_"
+        # 如果出错，尝试恢复原始内容
+        if ($originalContent) {
+            [System.IO.File]::WriteAllText(
+                [System.IO.Path]::GetFullPath($STORAGE_FILE), 
+                $originalContent, 
+                [System.Text.Encoding]::UTF8
+            )
+        }
+        throw "处理 JSON 失败: $_"
     }
 
     # 尝试设置文件权限

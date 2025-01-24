@@ -139,32 +139,27 @@ generate_uuid() {
 
 # 生成新的配置
 generate_new_config() {
+    # 检查配置文件是否存在
+    if [ ! -f "$STORAGE_FILE" ]; then
+        log_error "未找到配置文件: $STORAGE_FILE"
+        log_warn "请先安装并运行一次 Cursor 后再使用此脚本"
+        exit 1
+    }
+    
     # 将 auth0|user_ 转换为字节数组的十六进制
     local prefix_hex=$(echo -n "auth0|user_" | xxd -p)
-    # 生成随机部分
     local random_part=$(generate_random_id)
-    # 拼接前缀的十六进制和随机部分
     local machine_id="${prefix_hex}${random_part}"
     
     local mac_machine_id=$(generate_random_id)
     local device_id=$(generate_uuid | tr '[:upper:]' '[:lower:]')
     local sqm_id="{$(generate_uuid | tr '[:lower:]' '[:upper:]')}"
     
-    if [ -f "$STORAGE_FILE" ]; then
-        # 直接修改现有文件
-        sed -i '' -e "s/\"telemetry\.machineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.machineId\": \"$machine_id\"/" "$STORAGE_FILE"
-        sed -i '' -e "s/\"telemetry\.macMachineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.macMachineId\": \"$mac_machine_id\"/" "$STORAGE_FILE"
-        sed -i '' -e "s/\"telemetry\.devDeviceId\":[[:space:]]*\"[^\"]*\"/\"telemetry.devDeviceId\": \"$device_id\"/" "$STORAGE_FILE"
-        sed -i '' -e "s/\"telemetry\.sqmId\":[[:space:]]*\"[^\"]*\"/\"telemetry.sqmId\": \"$sqm_id\"/" "$STORAGE_FILE"
-    else
-        # 创建新文件
-        echo "{" > "$STORAGE_FILE"
-        echo "    \"telemetry.machineId\": \"$machine_id\"," >> "$STORAGE_FILE"
-        echo "    \"telemetry.macMachineId\": \"$mac_machine_id\"," >> "$STORAGE_FILE"
-        echo "    \"telemetry.devDeviceId\": \"$device_id\"," >> "$STORAGE_FILE"
-        echo "    \"telemetry.sqmId\": \"$sqm_id\"" >> "$STORAGE_FILE"
-        echo "}" >> "$STORAGE_FILE"
-    fi
+    # 修改现有文件
+    sed -i '' -e "s/\"telemetry\.machineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.machineId\": \"$machine_id\"/" "$STORAGE_FILE"
+    sed -i '' -e "s/\"telemetry\.macMachineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.macMachineId\": \"$mac_machine_id\"/" "$STORAGE_FILE"
+    sed -i '' -e "s/\"telemetry\.devDeviceId\":[[:space:]]*\"[^\"]*\"/\"telemetry.devDeviceId\": \"$device_id\"/" "$STORAGE_FILE"
+    sed -i '' -e "s/\"telemetry\.sqmId\":[[:space:]]*\"[^\"]*\"/\"telemetry.sqmId\": \"$sqm_id\"/" "$STORAGE_FILE"
 
     chmod 644 "$STORAGE_FILE"
     chown "$CURRENT_USER" "$STORAGE_FILE"
@@ -227,6 +222,9 @@ main() {
     echo -e "${BLUE}================================${NC}"
     echo -e "${GREEN}      Cursor ID 修改工具         ${NC}"
     echo -e "${BLUE}================================${NC}"
+    echo
+    echo -e "${YELLOW}[重要提示]${NC} 本工具仅支持 Cursor v0.44.11 及以下版本"
+    echo -e "${YELLOW}[重要提示]${NC} 最新的 0.45.x 版本暂不支持"
     echo
     
     check_permissions

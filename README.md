@@ -12,6 +12,14 @@
 
 </div>
 
+> ⚠️ **IMPORTANT NOTICE**
+> 
+> This tool currently supports:
+> - ✅ Cursor v0.44.11 and below
+> - ❌ Latest 0.45.x versions (temporarily unsupported)
+>
+> Please check your Cursor version before using this tool.
+
 ---
 
 ### 📝 Description
