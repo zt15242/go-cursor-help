@@ -179,11 +179,22 @@ generate_new_config() {
     local device_id=$(generate_uuid | tr '[:upper:]' '[:lower:]')
     local sqm_id="{$(generate_uuid | tr '[:lower:]' '[:upper:]')}"
     
-    # 修改现有文件，使用更安全的分隔符和转义
-    sed -i "s/\"telemetry\.machineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.machineId\": \"${machine_id}\"/" "$STORAGE_FILE"
-    sed -i "s/\"telemetry\.macMachineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.macMachineId\": \"${mac_machine_id}\"/" "$STORAGE_FILE"
-    sed -i "s/\"telemetry\.devDeviceId\":[[:space:]]*\"[^\"]*\"/\"telemetry.devDeviceId\": \"${device_id}\"/" "$STORAGE_FILE"
-    sed -i "s/\"telemetry\.sqmId\":[[:space:]]*\"[^\"]*\"/\"telemetry.sqmId\": \"${sqm_id}\"/" "$STORAGE_FILE"
+    # 增强的转义函数
+    escape_sed_replacement() {
+        echo "$1" | sed -e 's/[\/&|]/\\&/g'  # 转义 / & | 符号
+    }
+
+    # 对变量进行转义处理
+    machine_id_escaped=$(escape_sed_replacement "$machine_id")
+    mac_machine_id_escaped=$(escape_sed_replacement "$mac_machine_id")
+    device_id_escaped=$(escape_sed_replacement "$device_id")
+    sqm_id_escaped=$(escape_sed_replacement "$sqm_id")
+
+    # 使用增强正则表达式和转义
+    sed -i "s|\"telemetry\.machineId\": *\"[^\"]*\"|\"telemetry.machineId\": \"${machine_id_escaped}\"|" "$STORAGE_FILE"
+    sed -i "s|\"telemetry\.macMachineId\": *\"[^\"]*\"|\"telemetry.macMachineId\": \"${mac_machine_id_escaped}\"|" "$STORAGE_FILE"
+    sed -i "s|\"telemetry\.devDeviceId\": *\"[^\"]*\"|\"telemetry.devDeviceId\": \"${device_id_escaped}\"|" "$STORAGE_FILE"
+    sed -i "s|\"telemetry\.sqmId\": *\"[^\"]*\"|\"telemetry.sqmId\": \"${sqm_id_escaped}\"|" "$STORAGE_FILE"
 
     # 设置文件权限和所有者
     chmod 444 "$STORAGE_FILE"  # 改为只读权限
