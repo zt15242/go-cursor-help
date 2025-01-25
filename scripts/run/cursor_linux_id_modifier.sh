@@ -185,8 +185,20 @@ generate_new_config() {
     sed -i "s|\"telemetry\.devDeviceId\":[[:space:]]*\"[^\"]*\"|\"telemetry.devDeviceId\": \"$device_id\"|" "$STORAGE_FILE"
     sed -i "s|\"telemetry\.sqmId\":[[:space:]]*\"[^\"]*\"|\"telemetry.sqmId\": \"$sqm_id\"|" "$STORAGE_FILE"
 
-    chmod 644 "$STORAGE_FILE"
+    # 设置文件权限和所有者
+    chmod 444 "$STORAGE_FILE"  # 改为只读权限
     chown "$CURRENT_USER:$CURRENT_USER" "$STORAGE_FILE"
+    
+    # 验证权限设置
+    if [ -w "$STORAGE_FILE" ]; then
+        log_warn "无法设置只读权限，尝试使用其他方法..."
+        # 在 Linux 上使用 chattr 命令设置不可修改属性
+        if command -v chattr &> /dev/null; then
+            chattr +i "$STORAGE_FILE" 2>/dev/null || log_warn "chattr 设置失败"
+        fi
+    else
+        log_info "成功设置文件只读权限"
+    fi
     
     echo
     log_info "已更新配置:"

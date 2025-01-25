@@ -161,8 +161,17 @@ generate_new_config() {
     sed -i '' -e "s/\"telemetry\.devDeviceId\":[[:space:]]*\"[^\"]*\"/\"telemetry.devDeviceId\": \"$device_id\"/" "$STORAGE_FILE"
     sed -i '' -e "s/\"telemetry\.sqmId\":[[:space:]]*\"[^\"]*\"/\"telemetry.sqmId\": \"$sqm_id\"/" "$STORAGE_FILE"
 
-    chmod 644 "$STORAGE_FILE"
+    # 设置文件权限和所有者
+    chmod 444 "$STORAGE_FILE"  # 改为只读权限
     chown "$CURRENT_USER" "$STORAGE_FILE"
+    
+    # 验证权限设置
+    if [ -w "$STORAGE_FILE" ]; then
+        log_warn "无法设置只读权限，尝试使用其他方法..."
+        chattr +i "$STORAGE_FILE" 2>/dev/null || true
+    else
+        log_info "成功设置文件只读权限"
+    fi
     
     echo
     log_info "已更新配置:"

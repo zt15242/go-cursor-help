@@ -197,10 +197,10 @@ try {
         # 创建新的访问控制列表
         $acl = New-Object System.Security.AccessControl.FileSecurity
         
-        # 添加当前用户的完全控制权限
+        # 添加当前用户的只读权限
         $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
             $userAccount,  # 使用域名\用户名格式
-            [System.Security.AccessControl.FileSystemRights]::FullControl,
+            [System.Security.AccessControl.FileSystemRights]::ReadAndExecute,  # 改为只读权限
             [System.Security.AccessControl.InheritanceFlags]::None,
             [System.Security.AccessControl.PropagationFlags]::None,
             [System.Security.AccessControl.AccessControlType]::Allow
@@ -209,13 +209,20 @@ try {
         try {
             $acl.AddAccessRule($accessRule)
             Set-Acl -Path $STORAGE_FILE -AclObject $acl -ErrorAction Stop
-            Write-Host "$GREEN[信息]$NC 成功设置文件权限"
+            Write-Host "$GREEN[信息]$NC 成功设置文件只读权限"
+            
+            # 设置文件为只读属性
+            Set-ItemProperty -Path $STORAGE_FILE -Name IsReadOnly -Value $true
+            Write-Host "$GREEN[信息]$NC 成功设置文件只读属性"
         } catch {
             # 如果第一种方法失败，尝试使用 icacls
             Write-Host "$YELLOW[警告]$NC 使用备选方法设置权限..."
-            $result = Start-Process "icacls.exe" -ArgumentList "`"$STORAGE_FILE`" /grant `"$($env:USERNAME):(F)`"" -Wait -NoNewWindow -PassThru
+            $result = Start-Process "icacls.exe" -ArgumentList "`"$STORAGE_FILE`" /grant `"$($env:USERNAME):(R)`"" -Wait -NoNewWindow -PassThru
             if ($result.ExitCode -eq 0) {
-                Write-Host "$GREEN[信息]$NC 成功使用 icacls 设置文件权限"
+                Write-Host "$GREEN[信息]$NC 成功使用 icacls 设置文件只读权限"
+                # 设置文件为只读属性
+                Set-ItemProperty -Path $STORAGE_FILE -Name IsReadOnly -Value $true
+                Write-Host "$GREEN[信息]$NC 成功设置文件只读属性"
             } else {
                 Write-Host "$YELLOW[警告]$NC 设置文件权限失败，但文件已写入成功"
             }
@@ -224,9 +231,12 @@ try {
         Write-Host "$YELLOW[警告]$NC 设置文件权限失败: $_"
         Write-Host "$YELLOW[警告]$NC 尝试使用 icacls 命令..."
         try {
-            $result = Start-Process "icacls.exe" -ArgumentList "`"$STORAGE_FILE`" /grant `"$($env:USERNAME):(F)`"" -Wait -NoNewWindow -PassThru
+            $result = Start-Process "icacls.exe" -ArgumentList "`"$STORAGE_FILE`" /grant `"$($env:USERNAME):(R)`"" -Wait -NoNewWindow -PassThru
             if ($result.ExitCode -eq 0) {
-                Write-Host "$GREEN[信息]$NC 成功使用 icacls 设置文件权限"
+                Write-Host "$GREEN[信息]$NC 成功使用 icacls 设置文件只读权限"
+                # 设置文件为只读属性
+                Set-ItemProperty -Path $STORAGE_FILE -Name IsReadOnly -Value $true
+                Write-Host "$GREEN[信息]$NC 成功设置文件只读属性"
             } else {
                 Write-Host "$YELLOW[警告]$NC 所有权限设置方法都失败，但文件已写入成功"
             }
