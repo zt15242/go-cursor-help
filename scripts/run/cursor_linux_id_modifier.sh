@@ -179,11 +179,11 @@ generate_new_config() {
     local device_id=$(generate_uuid | tr '[:upper:]' '[:lower:]')
     local sqm_id="{$(generate_uuid | tr '[:lower:]' '[:upper:]')}"
     
-    # 修改现有文件
-    sed -i "s|\"telemetry\.machineId\":[[:space:]]*\"[^\"]*\"|\"telemetry.machineId\": \"$machine_id\"|" "$STORAGE_FILE"
-    sed -i "s|\"telemetry\.macMachineId\":[[:space:]]*\"[^\"]*\"|\"telemetry.macMachineId\": \"$mac_machine_id\"|" "$STORAGE_FILE"
-    sed -i "s|\"telemetry\.devDeviceId\":[[:space:]]*\"[^\"]*\"|\"telemetry.devDeviceId\": \"$device_id\"|" "$STORAGE_FILE"
-    sed -i "s|\"telemetry\.sqmId\":[[:space:]]*\"[^\"]*\"|\"telemetry.sqmId\": \"$sqm_id\"|" "$STORAGE_FILE"
+    # 修改现有文件，使用更安全的分隔符和转义
+    sed -i "s/\"telemetry\.machineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.machineId\": \"${machine_id}\"/" "$STORAGE_FILE"
+    sed -i "s/\"telemetry\.macMachineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.macMachineId\": \"${mac_machine_id}\"/" "$STORAGE_FILE"
+    sed -i "s/\"telemetry\.devDeviceId\":[[:space:]]*\"[^\"]*\"/\"telemetry.devDeviceId\": \"${device_id}\"/" "$STORAGE_FILE"
+    sed -i "s/\"telemetry\.sqmId\":[[:space:]]*\"[^\"]*\"/\"telemetry.sqmId\": \"${sqm_id}\"/" "$STORAGE_FILE"
 
     # 设置文件权限和所有者
     chmod 444 "$STORAGE_FILE"  # 改为只读权限
