@@ -161,14 +161,14 @@ generate_new_config() {
     if ! command -v uuidgen &> /dev/null; then
         log_error "未找到 uuidgen 命令，请安装 uuidgen"
         exit 1
-    }
+    fi
     
     # 检查配置文件是否存在
     if [ ! -f "$STORAGE_FILE" ]; then
         log_error "未找到配置文件: $STORAGE_FILE"
         log_warn "请先安装并运行一次 Cursor 后再使用此脚本"
         exit 1
-    }
+    fi
     
     # 将 auth0|user_ 转换为字节数组的十六进制
     local prefix_hex=$(echo -n "auth0|user_" | xxd -p)
