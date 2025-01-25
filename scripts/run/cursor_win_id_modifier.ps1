@@ -306,41 +306,111 @@ Write-Host ""
 Write-Host "$YELLOW[询问]$NC 是否要禁用 Cursor 自动更新功能？"
 Write-Host "0) 否 - 保持默认设置 (按回车键)"
 Write-Host "1) 是 - 禁用自动更新"
-$choice = Read-Host "请输入选项 (1)"
+$choice = Read-Host "请输入选项 (0)"
 
 if ($choice -eq "1") {
     Write-Host ""
     Write-Host "$GREEN[信息]$NC 正在处理自动更新..."
     $updaterPath = "$env:LOCALAPPDATA\cursor-updater"
 
-    if (Test-Path $updaterPath) {
+    # 定义手动设置教程
+    function Show-ManualGuide {
+        Write-Host ""
+        Write-Host "$YELLOW[警告]$NC 自动设置失败,请尝试手动操作："
+        Write-Host "$YELLOW手动禁用更新步骤：$NC"
+        Write-Host "1. 以管理员身份打开 PowerShell"
+        Write-Host "2. 复制粘贴以下命令："
+        Write-Host "$BLUE命令1 - 删除现有目录（如果存在）：$NC"
+        Write-Host "Remove-Item -Path `"$updaterPath`" -Force -Recurse -ErrorAction SilentlyContinue"
+        Write-Host ""
+        Write-Host "$BLUE命令2 - 创建阻止文件：$NC"
+        Write-Host "New-Item -Path `"$updaterPath`" -ItemType File -Force | Out-Null"
+        Write-Host ""
+        Write-Host "$BLUE命令3 - 设置只读属性：$NC"
+        Write-Host "Set-ItemProperty -Path `"$updaterPath`" -Name IsReadOnly -Value `$true"
+        Write-Host ""
+        Write-Host "$BLUE命令4 - 设置权限（可选）：$NC"
+        Write-Host "icacls `"$updaterPath`" /inheritance:r /grant:r `"`$($env:USERNAME):(R)`""
+        Write-Host ""
+        Write-Host "$YELLOW验证方法：$NC"
+        Write-Host "1. 运行命令：Get-ItemProperty `"$updaterPath`""
+        Write-Host "2. 确认 IsReadOnly 属性为 True"
+        Write-Host "3. 运行命令：icacls `"$updaterPath`""
+        Write-Host "4. 确认只有读取权限"
+        Write-Host ""
+        Write-Host "$YELLOW[提示]$NC 完成后请重启 Cursor"
+    }
+
+    try {
+        # 删除现有目录
+        if (Test-Path $updaterPath) {
+            try {
+                Remove-Item -Path $updaterPath -Force -Recurse -ErrorAction Stop
+                Write-Host "$GREEN[信息]$NC 成功删除 cursor-updater 目录"
+            }
+            catch {
+                Write-Host "$RED[错误]$NC 删除 cursor-updater 目录失败"
+                Show-ManualGuide
+                return
+            }
+        }
+
+        # 创建阻止文件
         try {
-            # 强制删除目录
-            Remove-Item -Path $updaterPath -Force -Recurse -ErrorAction Stop
-            Write-Host "$GREEN[信息]$NC 成功删除 cursor-updater 目录"
-            
-            # 创建同名文件
-            New-Item -Path $updaterPath -ItemType File -Force | Out-Null
+            New-Item -Path $updaterPath -ItemType File -Force -ErrorAction Stop | Out-Null
             Write-Host "$GREEN[信息]$NC 成功创建阻止文件"
         }
         catch {
-            Write-Host "$RED[错误]$NC 处理 cursor-updater 时出错: $_"
+            Write-Host "$RED[错误]$NC 创建阻止文件失败"
+            Show-ManualGuide
+            return
         }
+
+        # 设置文件权限
+        try {
+            # 设置只读属性
+            Set-ItemProperty -Path $updaterPath -Name IsReadOnly -Value $true -ErrorAction Stop
+            
+            # 使用 icacls 设置权限
+            $result = Start-Process "icacls.exe" -ArgumentList "`"$updaterPath`" /inheritance:r /grant:r `"$($env:USERNAME):(R)`"" -Wait -NoNewWindow -PassThru
+            if ($result.ExitCode -ne 0) {
+                throw "icacls 命令失败"
+            }
+            
+            Write-Host "$GREEN[信息]$NC 成功设置文件权限"
+        }
+        catch {
+            Write-Host "$RED[错误]$NC 设置文件权限失败"
+            Show-ManualGuide
+            return
+        }
+
+        # 验证设置
+        try {
+            $fileInfo = Get-ItemProperty $updaterPath
+            if (-not $fileInfo.IsReadOnly) {
+                Write-Host "$RED[错误]$NC 验证失败：文件权限设置可能未生效"
+                Show-ManualGuide
+                return
+            }
+        }
+        catch {
+            Write-Host "$RED[错误]$NC 验证设置失败"
+            Show-ManualGuide
+            return
+        }
+
+        Write-Host "$GREEN[信息]$NC 成功禁用自动更新"
     }
-    else {
-        # 直接创建阻止文件
-        New-Item -Path $updaterPath -ItemType File -Force | Out-Null
-        Write-Host "$GREEN[信息]$NC 成功创建阻止文件"
+    catch {
+        Write-Host "$RED[错误]$NC 发生未知错误: $_"
+        Show-ManualGuide
     }
-}
-elseif ($choice -ne "") {
-    Write-Host "$YELLOW[信息]$NC 保持默认设置，不进行更改"
 }
 else {
-    Write-Host "$YELLOW[信息]$NC 保持默认设置，不进行更改"
+    Write-Host "$GREEN[信息]$NC 保持默认设置，不进行更改"
 }
 
-
-
+Write-Host ""
 Read-Host "按回车键退出"
 exit 0 
