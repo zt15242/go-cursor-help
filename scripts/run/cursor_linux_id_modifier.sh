@@ -295,12 +295,11 @@ disable_auto_update() {
             return 1
         }
         
-        chmod 444 "$updater_path" 2>/dev/null && \
-        chown "$CURRENT_USER:$CURRENT_USER" "$updater_path" 2>/dev/null || {
+        if ! chmod 444 "$updater_path" 2>/dev/null || ! chown "$CURRENT_USER:$CURRENT_USER" "$updater_path" 2>/dev/null; then
             log_error "设置文件权限失败"
             show_manual_guide
             return 1
-        }
+        fi
         
         # 尝试设置不可修改属性
         if command -v chattr &> /dev/null; then
@@ -316,7 +315,7 @@ disable_auto_update() {
             log_error "验证失败：文件权限设置可能未生效"
             show_manual_guide
             return 1
-        }
+        fi
         
         log_info "成功禁用自动更新"
     else
