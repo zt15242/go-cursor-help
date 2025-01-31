@@ -356,7 +356,7 @@ macOS/Linux 用户可以尝试在系统中找到类似的`cursor-updater`目录�
 <td align="center">
 <b>微信交流群</b><br>
 <img src="img/wx_group2.png" width="250" alt="微信群二维码"><br>
-<small>7天内(1月15日前)有效，群满可以加公众号关注最新动态</small>
+<small>7天内(2月7日前)有效，群满可以加公众号关注最新动态</small>
 </td>
 <td align="center">
 <b>公众号</b><br>
