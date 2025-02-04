@@ -113,18 +113,34 @@ if (Test-Path $STORAGE_FILE) {
 # 生成新的 ID
 Write-Host "$GREEN[信息]$NC 正在生成新的 ID..."
 
-# 生成随机字节数组并转换为十六进制字符串的函数
+# 在颜色定义后添加此函数
 function Get-RandomHex {
     param (
         [int]$length
     )
-    $bytes = New-Object byte[] $length
+    
+    $bytes = New-Object byte[] ($length)
     $rng = [System.Security.Cryptography.RNGCryptoServiceProvider]::new()
     $rng.GetBytes($bytes)
+    $hexString = [System.BitConverter]::ToString($bytes) -replace '-',''
     $rng.Dispose()
-    return -join ($bytes | ForEach-Object { '{0:x2}' -f $_ })
+    return $hexString
 }
 
+# 改进 ID 生成函数
+function New-StandardMachineId {
+    $template = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
+    $result = $template -replace '[xy]', {
+        param($match)
+        $r = [Random]::new().Next(16)
+        $v = if ($match.Value -eq "x") { $r } else { ($r -band 0x3) -bor 0x8 }
+        return $v.ToString("x")
+    }
+    return $result
+}
+
+# 在生成 ID 时使用新函数
+$MAC_MACHINE_ID = New-StandardMachineId
 $UUID = [System.Guid]::NewGuid().ToString()
 # 将 auth0|user_ 转换为字节数组的十六进制
 $prefixBytes = [System.Text.Encoding]::UTF8.GetBytes("auth0|user_")
@@ -132,8 +148,30 @@ $prefixHex = -join ($prefixBytes | ForEach-Object { '{0:x2}' -f $_ })
 # 生成32字节(64个十六进制字符)的随机数作为 machineId 的随机部分
 $randomPart = Get-RandomHex -length 32
 $MACHINE_ID = "$prefixHex$randomPart"
-$MAC_MACHINE_ID = Get-RandomHex -length 32
 $SQM_ID = "{$([System.Guid]::NewGuid().ToString().ToUpper())}"
+
+# 在生成新ID后直接执行注册表操作，移除询问
+function Update-MachineGuid {
+    try {
+        $newMachineGuid = [System.Guid]::NewGuid().ToString()
+        $registryPath = "HKLM:\SOFTWARE\Microsoft\Cryptography"
+        
+        # 备份原始值
+        $originalGuid = (Get-ItemProperty -Path $registryPath -Name "MachineGuid").MachineGuid
+        $backupFile = "$BACKUP_DIR\MachineGuid.backup_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+        $originalGuid | Out-File $backupFile -Encoding UTF8
+        
+        # 更新注册表
+        Set-ItemProperty -Path $registryPath -Name "MachineGuid" -Value $newMachineGuid
+        Write-Host "$GREEN[信息]$NC 已更新系统 MachineGuid: $newMachineGuid"
+        Write-Host "$GREEN[信息]$NC 原始值已备份至: $backupFile"
+    }
+    catch {
+        Write-Host "$RED[错误]$NC 更新系统 MachineGuid 失败: $_"
+    }
+}
+
+
 
 # 创建或更新配置文件
 Write-Host "$GREEN[信息]$NC 正在更新配置..."
@@ -187,62 +225,151 @@ try {
         }
         throw "处理 JSON 失败: $_"
     }
+    # 直接执行更新 MachineGuid，不再询问
+    Update-MachineGuid
+    # 显示结果
+    Write-Host ""
+    Write-Host "$GREEN[信息]$NC 已更新配置:"
+    Write-Host "$BLUE[调试]$NC machineId: $MACHINE_ID"
+    Write-Host "$BLUE[调试]$NC macMachineId: $MAC_MACHINE_ID"
+    Write-Host "$BLUE[调试]$NC devDeviceId: $UUID"
+    Write-Host "$BLUE[调试]$NC sqmId: $SQM_ID"
 
-    # 尝试设置文件权限
-    try {
-        # 使用当前用户名和域名
-        $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-        $userAccount = "$($env:USERDOMAIN)\$($env:USERNAME)"
-        
-        # 创建新的访问控制列表
-        $acl = New-Object System.Security.AccessControl.FileSecurity
-        
-        # 添加当前用户的只读权限
-        $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-            $userAccount,  # 使用域名\用户名格式
-            [System.Security.AccessControl.FileSystemRights]::ReadAndExecute,  # 改为只读权限
-            [System.Security.AccessControl.InheritanceFlags]::None,
-            [System.Security.AccessControl.PropagationFlags]::None,
-            [System.Security.AccessControl.AccessControlType]::Allow
-        )
-        
-        try {
-            $acl.AddAccessRule($accessRule)
-            Set-Acl -Path $STORAGE_FILE -AclObject $acl -ErrorAction Stop
-            Write-Host "$GREEN[信息]$NC 成功设置文件只读权限"
-            
-            # 设置文件为只读属性
-            Set-ItemProperty -Path $STORAGE_FILE -Name IsReadOnly -Value $true
-            Write-Host "$GREEN[信息]$NC 成功设置文件只读属性"
-        } catch {
-            # 如果第一种方法失败，尝试使用 icacls
-            Write-Host "$YELLOW[警告]$NC 使用备选方法设置权限..."
-            $result = Start-Process "icacls.exe" -ArgumentList "`"$STORAGE_FILE`" /grant `"$($env:USERNAME):(R)`"" -Wait -NoNewWindow -PassThru
-            if ($result.ExitCode -eq 0) {
-                Write-Host "$GREEN[信息]$NC 成功使用 icacls 设置文件只读权限"
-                # 设置文件为只读属性
-                Set-ItemProperty -Path $STORAGE_FILE -Name IsReadOnly -Value $true
-                Write-Host "$GREEN[信息]$NC 成功设置文件只读属性"
-            } else {
-                Write-Host "$YELLOW[警告]$NC 设置文件权限失败，但文件已写入成功"
-            }
+    # 显示文件树结构
+    Write-Host ""
+    Write-Host "$GREEN[信息]$NC 文件结构:"
+    Write-Host "$BLUE$env:APPDATA\Cursor\User$NC"
+    Write-Host "├── globalStorage"
+    Write-Host "│   ├── storage.json (已修改)"
+    Write-Host "│   └── backups"
+
+    # 列出备份文件
+    $backupFiles = Get-ChildItem "$BACKUP_DIR\*" -ErrorAction SilentlyContinue
+    if ($backupFiles) {
+        foreach ($file in $backupFiles) {
+            Write-Host "│       └── $($file.Name)"
         }
-    } catch {
-        Write-Host "$YELLOW[警告]$NC 设置文件权限失败: $_"
-        Write-Host "$YELLOW[警告]$NC 尝试使用 icacls 命令..."
-        try {
-            $result = Start-Process "icacls.exe" -ArgumentList "`"$STORAGE_FILE`" /grant `"$($env:USERNAME):(R)`"" -Wait -NoNewWindow -PassThru
-            if ($result.ExitCode -eq 0) {
-                Write-Host "$GREEN[信息]$NC 成功使用 icacls 设置文件只读权限"
-                # 设置文件为只读属性
-                Set-ItemProperty -Path $STORAGE_FILE -Name IsReadOnly -Value $true
-                Write-Host "$GREEN[信息]$NC 成功设置文件只读属性"
-            } else {
-                Write-Host "$YELLOW[警告]$NC 所有权限设置方法都失败，但文件已写入成功"
-            }
-        } catch {
-            Write-Host "$YELLOW[警告]$NC icacls 命令失败: $_"
+    } else {
+        Write-Host "│       └── (空)"
+    }
+
+    # 显示公众号信息
+    Write-Host ""
+    Write-Host "$GREEN================================$NC"
+    Write-Host "$YELLOW  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识  $NC"
+    Write-Host "$GREEN================================$NC"
+    Write-Host ""
+    Write-Host "$GREEN[信息]$NC 请重启 Cursor 以应用新的配置"
+    Write-Host ""
+
+    # 询问是否要禁用自动更新
+    Write-Host ""
+    Write-Host "$YELLOW[询问]$NC 是否要禁用 Cursor 自动更新功能？"
+    Write-Host "0) 否 - 保持默认设置 (按回车键)"
+    Write-Host "1) 是 - 禁用自动更新"
+    $choice = Read-Host "请输入选项 (0)"
+
+    if ($choice -eq "1") {
+        Write-Host ""
+        Write-Host "$GREEN[信息]$NC 正在处理自动更新..."
+        $updaterPath = "$env:LOCALAPPDATA\cursor-updater"
+
+        # 定义手动设置教程
+        function Show-ManualGuide {
+            Write-Host ""
+            Write-Host "$YELLOW[警告]$NC 自动设置失败,请尝试手动操作："
+            Write-Host "$YELLOW手动禁用更新步骤：$NC"
+            Write-Host "1. 以管理员身份打开 PowerShell"
+            Write-Host "2. 复制粘贴以下命令："
+            Write-Host "$BLUE命令1 - 删除现有目录（如果存在）：$NC"
+            Write-Host "Remove-Item -Path `"$updaterPath`" -Force -Recurse -ErrorAction SilentlyContinue"
+            Write-Host ""
+            Write-Host "$BLUE命令2 - 创建阻止文件：$NC"
+            Write-Host "New-Item -Path `"$updaterPath`" -ItemType File -Force | Out-Null"
+            Write-Host ""
+            Write-Host "$BLUE命令3 - 设置只读属性：$NC"
+            Write-Host "Set-ItemProperty -Path `"$updaterPath`" -Name IsReadOnly -Value `$true"
+            Write-Host ""
+            Write-Host "$BLUE命令4 - 设置权限（可选）：$NC"
+            Write-Host "icacls `"$updaterPath`" /inheritance:r /grant:r `"`$($env:USERNAME):(R)`""
+            Write-Host ""
+            Write-Host "$YELLOW验证方法：$NC"
+            Write-Host "1. 运行命令：Get-ItemProperty `"$updaterPath`""
+            Write-Host "2. 确认 IsReadOnly 属性为 True"
+            Write-Host "3. 运行命令：icacls `"$updaterPath`""
+            Write-Host "4. 确认只有读取权限"
+            Write-Host ""
+            Write-Host "$YELLOW[提示]$NC 完成后请重启 Cursor"
         }
+
+        try {
+            # 删除现有目录
+            if (Test-Path $updaterPath) {
+                try {
+                    Remove-Item -Path $updaterPath -Force -Recurse -ErrorAction Stop
+                    Write-Host "$GREEN[信息]$NC 成功删除 cursor-updater 目录"
+                }
+                catch {
+                    Write-Host "$RED[错误]$NC 删除 cursor-updater 目录失败"
+                    Show-ManualGuide
+                    return
+                }
+            }
+
+            # 创建阻止文件
+            try {
+                New-Item -Path $updaterPath -ItemType File -Force -ErrorAction Stop | Out-Null
+                Write-Host "$GREEN[信息]$NC 成功创建阻止文件"
+            }
+            catch {
+                Write-Host "$RED[错误]$NC 创建阻止文件失败"
+                Show-ManualGuide
+                return
+            }
+
+            # 设置文件权限
+            try {
+                # 设置只读属性
+                Set-ItemProperty -Path $updaterPath -Name IsReadOnly -Value $true -ErrorAction Stop
+                
+                # 使用 icacls 设置权限
+                $result = Start-Process "icacls.exe" -ArgumentList "`"$updaterPath`" /inheritance:r /grant:r `"$($env:USERNAME):(R)`"" -Wait -NoNewWindow -PassThru
+                if ($result.ExitCode -ne 0) {
+                    throw "icacls 命令失败"
+                }
+                
+                Write-Host "$GREEN[信息]$NC 成功设置文件权限"
+            }
+            catch {
+                Write-Host "$RED[错误]$NC 设置文件权限失败"
+                Show-ManualGuide
+                return
+            }
+
+            # 验证设置
+            try {
+                $fileInfo = Get-ItemProperty $updaterPath
+                if (-not $fileInfo.IsReadOnly) {
+                    Write-Host "$RED[错误]$NC 验证失败：文件权限设置可能未生效"
+                    Show-ManualGuide
+                    return
+                }
+            }
+            catch {
+                Write-Host "$RED[错误]$NC 验证设置失败"
+                Show-ManualGuide
+                return
+            }
+
+            Write-Host "$GREEN[信息]$NC 成功禁用自动更新"
+        }
+        catch {
+            Write-Host "$RED[错误]$NC 发生未知错误: $_"
+            Show-ManualGuide
+        }
+    }
+    else {
+        Write-Host "$GREEN[信息]$NC 保持默认设置，不进行更改"
     }
 
 } catch {
@@ -266,151 +393,104 @@ try {
     }
 }
 
-# 显示结果
 Write-Host ""
-Write-Host "$GREEN[信息]$NC 已更新配置:"
-Write-Host "$BLUE[调试]$NC machineId: $MACHINE_ID"
-Write-Host "$BLUE[调试]$NC macMachineId: $MAC_MACHINE_ID"
-Write-Host "$BLUE[调试]$NC devDeviceId: $UUID"
-Write-Host "$BLUE[调试]$NC sqmId: $SQM_ID"
+Read-Host "按回车键退出"
+exit 0
 
-# 显示文件树结构
-Write-Host ""
-Write-Host "$GREEN[信息]$NC 文件结构:"
-Write-Host "$BLUE$env:APPDATA\Cursor\User$NC"
-Write-Host "├── globalStorage"
-Write-Host "│   ├── storage.json (已修改)"
-Write-Host "│   └── backups"
-
-# 列出备份文件
-$backupFiles = Get-ChildItem "$BACKUP_DIR\*" -ErrorAction SilentlyContinue
-if ($backupFiles) {
-    foreach ($file in $backupFiles) {
-        Write-Host "│       └── $($file.Name)"
-    }
-} else {
-    Write-Host "│       └── (空)"
-}
-
-# 显示公众号信息
-Write-Host ""
-Write-Host "$GREEN================================$NC"
-Write-Host "$YELLOW  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识  $NC"
-Write-Host "$GREEN================================$NC"
-Write-Host ""
-Write-Host "$GREEN[信息]$NC 请重启 Cursor 以应用新的配置"
-Write-Host ""
-
-# 询问是否要禁用自动更新
-Write-Host ""
-Write-Host "$YELLOW[询问]$NC 是否要禁用 Cursor 自动更新功能？"
-Write-Host "0) 否 - 保持默认设置 (按回车键)"
-Write-Host "1) 是 - 禁用自动更新"
-$choice = Read-Host "请输入选项 (0)"
-
-if ($choice -eq "1") {
-    Write-Host ""
-    Write-Host "$GREEN[信息]$NC 正在处理自动更新..."
-    $updaterPath = "$env:LOCALAPPDATA\cursor-updater"
-
-    # 定义手动设置教程
-    function Show-ManualGuide {
-        Write-Host ""
-        Write-Host "$YELLOW[警告]$NC 自动设置失败,请尝试手动操作："
-        Write-Host "$YELLOW手动禁用更新步骤：$NC"
-        Write-Host "1. 以管理员身份打开 PowerShell"
-        Write-Host "2. 复制粘贴以下命令："
-        Write-Host "$BLUE命令1 - 删除现有目录（如果存在）：$NC"
-        Write-Host "Remove-Item -Path `"$updaterPath`" -Force -Recurse -ErrorAction SilentlyContinue"
-        Write-Host ""
-        Write-Host "$BLUE命令2 - 创建阻止文件：$NC"
-        Write-Host "New-Item -Path `"$updaterPath`" -ItemType File -Force | Out-Null"
-        Write-Host ""
-        Write-Host "$BLUE命令3 - 设置只读属性：$NC"
-        Write-Host "Set-ItemProperty -Path `"$updaterPath`" -Name IsReadOnly -Value `$true"
-        Write-Host ""
-        Write-Host "$BLUE命令4 - 设置权限（可选）：$NC"
-        Write-Host "icacls `"$updaterPath`" /inheritance:r /grant:r `"`$($env:USERNAME):(R)`""
-        Write-Host ""
-        Write-Host "$YELLOW验证方法：$NC"
-        Write-Host "1. 运行命令：Get-ItemProperty `"$updaterPath`""
-        Write-Host "2. 确认 IsReadOnly 属性为 True"
-        Write-Host "3. 运行命令：icacls `"$updaterPath`""
-        Write-Host "4. 确认只有读取权限"
-        Write-Host ""
-        Write-Host "$YELLOW[提示]$NC 完成后请重启 Cursor"
-    }
-
+# 在文件写入部分修改
+function Write-ConfigFile {
+    param($config, $filePath)
+    
     try {
-        # 删除现有目录
-        if (Test-Path $updaterPath) {
-            try {
-                Remove-Item -Path $updaterPath -Force -Recurse -ErrorAction Stop
-                Write-Host "$GREEN[信息]$NC 成功删除 cursor-updater 目录"
-            }
-            catch {
-                Write-Host "$RED[错误]$NC 删除 cursor-updater 目录失败"
-                Show-ManualGuide
-                return
-            }
-        }
-
-        # 创建阻止文件
-        try {
-            New-Item -Path $updaterPath -ItemType File -Force -ErrorAction Stop | Out-Null
-            Write-Host "$GREEN[信息]$NC 成功创建阻止文件"
-        }
-        catch {
-            Write-Host "$RED[错误]$NC 创建阻止文件失败"
-            Show-ManualGuide
-            return
-        }
-
-        # 设置文件权限
-        try {
-            # 设置只读属性
-            Set-ItemProperty -Path $updaterPath -Name IsReadOnly -Value $true -ErrorAction Stop
-            
-            # 使用 icacls 设置权限
-            $result = Start-Process "icacls.exe" -ArgumentList "`"$updaterPath`" /inheritance:r /grant:r `"$($env:USERNAME):(R)`"" -Wait -NoNewWindow -PassThru
-            if ($result.ExitCode -ne 0) {
-                throw "icacls 命令失败"
-            }
-            
-            Write-Host "$GREEN[信息]$NC 成功设置文件权限"
-        }
-        catch {
-            Write-Host "$RED[错误]$NC 设置文件权限失败"
-            Show-ManualGuide
-            return
-        }
-
-        # 验证设置
-        try {
-            $fileInfo = Get-ItemProperty $updaterPath
-            if (-not $fileInfo.IsReadOnly) {
-                Write-Host "$RED[错误]$NC 验证失败：文件权限设置可能未生效"
-                Show-ManualGuide
-                return
-            }
-        }
-        catch {
-            Write-Host "$RED[错误]$NC 验证设置失败"
-            Show-ManualGuide
-            return
-        }
-
-        Write-Host "$GREEN[信息]$NC 成功禁用自动更新"
+        # 使用 UTF8 无 BOM 编码
+        $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+        $jsonContent = $config | ConvertTo-Json -Depth 10
+        
+        # 统一使用 LF 换行符
+        $jsonContent = $jsonContent.Replace("`r`n", "`n")
+        
+        [System.IO.File]::WriteAllText(
+            [System.IO.Path]::GetFullPath($filePath),
+            $jsonContent,
+            $utf8NoBom
+        )
+        
+        Write-Host "$GREEN[信息]$NC 成功写入配置文件(UTF8 无 BOM)"
     }
     catch {
-        Write-Host "$RED[错误]$NC 发生未知错误: $_"
-        Show-ManualGuide
+        throw "写入配置文件失败: $_"
+    }
+}
+
+function Get-CursorVersion {
+    try {
+        # 主要检测路径
+        $packagePath = "$env:LOCALAPPDATA\Programs\cursor\resources\app\package.json"
+        
+        if (Test-Path $packagePath) {
+            $packageJson = Get-Content $packagePath -Raw | ConvertFrom-Json
+            if ($packageJson.version) {
+                Write-Host "$GREEN[信息]$NC 检测到 Cursor 版本: $($packageJson.version)"
+                return $packageJson.version
+            }
+        }
+
+        # 备用路径检测
+        $altPath = "$env:LOCALAPPDATA\cursor\resources\app\package.json"
+        if (Test-Path $altPath) {
+            $packageJson = Get-Content $altPath -Raw | ConvertFrom-Json
+            if ($packageJson.version) {
+                Write-Host "$GREEN[信息]$NC 检测到 Cursor 版本: $($packageJson.version)"
+                return $packageJson.version
+            }
+        }
+
+        Write-Host "$YELLOW[警告]$NC 无法检测到 Cursor 版本"
+        Write-Host "$YELLOW[提示]$NC 请确保 Cursor 已正确安装"
+        return $null
+    }
+    catch {
+        Write-Host "$RED[错误]$NC 获取 Cursor 版本失败: $_"
+        return $null
+    }
+}
+
+function Compare-Version {
+    param (
+        [string]$version1,
+        [string]$version2
+    )
+    
+    try {
+        $v1 = [version]($version1 -replace '[^\d\.].*$')
+        $v2 = [version]($version2 -replace '[^\d\.].*$')
+        return $v1.CompareTo($v2)
+    }
+    catch {
+        Write-Host "$RED[错误]$NC 版本比较失败: $_"
+        return 0
+    }
+}
+
+# 在主流程开始时添加版本检查
+Write-Host "$GREEN[信息]$NC 正在检查 Cursor 版本..."
+$cursorVersion = Get-CursorVersion
+
+if ($cursorVersion) {
+    $compareResult = Compare-Version $cursorVersion "0.45.0"
+    if ($compareResult -ge 0) {
+        Write-Host "$RED[错误]$NC 当前版本 ($cursorVersion) 暂不支持"
+        Write-Host "$YELLOW[建议]$NC 请使用 v0.44.11 及以下版本"
+        Write-Host "$YELLOW[建议]$NC 可以从以下地址下载支持的版本:"
+        Write-Host "Windows: https://download.todesktop.com/230313mzl4w4u92/Cursor%20Setup%200.44.11%20-%20Build%20250103fqxdt5u9z-x64.exe"
+        Write-Host "Mac ARM64: https://dl.todesktop.com/230313mzl4w4u92/versions/0.44.11/mac/zip/arm64"
+        Read-Host "按回车键退出"
+        exit 1
+    }
+    else {
+        Write-Host "$GREEN[信息]$NC 当前版本 ($cursorVersion) 支持重置功能"
     }
 }
 else {
-    Write-Host "$GREEN[信息]$NC 保持默认设置，不进行更改"
-}
-
-Write-Host ""
-Read-Host "按回车键退出"
-exit 0 
+    Write-Host "$YELLOW[警告]$NC 无法检测版本，将继续执行..."
+} 
