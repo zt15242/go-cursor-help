@@ -112,6 +112,32 @@ check_and_kill_cursor() {
     exit 1
 }
 
+# 备份系统 ID
+backup_system_id() {
+    log_info "正在备份系统 ID..."
+    local system_id_file="$BACKUP_DIR/system_id.backup_$(date +%Y%m%d_%H%M%S)"
+    
+    # 获取并备份 machine-id
+    {
+        echo "# Original Machine ID Backup" > "$system_id_file"
+        echo "## /var/lib/dbus/machine-id:" >> "$system_id_file"
+        cat /var/lib/dbus/machine-id 2>/dev/null >> "$system_id_file" || echo "Not found" >> "$system_id_file"
+        
+        echo -e "\n## /etc/machine-id:" >> "$system_id_file"
+        cat /etc/machine-id 2>/dev/null >> "$system_id_file" || echo "Not found" >> "$system_id_file"
+        
+        echo -e "\n## hostname:" >> "$system_id_file"
+        hostname >> "$system_id_file"
+        
+        chmod 444 "$system_id_file"
+        chown "$CURRENT_USER:$CURRENT_USER" "$system_id_file"
+        log_info "系统 ID 已备份到: $system_id_file"
+    } || {
+        log_error "备份系统 ID 失败"
+        return 1
+    }
+}
+
 # 备份配置文件
 backup_config() {
     # 检查文件权限
@@ -168,6 +194,22 @@ generate_new_config() {
         log_error "未找到配置文件: $STORAGE_FILE"
         log_warn "请先安装并运行一次 Cursor 后再使用此脚本"
         exit 1
+    fi
+    
+    # 修改系统 machine-id
+    if [ -f "/etc/machine-id" ]; then
+        log_info "正在修改系统 machine-id..."
+        local new_machine_id=$(uuidgen | tr -d '-')
+        
+        # 备份原始 machine-id
+        backup_system_id
+        
+        # 修改 machine-id
+        echo "$new_machine_id" | sudo tee /etc/machine-id > /dev/null
+        if [ -f "/var/lib/dbus/machine-id" ]; then
+            sudo ln -sf /etc/machine-id /var/lib/dbus/machine-id
+        fi
+        log_info "系统 machine-id 已更新"
     fi
     
     # 将 auth0|user_ 转换为字节数组的十六进制

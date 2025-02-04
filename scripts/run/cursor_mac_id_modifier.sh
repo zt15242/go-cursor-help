@@ -106,6 +106,26 @@ check_and_kill_cursor() {
     exit 1
 }
 
+# 备份系统 ID
+backup_system_id() {
+    log_info "正在备份系统 ID..."
+    local system_id_file="$BACKUP_DIR/system_id.backup_$(date +%Y%m%d_%H%M%S)"
+    
+    # 获取并备份 IOPlatformExpertDevice 信息
+    {
+        echo "# Original System ID Backup" > "$system_id_file"
+        echo "## IOPlatformExpertDevice Info:" >> "$system_id_file"
+        ioreg -rd1 -c IOPlatformExpertDevice >> "$system_id_file"
+        
+        chmod 444 "$system_id_file"
+        chown "$CURRENT_USER" "$system_id_file"
+        log_info "系统 ID 已备份到: $system_id_file"
+    } || {
+        log_error "备份系统 ID 失败"
+        return 1
+    }
+}
+
 # 备份配置文件
 backup_config() {
     if [ ! -f "$STORAGE_FILE" ]; then
@@ -144,6 +164,26 @@ generate_new_config() {
         log_error "未找到配置文件: $STORAGE_FILE"
         log_warn "请先安装并运行一次 Cursor 后再使用此脚本"
         exit 1
+    fi
+    
+    # 修改系统 ID
+    log_info "正在修改系统 ID..."
+    
+    # 备份当前系统 ID
+    backup_system_id
+    
+    # 生成新的系统 UUID
+    local new_system_uuid=$(uuidgen)
+    
+    # 尝试修改系统 UUID (需要用户确认)
+    log_warn "注意：修改系统 UUID 需要重启系统才能生效"
+    log_warn "是否要修改系统 UUID？(y/N)"
+    read -r choice
+    if [[ "$choice" =~ ^[Yy]$ ]]; then
+        sudo nvram SystemUUID="$new_system_uuid"
+        log_info "系统 UUID 已更新，请重启系统以应用更改"
+    else
+        log_info "跳过系统 UUID 修改"
     fi
     
     # 将 auth0|user_ 转换为字节数组的十六进制
