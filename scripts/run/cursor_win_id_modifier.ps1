@@ -43,8 +43,46 @@ Write-Host "$BLUE================================$NC"
 Write-Host "$GREEN      Cursor ID 修改工具          $NC"
 Write-Host "$BLUE================================$NC"
 Write-Host ""
-Write-Host "$YELLOW[重要提示]$NC 本工具仅支持 Cursor v0.44.11 及以下版本"
-Write-Host "$YELLOW[重要提示]$NC 最新的 0.45.x 版本暂不支持"
+
+# 获取并显示 Cursor 版本
+function Get-CursorVersion {
+    try {
+        # 主要检测路径
+        $packagePath = "$env:LOCALAPPDATA\Programs\cursor\resources\app\package.json"
+        
+        if (Test-Path $packagePath) {
+            $packageJson = Get-Content $packagePath -Raw | ConvertFrom-Json
+            if ($packageJson.version) {
+                Write-Host "$GREEN[信息]$NC 当前安装的 Cursor 版本: v$($packageJson.version)"
+                return $packageJson.version
+            }
+        }
+
+        # 备用路径检测
+        $altPath = "$env:LOCALAPPDATA\cursor\resources\app\package.json"
+        if (Test-Path $altPath) {
+            $packageJson = Get-Content $altPath -Raw | ConvertFrom-Json
+            if ($packageJson.version) {
+                Write-Host "$GREEN[信息]$NC 当前安装的 Cursor 版本: v$($packageJson.version)"
+                return $packageJson.version
+            }
+        }
+
+        Write-Host "$YELLOW[警告]$NC 无法检测到 Cursor 版本"
+        Write-Host "$YELLOW[提示]$NC 请确保 Cursor 已正确安装"
+        return $null
+    }
+    catch {
+        Write-Host "$RED[错误]$NC 获取 Cursor 版本失败: $_"
+        return $null
+    }
+}
+
+# 获取并显示版本信息
+$cursorVersion = Get-CursorVersion
+Write-Host ""
+
+Write-Host "$YELLOW[重要提示]$NC 最新的 0.45.x (以支持)"
 Write-Host ""
 
 # 检查并关闭 Cursor 进程
@@ -170,8 +208,6 @@ function Update-MachineGuid {
         Write-Host "$RED[错误]$NC 更新系统 MachineGuid 失败: $_"
     }
 }
-
-
 
 # 创建或更新配置文件
 Write-Host "$GREEN[信息]$NC 正在更新配置..."
@@ -419,39 +455,6 @@ function Write-ConfigFile {
     }
     catch {
         throw "写入配置文件失败: $_"
-    }
-}
-
-function Get-CursorVersion {
-    try {
-        # 主要检测路径
-        $packagePath = "$env:LOCALAPPDATA\Programs\cursor\resources\app\package.json"
-        
-        if (Test-Path $packagePath) {
-            $packageJson = Get-Content $packagePath -Raw | ConvertFrom-Json
-            if ($packageJson.version) {
-                Write-Host "$GREEN[信息]$NC 检测到 Cursor 版本: $($packageJson.version)"
-                return $packageJson.version
-            }
-        }
-
-        # 备用路径检测
-        $altPath = "$env:LOCALAPPDATA\cursor\resources\app\package.json"
-        if (Test-Path $altPath) {
-            $packageJson = Get-Content $altPath -Raw | ConvertFrom-Json
-            if ($packageJson.version) {
-                Write-Host "$GREEN[信息]$NC 检测到 Cursor 版本: $($packageJson.version)"
-                return $packageJson.version
-            }
-        }
-
-        Write-Host "$YELLOW[警告]$NC 无法检测到 Cursor 版本"
-        Write-Host "$YELLOW[提示]$NC 请确保 Cursor 已正确安装"
-        return $null
-    }
-    catch {
-        Write-Host "$RED[错误]$NC 获取 Cursor 版本失败: $_"
-        return $null
     }
 }
 
