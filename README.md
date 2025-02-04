@@ -17,7 +17,7 @@
 > This tool currently supports:
 > - ✅ Cursor v0.44.11 and below
 > - ✅ Windows: Latest 0.45.x versions (Supported)
-> - ⚠️ Mac/Linux: Latest 0.45.x versions (Under testing)
+> - ✅ Mac/Linux: Latest 0.45.x versions (Supported, feedback welcome)
 >
 > Please check your Cursor version before using this tool.
 
