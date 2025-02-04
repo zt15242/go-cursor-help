@@ -375,6 +375,40 @@ macOS/Linux users can try to locate similar `cursor-updater` directory in their 
 - ✅ Error handling and recovery
 </details>
 
+<details>
+<summary><b>Registry Modification Notice</b></summary>
+
+> ⚠️ **Important: This tool modifies the Windows Registry**
+
+#### Modified Registry
+- Path: `Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography`
+- Key: `MachineGuid`
+
+#### Potential Impact
+Modifying this registry key may affect:
+- Windows system's unique device identification
+- Device recognition and authorization status of certain software
+- System features based on hardware identification
+
+#### Safety Measures
+1. Automatic Backup
+   - Original value is automatically backed up before modification
+   - Backup location: `%APPDATA%\Cursor\User\globalStorage\backups`
+   - Backup file format: `MachineGuid.backup_YYYYMMDD_HHMMSS`
+
+2. Manual Recovery Steps
+   - Open Registry Editor (regedit)
+   - Navigate to: `Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography`
+   - Right-click on `MachineGuid`
+   - Select "Modify"
+   - Paste the value from backup file
+
+#### Important Notes
+- Verify backup file existence before modification
+- Use backup file to restore original value if needed
+- Administrator privileges required for registry modification
+</details>
+
 ---
 
 ### 📚 Recommended Reading

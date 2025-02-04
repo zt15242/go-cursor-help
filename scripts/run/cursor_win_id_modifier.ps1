@@ -203,6 +203,8 @@ function Update-MachineGuid {
         Set-ItemProperty -Path $registryPath -Name "MachineGuid" -Value $newMachineGuid
         Write-Host "$GREEN[信息]$NC 已更新系统 MachineGuid: $newMachineGuid"
         Write-Host "$GREEN[信息]$NC 原始值已备份至: $backupFile"
+        Write-Host "$GREEN[信息]$NC 注册表路径: 计算机\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography"
+        Write-Host "$GREEN[信息]$NC 注册表项名: MachineGuid"
     }
     catch {
         Write-Host "$RED[错误]$NC 更新系统 MachineGuid 失败: $_"

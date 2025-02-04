@@ -305,6 +305,40 @@ winget install --id Microsoft.PowerShell --source winget
 ### 🔧 技术细节
 
 <details>
+<summary><b>注册表修改说明</b></summary>
+
+> ⚠️ **重要提示：本工具会修改系统注册表**
+
+#### 修改内容
+- 路径：`计算机\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography`
+- 项目：`MachineGuid`
+
+#### 潜在影响
+修改此注册表项可能会影响：
+- Windows 系统对设备的唯一标识
+- 某些软件的设备识别和授权状态
+- 基于硬件标识的系统功能
+
+#### 安全措施
+1. 自动备份
+   - 每次修改前会自动备份原始值
+   - 备份保存在：`%APPDATA%\Cursor\User\globalStorage\backups`
+   - 备份文件格式：`MachineGuid.backup_YYYYMMDD_HHMMSS`
+
+2. 手动恢复方法
+   - 打开注册表编辑器（regedit）
+   - 定位到：`计算机\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography`
+   - 右键点击 `MachineGuid`
+   - 选择"修改"
+   - 粘贴备份文件中的值
+
+#### 注意事项
+- 建议在修改前先确认备份文件的存在
+- 如遇问题可通过备份文件恢复原始值
+- 必须以管理员权限运行才能修改注册表
+</details>
+
+<details>
 <summary><b>配置文件</b></summary>
 
 程序修改 Cursor 的`storage.json`配置文件，位于：
