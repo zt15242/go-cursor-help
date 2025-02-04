@@ -216,44 +216,6 @@ show_follow_info() {
     echo
 }
 
-# 主函数
-main() {
-    clear
-    # 显示 CURSOR Logo
-    echo -e "
-    ██████╗██╗   ██╗██████╗ ███████╗ ██████╗ ██████╗ 
-   ██╔════╝██║   ██║██╔══██╗██╔════╝██╔═══██╗██╔══██╗
-   ██║     ██║   ██║██████╔╝███████╗██║   ██║██████╔╝
-   ██║     ██║   ██║██╔══██╗╚════██║██║   ██║██╔══██╗
-   ╚██████╗╚██████╔╝██║  ██║███████║╚██████╔╝██║  ██║
-    ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
-    "
-    echo -e "${BLUE}================================${NC}"
-    echo -e "${GREEN}      Cursor ID 修改工具         ${NC}"
-    echo -e "${BLUE}================================${NC}"
-    echo
-    echo -e "${YELLOW}[重要提示]${NC} 本工具仅支持 Cursor v0.44.11 及以下版本"
-    echo -e "${YELLOW}[重要提示]${NC} 最新的 0.45.x 版本暂不支持"
-    echo
-    
-    check_permissions
-    check_and_kill_cursor
-    backup_config
-    generate_new_config
-    
-    echo
-    log_info "操作完成！"
-    show_file_tree
-    show_follow_info
-    log_info "请重启 Cursor 以应用新的配置"
-    
-    # 询问是否要禁用自动更新
-    disable_auto_update
-}
-
-# 执行主函数
-main
-
 # 询问是否要禁用自动更新
 disable_auto_update() {
     echo
@@ -313,10 +275,48 @@ disable_auto_update() {
             log_error "验证失败：文件权限设置可能未生效"
             show_manual_guide
             return 1
-        }
+        fi
         
         log_info "成功禁用自动更新"
     else
         log_info "保持默认设置，不进行更改"
     fi
 }
+
+# 主函数
+main() {
+    clear
+    # 显示 CURSOR Logo
+    echo -e "
+    ██████╗██╗   ██╗██████╗ ███████╗ ██████╗ ██████╗ 
+   ██╔════╝██║   ██║██╔══██╗██╔════╝██╔═══██╗██╔══██╗
+   ██║     ██║   ██║██████╔╝███████╗██║   ██║██████╔╝
+   ██║     ██║   ██║██╔══██╗╚════██║██║   ██║██╔══██╗
+   ╚██████╗╚██████╔╝██║  ██║███████║╚██████╔╝██║  ██║
+    ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
+    "
+    echo -e "${BLUE}================================${NC}"
+    echo -e "${GREEN}      Cursor ID 修改工具         ${NC}"
+    echo -e "${BLUE}================================${NC}"
+    echo
+    echo -e "${YELLOW}[重要提示]${NC} 本工具仅支持 Cursor v0.44.11 及以下版本"
+    echo -e "${YELLOW}[重要提示]${NC} 最新的 0.45.x 版本暂不支持"
+    echo
+    
+    check_permissions
+    check_and_kill_cursor
+    backup_config
+    generate_new_config
+    
+    echo
+    log_info "操作完成！"
+    show_file_tree
+    show_follow_info
+    log_info "请重启 Cursor 以应用新的配置"
+    
+    # 询问是否要禁用自动更新
+    disable_auto_update
+}
+
+# 执行主函数
+main
