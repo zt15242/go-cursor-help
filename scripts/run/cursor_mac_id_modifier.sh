@@ -176,8 +176,9 @@ generate_new_config() {
     local new_system_uuid=$(uuidgen)
     
     # 尝试修改系统 UUID (需要用户确认)
-    log_warn "注意：修改系统 UUID 需要重启系统才能生效"
-    log_warn "是否要修改系统 UUID？(y/N)"
+    echo # 添加空行使提示更清晰
+    printf "${YELLOW}注意：修改系统 UUID 需要重启系统才能生效${NC}\n"
+    printf "${YELLOW}是否要修改系统 UUID？(y/N)${NC} "  # 使用 printf 并在末尾加空格
     read -r choice
     if [[ "$choice" =~ ^[Yy]$ ]]; then
         sudo nvram SystemUUID="$new_system_uuid"

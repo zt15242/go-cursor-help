@@ -180,12 +180,12 @@ generate_uuid() {
 generate_new_config() {
     # 错误处理
     if ! command -v xxd &> /dev/null; then
-        log_error "未找到 xxd 命令，请安装 xxd"
+        log_error "未找到 xxd 命令，请安装 xxd,使用 apt-get install xxd"
         exit 1
     fi
     
     if ! command -v uuidgen &> /dev/null; then
-        log_error "未找到 uuidgen 命令，请安装 uuidgen"
+        log_error "未找到 uuidgen 命令，请安装 uuidgen,使用 apt-get install uuid-runtime"
         exit 1
     fi
     
