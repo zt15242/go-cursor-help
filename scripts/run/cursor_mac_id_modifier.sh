@@ -8,7 +8,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' 
+NC='\033[0m' # No Color
 
 # 日志函数
 log_info() {
@@ -230,7 +230,7 @@ modify_cursor_app_files() {
         if [ ! -f "$file" ]; then
             log_warn "文件不存在: $file"
             continue
-        }
+        fi
         
         # 创建备份
         local backup_file="${file}.bak"
@@ -246,36 +246,44 @@ modify_cursor_app_files() {
             log_debug "备份已存在: $backup_file"
         fi
         
-        # 读取文件内容
-        local content
-        content=$(cat "$file") || {
-            log_error "无法读取文件: $file"
-            continue
-        }
+        # 创建临时文件
+        local temp_file=$(mktemp)
         
-        # 查找 IOPlatformUUID 位置
-        local uuid_pos
-        uuid_pos=$(printf "%s" "$content" | grep -b -o "IOPlatformUUID" | cut -d: -f1)
-        if [ -z "$uuid_pos" ]; then
-            log_warn "未找到 IOPlatformUUID: $file"
+        # 读取文件内容并进行修改
+        if ! awk '
+            /IOPlatformUUID/ {
+                in_block = 1
+                print "return crypto.randomUUID();"
+                next
+            }
+            in_block && /}/ {
+                in_block = 0
+                next
+            }
+            !in_block {
+                print
+            }
+        ' "$file" > "$temp_file"; then
+            log_error "处理文件内容失败: $file"
+            rm -f "$temp_file"
             continue
-        }
+        fi
         
-        # 从 UUID 位置向前查找 switch
-        local before_uuid="${content:0:$uuid_pos}"
-        local switch_pos
-        switch_pos=$(printf "%s" "$before_uuid" | grep -b -o "switch" | tail -n1 | cut -d: -f1)
-        if [ -z "$switch_pos" ]; then
-            log_warn "未找到 switch 关键字: $file"
+        # 验证临时文件不为空
+        if [ ! -s "$temp_file" ]; then
+            log_error "生成的文件为空: $file"
+            rm -f "$temp_file"
             continue
-        }
+        fi
         
-        # 构建新的文件内容
-        printf "%sreturn crypto.randomUUID();\n%s" "${content:0:$switch_pos}" "${content:$switch_pos}" > "$file" || {
-            log_error "无法写入文件: $file"
+        # 替换原文件
+        if ! mv "$temp_file" "$file"; then
+            log_error "无法更新文件: $file"
+            rm -f "$temp_file"
             continue
-        }
+        fi
         
+        # 设置权限
         chmod 644 "$file"
         chown "$CURRENT_USER" "$file"
         
