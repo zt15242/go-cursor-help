@@ -175,17 +175,10 @@ generate_new_config() {
     # 生成新的系统 UUID
     local new_system_uuid=$(uuidgen)
     
-    # 尝试修改系统 UUID (需要用户确认)
-    echo # 添加空行使提示更清晰
-    printf "${YELLOW}注意：修改系统 UUID 需要重启系统才能生效${NC}\n"
-    printf "${YELLOW}是否要修改系统 UUID？(y/N)${NC} "  # 使用 printf 并在末尾加空格
-    read -r choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then
-        sudo nvram SystemUUID="$new_system_uuid"
-        log_info "系统 UUID 已更新，请重启系统以应用更改"
-    else
-        log_info "跳过系统 UUID 修改"
-    fi
+    # 修改系统 UUID
+    sudo nvram SystemUUID="$new_system_uuid"
+    printf "${YELLOW}系统 UUID 已更新为: $new_system_uuid${NC}\n"
+    printf "${YELLOW}请重启系统以使更改生效${NC}\n"
     
     # 将 auth0|user_ 转换为字节数组的十六进制
     local prefix_hex=$(echo -n "auth0|user_" | xxd -p)
