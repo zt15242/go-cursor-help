@@ -46,6 +46,11 @@ fi
 STORAGE_FILE="$HOME/Library/Application Support/Cursor/User/globalStorage/storage.json"
 BACKUP_DIR="$HOME/Library/Application Support/Cursor/User/globalStorage/backups"
 
+# 定义 Cursor 应用程序文件路径
+CURSOR_APP_PATH="/Applications/Cursor.app"
+MAIN_JS_PATH="$CURSOR_APP_PATH/Contents/Resources/app/out/main.js"
+CLI_JS_PATH="$CURSOR_APP_PATH/Contents/Resources/app/out/vs/code/node/cliProcessMain.js"
+
 # 检查权限
 check_permissions() {
     if [ "$EUID" -ne 0 ]; then
@@ -215,6 +220,69 @@ generate_new_config() {
     log_debug "sqmId: $sqm_id"
 }
 
+# 修改 Cursor 主程序文件
+modify_cursor_app_files() {
+    log_info "正在修改 Cursor 主程序文件..."
+    
+    local files=("$MAIN_JS_PATH" "$CLI_JS_PATH")
+    
+    for file in "${files[@]}"; do
+        if [ ! -f "$file" ]; then
+            log_warn "文件不存在: $file"
+            continue
+        }
+        
+        # 创建备份
+        local backup_file="${file}.bak"
+        if [ ! -f "$backup_file" ]; then
+            log_info "正在备份 $file"
+            cp "$file" "$backup_file" || {
+                log_error "无法备份文件: $file"
+                continue
+            }
+            chmod 644 "$backup_file"
+            chown "$CURRENT_USER" "$backup_file"
+        else
+            log_debug "备份已存在: $backup_file"
+        fi
+        
+        # 读取文件内容
+        local content
+        content=$(cat "$file") || {
+            log_error "无法读取文件: $file"
+            continue
+        }
+        
+        # 查找 IOPlatformUUID 位置
+        local uuid_pos
+        uuid_pos=$(printf "%s" "$content" | grep -b -o "IOPlatformUUID" | cut -d: -f1)
+        if [ -z "$uuid_pos" ]; then
+            log_warn "未找到 IOPlatformUUID: $file"
+            continue
+        }
+        
+        # 从 UUID 位置向前查找 switch
+        local before_uuid="${content:0:$uuid_pos}"
+        local switch_pos
+        switch_pos=$(printf "%s" "$before_uuid" | grep -b -o "switch" | tail -n1 | cut -d: -f1)
+        if [ -z "$switch_pos" ]; then
+            log_warn "未找到 switch 关键字: $file"
+            continue
+        }
+        
+        # 构建新的文件内容
+        printf "%sreturn crypto.randomUUID();\n%s" "${content:0:$switch_pos}" "${content:$switch_pos}" > "$file" || {
+            log_error "无法写入文件: $file"
+            continue
+        }
+        
+        chmod 644 "$file"
+        chown "$CURRENT_USER" "$file"
+        
+        log_info "成功修改文件: $file"
+    done
+}
+
 # 显示文件树结构
 show_file_tree() {
     local base_dir=$(dirname "$STORAGE_FILE")
@@ -342,6 +410,7 @@ main() {
     check_and_kill_cursor
     backup_config
     generate_new_config
+    modify_cursor_app_files
     
     echo
     log_info "操作完成！"
