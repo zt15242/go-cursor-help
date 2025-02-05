@@ -245,7 +245,7 @@ show_file_tree() {
 show_follow_info() {
     echo
     echo -e "${GREEN}================================${NC}"
-    echo -e "${YELLOW}  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识 ${NC}"
+    echo -e "${YELLOW}  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识(脚本免费、关注公众号加群有更多技巧和大佬) ${NC}"
     echo -e "${GREEN}================================${NC}"
     echo
 }
@@ -320,7 +320,7 @@ disable_auto_update() {
 # 主函数
 main() {
     clear
-    # 显示 CURSOR Logo
+    # 显示 Logo
     echo -e "
     ██████╗██╗   ██╗██████╗ ███████╗ ██████╗ ██████╗ 
    ██╔════╝██║   ██║██╔══██╗██╔════╝██╔═══██╗██╔══██╗
@@ -330,11 +330,12 @@ main() {
     ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
     "
     echo -e "${BLUE}================================${NC}"
-    echo -e "${GREEN}      Cursor ID 修改工具         ${NC}"
+    echo -e "${GREEN}      Cursor ID 修改工具          ${NC}"
+    echo -e "${YELLOW}  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识(脚本免费、关注公众号加群有更多技巧和大佬)  ${NC}"
     echo -e "${BLUE}================================${NC}"
     echo
-    echo -e "${YELLOW}[重要提示]${NC} 本工具仅支持 Cursor v0.44.11 及以下版本"
-    echo -e "${YELLOW}[重要提示]${NC} 最新的 0.45.x 版本暂不支持"
+    echo -e "${YELLOW}[重要提示]${NC} 本工具支持 Cursor v0.45.x"
+    echo -e "${YELLOW}[重要提示]${NC} 本工具免费，关注公众号加群有更多技巧和大佬"
     echo
     
     check_permissions
