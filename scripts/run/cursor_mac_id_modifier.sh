@@ -278,11 +278,16 @@ modify_cursor_app_files() {
         fi
         
         # 验证文件内容是否包含必要的代码
-        if ! grep -q "crypto.randomUUID()" "$temp_file"; then
+        log_debug "正在验证文件内容..."
+        if ! grep -q "crypto\s*\.\s*randomUUID\s*(" "$temp_file"; then
+            log_debug "文件内容预览："
+            head -n 20 "$temp_file" | log_debug
             log_error "修改后的文件缺少必要的代码: $file"
             rm -f "$temp_file"
             continue
         fi
+        
+        log_debug "文件验证通过"
         
         # 替换原文件
         if ! mv "$temp_file" "$file"; then
