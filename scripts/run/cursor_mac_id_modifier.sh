@@ -230,7 +230,7 @@ modify_cursor_app_files() {
         if [ ! -f "$file" ]; then
             log_warn "文件不存在: $file"
             continue
-        fi
+        }
         
         # 创建备份
         local backup_file="${file}.bak"
@@ -249,45 +249,53 @@ modify_cursor_app_files() {
         # 创建临时文件
         local temp_file=$(mktemp)
         
-        # 读取文件内容并进行修改
-        if ! awk '
-            /IOPlatformUUID/ {
-                in_block = 1
-                print "return crypto.randomUUID();"
-                next
-            }
-            in_block && /}/ {
-                in_block = 0
-                next
-            }
-            !in_block {
-                print
-            }
-        ' "$file" > "$temp_file"; then
+        # 读取文件内容
+        local content=$(<"$file")
+        
+        # 查找关键位置
+        local uuid_pattern="IOPlatformUUID"
+        if ! echo "$content" | grep -q "$uuid_pattern"; then
+            log_warn "在文件 $file 中未找到 $uuid_pattern"
+            rm -f "$temp_file"
+            continue
+        }
+        
+        # 构建替换内容
+        local replacement='case "IOPlatformUUID": return crypto.randomUUID();'
+        
+        # 使用 sed 进行替换
+        if ! sed -E "s/(case \"IOPlatformUUID\":)[^}]+}/\1 return crypto.randomUUID();/" "$file" > "$temp_file"; then
             log_error "处理文件内容失败: $file"
             rm -f "$temp_file"
             continue
-        fi
+        }
         
-        # 验证临时文件不为空
+        # 验证临时文件
         if [ ! -s "$temp_file" ]; then
             log_error "生成的文件为空: $file"
             rm -f "$temp_file"
             continue
-        fi
+        }
+        
+        # 验证文件内容是否包含必要的代码
+        if ! grep -q "crypto.randomUUID()" "$temp_file"; then
+            log_error "修改后的文件缺少必要的代码: $file"
+            rm -f "$temp_file"
+            continue
+        }
         
         # 替换原文件
         if ! mv "$temp_file" "$file"; then
             log_error "无法更新文件: $file"
             rm -f "$temp_file"
             continue
-        fi
+        }
         
         # 设置权限
         chmod 644 "$file"
         chown "$CURRENT_USER" "$file"
         
-        log_info "成功修改文件: $file"
+        log_info "成功修改文件: $file 请重启Cursor，如果重启后无法打开或者报异常，请重新安装Cursor"
     done
 }
 
