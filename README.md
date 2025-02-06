@@ -214,7 +214,7 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/
 **macOS**
 
 ```bash
-curl -fsSL https://aizaozao.com/accelerate.php/c | sudo bash
+curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | sudo bash
 ```
 
 **Linux**
