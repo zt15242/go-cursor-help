@@ -406,6 +406,98 @@ disable_auto_update() {
     fi
 }
 
+# 生成随机MAC地址
+generate_random_mac() {
+    # 生成随机MAC地址,保持第一个字节的第二位为0(保证是单播地址)
+    printf '02:%02x:%02x:%02x:%02x:%02x' $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256))
+}
+
+# 获取网络接口列表
+get_network_interfaces() {
+    networksetup -listallhardwareports | awk '/Hardware Port|Ethernet Address/ {print $NF}' | paste - - | grep -v 'N/A'
+}
+
+# 备份MAC地址
+backup_mac_addresses() {
+    log_info "正在备份MAC地址..."
+    local backup_file="$BACKUP_DIR/mac_addresses.backup_$(date +%Y%m%d_%H%M%S)"
+    
+    {
+        echo "# Original MAC Addresses Backup - $(date)" > "$backup_file"
+        echo "## Network Interfaces:" >> "$backup_file"
+        networksetup -listallhardwareports >> "$backup_file"
+        
+        chmod 444 "$backup_file"
+        chown "$CURRENT_USER" "$backup_file"
+        log_info "MAC地址已备份到: $backup_file"
+    } || {
+        log_error "备份MAC地址失败"
+        return 1
+    }
+}
+
+# 修改MAC地址
+modify_mac_address() {
+    log_info "正在获取网络接口信息..."
+    
+    # 备份当前MAC地址
+    backup_mac_addresses
+    
+    # 获取所有网络接口
+    local interfaces=$(get_network_interfaces)
+    
+    if [ -z "$interfaces" ]; then
+        log_error "未找到可用的网络接口"
+        return 1
+    }
+    
+    echo
+    log_info "发现以下网络接口:"
+    echo "$interfaces" | nl -w2 -s') '
+    echo
+    
+    echo -n "请选择要修改的接口编号 (按回车跳过): "
+    read -r choice
+    
+    if [ -z "$choice" ]; then
+        log_info "跳过MAC地址修改"
+        return 0
+    fi
+    
+    # 获取选择的接口名称
+    local selected_interface=$(echo "$interfaces" | sed -n "${choice}p" | awk '{print $1}')
+    
+    if [ -z "$selected_interface" ]; then
+        log_error "无效的选择"
+        return 1
+    }
+    
+    # 生成新的MAC地址
+    local new_mac=$(generate_random_mac)
+    
+    log_info "正在修改接口 $selected_interface 的MAC地址..."
+    
+    # 关闭网络接口
+    sudo ifconfig "$selected_interface" down || {
+        log_error "无法关闭网络接口"
+        return 1
+    }
+    
+    # 修改MAC地址
+    if sudo ifconfig "$selected_interface" ether "$new_mac"; then
+        # 重新启用网络接口
+        sudo ifconfig "$selected_interface" up
+        log_info "成功修改MAC地址为: $new_mac"
+        echo
+        log_warn "请注意: MAC地址修改可能需要重新连接网络才能生效"
+    else
+        log_error "修改MAC地址失败"
+        # 尝试恢复网络接口
+        sudo ifconfig "$selected_interface" up
+        return 1
+    fi
+}
+
 # 主函数
 main() {
     clear
@@ -432,6 +524,17 @@ main() {
     backup_config
     generate_new_config
     modify_cursor_app_files
+    
+    # 添加MAC地址修改选项
+    echo
+    log_warn "是否要修改MAC地址？"
+    echo "0) 否 - 保持默认设置 (按回车键)"
+    echo "1) 是 - 修改MAC地址"
+    read -r choice
+    
+    if [ "$choice" = "1" ]; then
+        modify_mac_address
+    fi
     
     echo
     log_info "操作完成！"

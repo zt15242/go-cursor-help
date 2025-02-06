@@ -20,7 +20,15 @@
 > - ✅ Mac/Linux: Latest 0.45.x versions (Supported, feedback welcome)
 >
 > Please check your Cursor version before using this tool.
-
+>
+> ⚠️ **MAC Address Modification Warning**
+> 
+> For Mac users: This script includes a MAC address modification feature that will:
+> - Modify your network interface's MAC address
+> - Backup original MAC addresses before modification
+> - This modification may temporarily affect network connectivity
+> - You can skip this step when prompted during execution
+>
 > 💾 **Download Cursor v0.44.11**
 > 
 > Windows:
