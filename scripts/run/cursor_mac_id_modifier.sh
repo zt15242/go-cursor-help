@@ -230,7 +230,7 @@ modify_cursor_app_files() {
         if [ ! -f "$file" ]; then
             log_warn "文件不存在: $file"
             continue
-        }
+        fi
         
         # 创建备份
         local backup_file="${file}.bak"
@@ -258,7 +258,7 @@ modify_cursor_app_files() {
             log_warn "在文件 $file 中未找到 $uuid_pattern"
             rm -f "$temp_file"
             continue
-        }
+        fi
         
         # 构建替换内容
         local replacement='case "IOPlatformUUID": return crypto.randomUUID();'
@@ -268,28 +268,28 @@ modify_cursor_app_files() {
             log_error "处理文件内容失败: $file"
             rm -f "$temp_file"
             continue
-        }
+        fi
         
         # 验证临时文件
         if [ ! -s "$temp_file" ]; then
             log_error "生成的文件为空: $file"
             rm -f "$temp_file"
             continue
-        }
+        fi
         
         # 验证文件内容是否包含必要的代码
         if ! grep -q "crypto.randomUUID()" "$temp_file"; then
             log_error "修改后的文件缺少必要的代码: $file"
             rm -f "$temp_file"
             continue
-        }
+        fi
         
         # 替换原文件
         if ! mv "$temp_file" "$file"; then
             log_error "无法更新文件: $file"
             rm -f "$temp_file"
             continue
-        }
+        fi
         
         # 设置权限
         chmod 644 "$file"
