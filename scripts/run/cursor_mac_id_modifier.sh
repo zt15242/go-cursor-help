@@ -449,7 +449,7 @@ modify_mac_address() {
     if [ -z "$interfaces" ]; then
         log_error "未找到可用的网络接口"
         return 1
-    }
+    fi
     
     echo
     log_info "发现以下网络接口:"
@@ -470,7 +470,7 @@ modify_mac_address() {
     if [ -z "$selected_interface" ]; then
         log_error "无效的选择"
         return 1
-    }
+    fi
     
     # 生成新的MAC地址
     local new_mac=$(generate_random_mac)
