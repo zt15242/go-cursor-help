@@ -213,6 +213,7 @@ generate_new_config() {
         exit 1
     fi
     
+    
     # 修改现有文件
     modify_or_add_config "telemetry.machineId" "$machine_id" "$STORAGE_FILE"
     modify_or_add_config "telemetry.macMachineId" "$mac_machine_id" "$STORAGE_FILE"
@@ -232,7 +233,7 @@ generate_new_config() {
     fi
     
     echo
-    log_info "已更新配置:"
+    log_info "已更新配置: $STORAGE_FILE"
     log_debug "machineId: $machine_id"
     log_debug "macMachineId: $mac_machine_id"
     log_debug "devDeviceId: $device_id"
@@ -319,8 +320,9 @@ modify_cursor_app_files() {
         chmod 644 "$file"
         chown "$CURRENT_USER" "$file"
         
-        log_info "成功修改文件: $file 请重启Cursor，如果重启后无法打开或者报异常，请重新安装Cursor"
+        log_info "成功修改文件: $file"
     done
+     log_info "请重启Cursor，如果重启后无法打开或者报异常，请重新安装Cursor"
 }
 
 # 显示文件树结构
