@@ -415,67 +415,29 @@ show_follow_info() {
     echo
 }
 
-# 询问是否要禁用自动更新
+# 禁用自动更新
 disable_auto_update() {
-    while true; do
+    local updater_path="$HOME/Library/Application Support/Caches/cursor-updater"
+    
+    log_info "正在处理自动更新..."
+    
+    # 尝试自动执行
+    if sudo rm -rf "$updater_path" && \
+       sudo touch "$updater_path" && \
+       sudo chmod 444 "$updater_path"; then
+        log_info "成功禁用自动更新"
         echo
-        log_warn "是否要禁用 Cursor 自动更新功能？"
-        echo "0) 否 - 保持默认设置"
-        echo "1) 是 - 禁用自动更新"
-        echo "q) 退出"
+        log_info "验证方法："
+        echo "运行命令：ls -l \"$updater_path\""
+        echo "确认文件权限显示为：r--r--r--"
+    else
+        log_error "自动设置失败，请手动执行以下命令："
         echo
-        
-        # 确保等待用户输入
-        printf "请选择 [0/1/q]: "
-        read -r choice < /dev/tty || true
-        
-        # 调试输出
-        log_debug "收到的输入: '$choice'"
-        
-        # 如果输入为空，继续循环
-        if [ -z "$choice" ]; then
-            log_error "未收到输入，请重试"
-            continue
-        fi
-        
-        case "$choice" in
-            0)
-                log_info "保持默认设置，不进行更改"
-                return 0
-                ;;
-            1)
-                echo
-                log_info "正在处理自动更新..."
-                local updater_path="$HOME/Library/Application Support/Caches/cursor-updater"
-                
-                # 尝试自动执行
-                if sudo rm -rf "$updater_path" && \
-                   sudo touch "$updater_path" && \
-                   sudo chmod 444 "$updater_path"; then
-                    log_info "成功禁用自动更新"
-                    echo
-                    log_info "验证方法："
-                    echo "运行命令：ls -l \"$updater_path\""
-                    echo "确认文件权限显示为：r--r--r--"
-                else
-                    log_error "自动设置失败，请手动执行以下命令："
-                    echo
-                    echo -e "${BLUE}sudo rm -rf \"$updater_path\" && sudo touch \"$updater_path\" && sudo chmod 444 \"$updater_path\"${NC}"
-                fi
-                
-                echo
-                log_info "完成后请重启 Cursor"
-                return 0
-                ;;
-            q|Q)
-                log_info "退出自动更新设置"
-                return 0
-                ;;
-            *)
-                log_error "无效的选择，请重新输入"
-                ;;
-        esac
-    done
+        echo -e "${BLUE}sudo rm -rf \"$updater_path\" && sudo touch \"$updater_path\" && sudo chmod 444 \"$updater_path\"${NC}"
+    fi
+    
+    echo
+    log_info "完成后请重启 Cursor"
 }
 
 # 生成随机MAC地址
@@ -615,7 +577,18 @@ main() {
     log_info "请重启 Cursor 以应用新的配置"
     
     # 询问是否要禁用自动更新
-    disable_auto_update
+    echo
+    log_warn "是否要禁用 Cursor 自动更新功能？"
+    echo "0) 否 - 保持默认设置 (按回车键)"
+    echo "1) 是 - 禁用自动更新"
+    read -r choice
+    
+    if [ "$choice" = "1" ]; then
+        disable_auto_update
+    fi
+    
+    # 显示最后的提示信息
+    show_follow_info
 }
 
 # 执行主函数
