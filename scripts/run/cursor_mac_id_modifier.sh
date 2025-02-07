@@ -536,8 +536,29 @@ modify_mac_address() {
     fi
 }
 
+# 新增恢复功能选项
+add_restore_feature() {
+    local backup_files=("$BACKUP_DIR"/*.backup_*)
+    echo "可用的备份文件："
+    select backup in "${backup_files[@]}"; do
+        if [ -n "$backup" ]; then
+            cp "$backup" "$STORAGE_FILE"
+            log_info "已从备份恢复配置"
+            break
+        fi
+    done
+}
+
 # 主函数
 main() {
+    
+    # 新增环境检查
+    if [[ $(uname) != "Darwin" ]]; then
+        log_error "本脚本仅支持 macOS 系统"
+        exit 1
+    fi
+    
+    
     clear
     # 显示 Logo
     echo -e "
@@ -586,6 +607,9 @@ main() {
     log_info "请重启 Cursor 以应用新的配置"
     # 显示最后的提示信息
     show_follow_info
+
+    # 新增恢复功能选项
+    restore_feature
 }
 
 # 执行主函数
