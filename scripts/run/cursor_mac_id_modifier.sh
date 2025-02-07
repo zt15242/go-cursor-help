@@ -168,15 +168,27 @@ modify_or_add_config() {
     local value="$2"
     local file="$3"
     
+    if [ ! -f "$file" ]; then
+        log_error "文件不存在: $file"
+        return 1
+    fi
+    
     # 检查key是否存在
     if grep -q "\"$key\":" "$file"; then
         # key存在,执行替换
-        sed -i '' -e "s/\"$key\":[[:space:]]*\"[^\"]*\"/\"$key\": \"$value\"/" "$file"
+        if ! sed -i '' -e "s/\"$key\":[[:space:]]*\"[^\"]*\"/\"$key\": \"$value\"/" "$file"; then
+            log_error "修改配置失败: $key"
+            return 1
+        fi
     else
         # key不存在,添加新的key-value对
-        # 在最后一个}前添加新行
-        sed -i '' -e "s/}$/,\n    \"$key\": \"$value\"\n}/" "$file"
+        if ! sed -i '' -e "s/}$/,\n    \"$key\": \"$value\"\n}/" "$file"; then
+            log_error "添加配置失败: $key"
+            return 1
+        fi
     fi
+    
+    return 0
 }
 
 # 生成新的配置
