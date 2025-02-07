@@ -213,9 +213,7 @@ generate_new_config() {
     fi
     
     # 将 auth0|user_ 转换为字节数组的十六进制
-    local prefix_hex=$(echo -n "auth0|user_" | xxd -p)
-    local random_part=$(generate_random_id)
-    local machine_id="${prefix_hex}${random_part}"
+    local machine_id="auth0|user_$(generate_random_id | cut -c 1-32)"
     
     local mac_machine_id=$(generate_random_id)
     local device_id=$(generate_uuid | tr '[:upper:]' '[:lower:]')
@@ -223,7 +221,7 @@ generate_new_config() {
     
     # 增强的转义函数
     escape_sed_replacement() {
-        echo "$1" | sed -e 'g'
+        echo "$1" | sed -e 's/[\/&]/\\&/g'
     }
 
     # 对变量进行转义处理
@@ -259,6 +257,18 @@ generate_new_config() {
     log_debug "macMachineId: $mac_machine_id"
     log_debug "devDeviceId: $device_id"
     log_debug "sqmId: $sqm_id"
+
+    # 在generate_new_config函数末尾添加验证
+    log_info "验证配置文件有效性..."
+    if ! command -v jq &> /dev/null; then
+        log_warn "未找到jq命令，跳过JSON验证"
+    else
+        if ! jq empty "$STORAGE_FILE" &> /dev/null; then
+            log_error "配置文件格式错误，正在恢复备份..."
+            cp "$(ls -t "$BACKUP_DIR"/storage.json.backup_* | head -1)" "$STORAGE_FILE"
+            exit 1
+        fi
+    fi
 }
 
 # 显示文件树结构
