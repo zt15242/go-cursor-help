@@ -341,69 +341,86 @@ show_follow_info() {
 
 # 询问是否要禁用自动更新
 disable_auto_update() {
-    echo
-    log_warn "是否要禁用 Cursor 自动更新功能？"
-    echo "0) 否 - 保持默认设置 (按回车键)"
-    echo "1) 是 - 禁用自动更新"
-    read -r choice
-    
-    if [ "$choice" = "1" ]; then
+    while true; do
         echo
-        log_info "正在处理自动更新..."
-        local updater_path="$HOME/Library/Application Support/cursor-updater"
+        log_warn "是否要禁用 Cursor 自动更新功能？"
+        echo "0) 否 - 保持默认设置 (按回车键)"
+        echo "1) 是 - 禁用自动更新"
+        echo "q) 退出"
+        echo
+        echo -n "请选择 [0/1/q] (按回车键选择默认选项0): "
+        read -r choice
         
-        # 定义手动设置教程
-        show_manual_guide() {
-            echo
-            log_warn "自动设置失败,请尝试手动操作："
-            echo -e "${YELLOW}手动禁用更新步骤：${NC}"
-            echo "1. 打开终端(Terminal)"
-            echo "2. 复制粘贴以下命令："
-            echo -e "${BLUE}rm -rf \"$updater_path\" && touch \"$updater_path\" && chmod 444 \"$updater_path\"${NC}"
-            echo
-            echo -e "${YELLOW}如果上述命令提示权限不足，请使用 sudo：${NC}"
-            echo -e "${BLUE}sudo rm -rf \"$updater_path\" && sudo touch \"$updater_path\" && sudo chmod 444 \"$updater_path\"${NC}"
-            echo
-            echo -e "${YELLOW}验证方法：${NC}"
-            echo "1. 运行命令：ls -l \"$updater_path\""
-            echo "2. 确认文件权限为 r--r--r--"
-            echo
-            log_warn "完成后请重启 Cursor"
-        }
-        
-        if [ -d "$updater_path" ]; then
-            rm -rf "$updater_path" 2>/dev/null || {
-                log_error "删除 cursor-updater 目录失败"
-                show_manual_guide
-                return 1
-            }
-            log_info "成功删除 cursor-updater 目录"
-        fi
-        
-        touch "$updater_path" 2>/dev/null || {
-            log_error "创建阻止文件失败"
-            show_manual_guide
-            return 1
-        }
-        
-        chmod 444 "$updater_path" 2>/dev/null && \
-        chown "$CURRENT_USER" "$updater_path" 2>/dev/null || {
-            log_error "设置文件权限失败"
-            show_manual_guide
-            return 1
-        }
-        
-        # 验证设置是否成功
-        if [ ! -f "$updater_path" ] || [ -w "$updater_path" ]; then
-            log_error "验证失败：文件权限设置可能未生效"
-            show_manual_guide
-            return 1
-        fi
-        
-        log_info "成功禁用自动更新"
-    else
-        log_info "保持默认设置，不进行更改"
-    fi
+        case "$choice" in
+            ""|0)
+                log_info "保持默认设置，不进行更改"
+                return 0
+                ;;
+            1)
+                echo
+                log_info "正在处理自动更新..."
+                local updater_path="$HOME/Library/Application Support/cursor-updater"
+                
+                # 定义手动设置教程
+                show_manual_guide() {
+                    echo
+                    log_warn "自动设置失败,请尝试手动操作："
+                    echo -e "${YELLOW}手动禁用更新步骤：${NC}"
+                    echo "1. 打开终端(Terminal)"
+                    echo "2. 复制粘贴以下命令："
+                    echo -e "${BLUE}rm -rf \"$updater_path\" && touch \"$updater_path\" && chmod 444 \"$updater_path\"${NC}"
+                    echo
+                    echo -e "${YELLOW}如果上述命令提示权限不足，请使用 sudo：${NC}"
+                    echo -e "${BLUE}sudo rm -rf \"$updater_path\" && sudo touch \"$updater_path\" && sudo chmod 444 \"$updater_path\"${NC}"
+                    echo
+                    echo -e "${YELLOW}验证方法：${NC}"
+                    echo "1. 运行命令：ls -l \"$updater_path\""
+                    echo "2. 确认文件权限为 r--r--r--"
+                    echo
+                    log_warn "完成后请重启 Cursor"
+                }
+                
+                if [ -d "$updater_path" ]; then
+                    rm -rf "$updater_path" 2>/dev/null || {
+                        log_error "删除 cursor-updater 目录失败"
+                        show_manual_guide
+                        return 1
+                    }
+                    log_info "成功删除 cursor-updater 目录"
+                fi
+                
+                touch "$updater_path" 2>/dev/null || {
+                    log_error "创建阻止文件失败"
+                    show_manual_guide
+                    return 1
+                }
+                
+                chmod 444 "$updater_path" 2>/dev/null && \
+                chown "$CURRENT_USER" "$updater_path" 2>/dev/null || {
+                    log_error "设置文件权限失败"
+                    show_manual_guide
+                    return 1
+                }
+                
+                # 验证设置是否成功
+                if [ ! -f "$updater_path" ] || [ -w "$updater_path" ]; then
+                    log_error "验证失败：文件权限设置可能未生效"
+                    show_manual_guide
+                    return 1
+                }
+                
+                log_info "成功禁用自动更新"
+                return 0
+                ;;
+            q|Q)
+                log_info "退出自动更新设置"
+                return 0
+                ;;
+            *)
+                log_error "无效的选择，请重新输入"
+                ;;
+        esac
+    done
 }
 
 # 生成随机MAC地址
@@ -537,7 +554,7 @@ main() {
     fi
     
     echo
-    log_info "操作完成！"
+    log_info "MAC地址修改完成！"
     show_file_tree
     show_follow_info
     log_info "请重启 Cursor 以应用新的配置"
