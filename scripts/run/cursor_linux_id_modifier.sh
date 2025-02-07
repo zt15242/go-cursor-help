@@ -389,12 +389,13 @@ main() {
     ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
     "
     echo -e "${BLUE}================================${NC}"
-    echo -e "${GREEN}   Cursor ID 修改工具          ${NC}"
-    echo -e "${YELLOW}  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识(脚本免费、关注公众号加群有更多技巧和大佬)  ${NC}"
+    echo -e "${GREEN}   Cursor 设备ID 修改工具          ${NC}"
+    echo -e "${YELLOW}  关注公众号【煎饼果子卷AI】     ${NC}"
+    echo -e "${YELLOW}  一起交流更多Cursor技巧和AI知识(脚本免费、关注公众号加群有更多技巧和大佬)  ${NC}"
     echo -e "${BLUE}================================${NC}"
     echo
     echo -e "${YELLOW}[重要提示]${NC} 本工具支持 Cursor v0.45.x"
-    echo -e "${YELLOW}[重要提示]${NC} 本工具免费，关注公众号加群有更多技巧和大佬"
+    echo -e "${YELLOW}[重要提示]${NC} 本工具免费，如果对您有帮助，请关注公众号【煎饼果子卷AI】"
     echo
     
     check_permissions
