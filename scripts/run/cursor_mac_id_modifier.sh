@@ -162,15 +162,26 @@ generate_uuid() {
     uuidgen | tr '[:upper:]' '[:lower:]'
 }
 
+# 修改现有文件
+modify_or_add_config() {
+    local key="$1"
+    local value="$2"
+    local file="$3"
+    
+    # 检查key是否存在
+    if grep -q "\"$key\":" "$file"; then
+        # key存在,执行替换
+        sed -i '' -e "s/\"$key\":[[:space:]]*\"[^\"]*\"/\"$key\": \"$value\"/" "$file"
+    else
+        # key不存在,添加新的key-value对
+        # 在最后一个}前添加新行
+        sed -i '' -e "s/}$/,\n    \"$key\": \"$value\"\n}/" "$file"
+    fi
+}
+
 # 生成新的配置
 generate_new_config() {
-    # 检查配置文件是否存在
-    if [ ! -f "$STORAGE_FILE" ]; then
-        log_error "未找到配置文件: $STORAGE_FILE"
-        log_warn "请先安装并运行一次 Cursor 后再使用此脚本"
-        exit 1
-    fi
-    
+  
     # 修改系统 ID
     log_info "正在修改系统 ID..."
     
@@ -194,11 +205,19 @@ generate_new_config() {
     local device_id=$(generate_uuid | tr '[:upper:]' '[:lower:]')
     local sqm_id="{$(generate_uuid | tr '[:lower:]' '[:upper:]')}"
     
+    log_info "正在修改配置文件..."
+    # 检查配置文件是否存在
+    if [ ! -f "$STORAGE_FILE" ]; then
+        log_error "未找到配置文件: $STORAGE_FILE"
+        log_warn "请先安装并运行一次 Cursor 后再使用此脚本"
+        exit 1
+    fi
+    
     # 修改现有文件
-    sed -i '' -e "s/\"telemetry\.machineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.machineId\": \"$machine_id\"/" "$STORAGE_FILE"
-    sed -i '' -e "s/\"telemetry\.macMachineId\":[[:space:]]*\"[^\"]*\"/\"telemetry.macMachineId\": \"$mac_machine_id\"/" "$STORAGE_FILE"
-    sed -i '' -e "s/\"telemetry\.devDeviceId\":[[:space:]]*\"[^\"]*\"/\"telemetry.devDeviceId\": \"$device_id\"/" "$STORAGE_FILE"
-    sed -i '' -e "s/\"telemetry\.sqmId\":[[:space:]]*\"[^\"]*\"/\"telemetry.sqmId\": \"$sqm_id\"/" "$STORAGE_FILE"
+    modify_or_add_config "telemetry.machineId" "$machine_id" "$STORAGE_FILE"
+    modify_or_add_config "telemetry.macMachineId" "$mac_machine_id" "$STORAGE_FILE"
+    modify_or_add_config "telemetry.devDeviceId" "$device_id" "$STORAGE_FILE"
+    modify_or_add_config "telemetry.sqmId" "$sqm_id" "$STORAGE_FILE"
 
     # 设置文件权限和所有者
     chmod 444 "$STORAGE_FILE"  # 改为只读权限
