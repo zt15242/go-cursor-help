@@ -178,12 +178,14 @@ modify_or_add_config() {
         # key存在,执行替换
         if ! sed -i '' -e "s/\"$key\":[[:space:]]*\"[^\"]*\"/\"$key\": \"$value\"/" "$file"; then
             log_error "修改配置失败: $key"
+            log_error "请手动修改配置文件: $file"
             return 1
         fi
     else
         # key不存在,添加新的key-value对
         if ! sed -i '' -e "s/}$/,\n    \"$key\": \"$value\"\n}/" "$file"; then
             log_error "添加配置失败: $key"
+            log_error "请手动修改配置文件: $file"
             return 1
         fi
     fi
