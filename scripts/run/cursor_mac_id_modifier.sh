@@ -173,22 +173,50 @@ modify_or_add_config() {
         return 1
     fi
     
+    # 确保文件可写
+    chmod 644 "$file" || {
+        log_error "无法修改文件权限: $file"
+        return 1
+    }
+    
+    # 创建临时文件
+    local temp_file=$(mktemp)
+    
     # 检查key是否存在
     if grep -q "\"$key\":" "$file"; then
         # key存在,执行替换
-        if ! sed -i '' -e "s/\"$key\":[[:space:]]*\"[^\"]*\"/\"$key\": \"$value\"/" "$file"; then
+        sed "s/\"$key\":[[:space:]]*\"[^\"]*\"/\"$key\": \"$value\"/" "$file" > "$temp_file" || {
             log_error "修改配置失败: $key"
-            log_error "请手动修改配置文件: $file"
+            rm -f "$temp_file"
             return 1
-        fi
+        }
     else
         # key不存在,添加新的key-value对
-        if ! sed -i '' -e "s/}$/,\n    \"$key\": \"$value\"\n}/" "$file"; then
+        sed "s/}$/,\n    \"$key\": \"$value\"\n}/" "$file" > "$temp_file" || {
             log_error "添加配置失败: $key"
-            log_error "请手动修改配置文件: $file"
+            rm -f "$temp_file"
             return 1
-        fi
+        }
     fi
+    
+    # 检查临时文件是否为空
+    if [ ! -s "$temp_file" ]; then
+        log_error "生成的临时文件为空"
+        rm -f "$temp_file"
+        return 1
+    fi
+    
+    # 使用 cat 替换原文件内容
+    cat "$temp_file" > "$file" || {
+        log_error "无法写入文件: $file"
+        rm -f "$temp_file"
+        return 1
+    }
+    
+    rm -f "$temp_file"
+    
+    # 恢复文件权限
+    chmod 444 "$file"
     
     return 0
 }
@@ -225,15 +253,28 @@ generate_new_config() {
         log_error "未找到配置文件: $STORAGE_FILE"
         log_warn "请先安装并运行一次 Cursor 后再使用此脚本"
         exit 1
-    fi
+    }
     
+    # 确保配置文件目录存在
+    mkdir -p "$(dirname "$STORAGE_FILE")" || {
+        log_error "无法创建配置目录"
+        exit 1
+    }
+    
+    # 如果文件不存在，创建一个基本的 JSON 结构
+    if [ ! -s "$STORAGE_FILE" ]; then
+        echo '{}' > "$STORAGE_FILE" || {
+            log_error "无法初始化配置文件"
+            exit 1
+        }
+    }
     
     # 修改现有文件
-    modify_or_add_config "telemetry.machineId" "$machine_id" "$STORAGE_FILE"
-    modify_or_add_config "telemetry.macMachineId" "$mac_machine_id" "$STORAGE_FILE"
-    modify_or_add_config "telemetry.devDeviceId" "$device_id" "$STORAGE_FILE"
-    modify_or_add_config "telemetry.sqmId" "$sqm_id" "$STORAGE_FILE"
-
+    modify_or_add_config "telemetry.machineId" "$machine_id" "$STORAGE_FILE" || exit 1
+    modify_or_add_config "telemetry.macMachineId" "$mac_machine_id" "$STORAGE_FILE" || exit 1
+    modify_or_add_config "telemetry.devDeviceId" "$device_id" "$STORAGE_FILE" || exit 1
+    modify_or_add_config "telemetry.sqmId" "$sqm_id" "$STORAGE_FILE" || exit 1
+    
     # 设置文件权限和所有者
     chmod 444 "$STORAGE_FILE"  # 改为只读权限
     chown "$CURRENT_USER" "$STORAGE_FILE"
