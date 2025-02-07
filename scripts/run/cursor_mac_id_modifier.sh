@@ -428,7 +428,7 @@ disable_auto_update() {
                     log_error "验证失败：文件权限设置可能未生效"
                     show_manual_guide
                     return 1
-                }
+                fi
                 
                 log_info "成功禁用自动更新"
                 return 0
