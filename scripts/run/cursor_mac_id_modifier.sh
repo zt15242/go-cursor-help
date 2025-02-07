@@ -253,7 +253,7 @@ generate_new_config() {
         log_error "未找到配置文件: $STORAGE_FILE"
         log_warn "请先安装并运行一次 Cursor 后再使用此脚本"
         exit 1
-    }
+    fi
     
     # 确保配置文件目录存在
     mkdir -p "$(dirname "$STORAGE_FILE")" || {
@@ -267,7 +267,7 @@ generate_new_config() {
             log_error "无法初始化配置文件"
             exit 1
         }
-    }
+    fi
     
     # 修改现有文件
     modify_or_add_config "telemetry.machineId" "$machine_id" "$STORAGE_FILE" || exit 1
