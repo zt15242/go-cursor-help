@@ -419,7 +419,11 @@ show_follow_info() {
 disable_auto_update() {
     local updater_path="$HOME/Library/Application Support/Caches/cursor-updater"
     
-    log_info "正在处理自动更新..."
+    echo
+    log_info "正在禁用 Cursor 自动更新..."
+    echo -e "${YELLOW}如果需要恢复自动更新，可以手动删除文件：${NC}"
+    echo -e "${BLUE}$updater_path${NC}"
+    echo
     
     # 尝试自动执行
     if sudo rm -rf "$updater_path" && \
@@ -574,19 +578,11 @@ main() {
     log_info "MAC地址修改完成！"
     show_file_tree
     show_follow_info
+  
+    # 直接执行禁用自动更新
+    disable_auto_update
+
     log_info "请重启 Cursor 以应用新的配置"
-    
-    # 询问是否要禁用自动更新
-    echo
-    log_warn "是否要禁用 Cursor 自动更新功能？"
-    echo "0) 否 - 保持默认设置 (按回车键)"
-    echo "1) 是 - 禁用自动更新"
-    read -r choice
-    
-    if [ "$choice" = "1" ]; then
-        disable_auto_update
-    fi
-    
     # 显示最后的提示信息
     show_follow_info
 }
