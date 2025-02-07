@@ -446,7 +446,7 @@ disable_auto_update() {
             1)
                 echo
                 log_info "正在处理自动更新..."
-                local updater_path="$HOME/Library/Application Support/cursor-updater"
+                local updater_path="$HOME/Library/Application Support/Caches/cursor-updater"
                 
                 # 尝试自动执行
                 if sudo rm -rf "$updater_path" && \
