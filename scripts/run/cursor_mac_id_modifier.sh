@@ -537,7 +537,7 @@ modify_mac_address() {
 }
 
 # 新增恢复功能选项
-add_restore_feature() {
+restore_feature() {
     local backup_files=("$BACKUP_DIR"/*.backup_*)
     
     # 检查是否存在备份文件
@@ -643,7 +643,7 @@ main() {
     log_info "请重启 Cursor 以应用新的配置"
 
     # 新增恢复功能选项
-    add_restore_feature
+    restore_feature
 
     # 显示最后的提示信息
     show_follow_info
