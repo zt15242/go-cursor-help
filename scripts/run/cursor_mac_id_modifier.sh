@@ -544,7 +544,7 @@ restore_feature() {
     if [ ! -e "$BACKUP_DIR"/*.backup_* ]; then
         log_warn "未找到任何备份文件"
         return
-    }
+    fi
     
     echo
     log_info "可用的备份文件："
@@ -569,7 +569,7 @@ restore_feature() {
     if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -ge "$i" ]; then
         log_error "无效的选择"
         return
-    }
+    fi
     
     # 获取选择的备份文件
     local selected_backup="${backup_files[$((choice-1))]}"
