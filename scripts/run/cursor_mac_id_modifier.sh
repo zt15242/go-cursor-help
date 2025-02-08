@@ -538,50 +538,64 @@ modify_mac_address() {
 
 # 新增恢复功能选项
 restore_feature() {
-    local backup_files=("$BACKUP_DIR"/*.backup_*)
+    # 检查备份目录是否存在
+    if [ ! -d "$BACKUP_DIR" ]; then
+        log_warn "备份目录不存在"
+        return 1
+    }
+
+    # 使用find命令获取备份文件列表
+    mapfile -t backup_files < <(find "$BACKUP_DIR" -name "*.backup_*" -type f 2>/dev/null | sort)
     
-    # 检查是否存在备份文件
-    if [ ! -e "$BACKUP_DIR"/*.backup_* ]; then
+    # 检查是否找到备份文件
+    if [ ${#backup_files[@]} -eq 0 ]; then
         log_warn "未找到任何备份文件"
-        return
-    fi
+        return 1
+    }
     
     echo
     log_info "可用的备份文件："
     echo "0) 退出 (默认)"
-    local i=1
-    for backup in "${backup_files[@]}"; do
-        echo "$i) $(basename "$backup")"
-        ((i++))
+    
+    # 显示备份文件列表
+    for i in "${!backup_files[@]}"; do
+        echo "$((i+1))) $(basename "${backup_files[$i]}")"
     done
     
     echo
-    echo -n "请选择要恢复的备份文件编号 [0-$((i-1))] (默认: 0): "
+    echo -n "请选择要恢复的备份文件编号 [0-${#backup_files[@]}] (默认: 0): "
     read -r choice
     
-    # 如果用户直接按回车或输入0，则退出
+    # 处理用户输入
     if [ -z "$choice" ] || [ "$choice" = "0" ]; then
         log_info "跳过恢复操作"
-        return
+        return 0
     fi
     
-    # 验证输入是否为有效数字
-    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -ge "$i" ]; then
+    # 验证输入
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -gt "${#backup_files[@]}" ]; then
         log_error "无效的选择"
-        return
+        return 1
     fi
     
     # 获取选择的备份文件
     local selected_backup="${backup_files[$((choice-1))]}"
     
-    if [ -f "$selected_backup" ]; then
-        if cp "$selected_backup" "$STORAGE_FILE"; then
-            log_info "已从备份文件恢复配置: $(basename "$selected_backup")"
-        else
-            log_error "恢复配置失败"
-        fi
+    # 验证文件存在性和可读性
+    if [ ! -f "$selected_backup" ] || [ ! -r "$selected_backup" ]; then
+        log_error "无法访问选择的备份文件"
+        return 1
+    }
+    
+    # 尝试恢复配置
+    if cp "$selected_backup" "$STORAGE_FILE"; then
+        chmod 644 "$STORAGE_FILE"
+        chown "$CURRENT_USER" "$STORAGE_FILE"
+        log_info "已从备份文件恢复配置: $(basename "$selected_backup")"
+        return 0
     else
-        log_error "选择的备份文件不存在"
+        log_error "恢复配置失败"
+        return 1
     fi
 }
 
