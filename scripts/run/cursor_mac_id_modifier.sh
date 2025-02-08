@@ -539,14 +539,50 @@ modify_mac_address() {
 # 新增恢复功能选项
 add_restore_feature() {
     local backup_files=("$BACKUP_DIR"/*.backup_*)
-    echo "可用的备份文件："
-    select backup in "${backup_files[@]}"; do
-        if [ -n "$backup" ]; then
-            cp "$backup" "$STORAGE_FILE"
-            log_info "已从备份恢复配置"
-            break
-        fi
+    
+    # 检查是否存在备份文件
+    if [ ! -e "$BACKUP_DIR"/*.backup_* ]; then
+        log_warn "未找到任何备份文件"
+        return
+    }
+    
+    echo
+    log_info "可用的备份文件："
+    echo "0) 退出 (默认)"
+    local i=1
+    for backup in "${backup_files[@]}"; do
+        echo "$i) $(basename "$backup")"
+        ((i++))
     done
+    
+    echo
+    echo -n "请选择要恢复的备份文件编号 [0-$((i-1))] (默认: 0): "
+    read -r choice
+    
+    # 如果用户直接按回车或输入0，则退出
+    if [ -z "$choice" ] || [ "$choice" = "0" ]; then
+        log_info "跳过恢复操作"
+        return
+    fi
+    
+    # 验证输入是否为有效数字
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -ge "$i" ]; then
+        log_error "无效的选择"
+        return
+    }
+    
+    # 获取选择的备份文件
+    local selected_backup="${backup_files[$((choice-1))]}"
+    
+    if [ -f "$selected_backup" ]; then
+        if cp "$selected_backup" "$STORAGE_FILE"; then
+            log_info "已从备份文件恢复配置: $(basename "$selected_backup")"
+        else
+            log_error "恢复配置失败"
+        fi
+    else
+        log_error "选择的备份文件不存在"
+    fi
 }
 
 # 主函数
@@ -605,11 +641,14 @@ main() {
     disable_auto_update
 
     log_info "请重启 Cursor 以应用新的配置"
+
+    # 新增恢复功能选项
+    add_restore_feature
+
     # 显示最后的提示信息
     show_follow_info
 
-    # 新增恢复功能选项
-    restore_feature
+    
 }
 
 # 执行主函数
