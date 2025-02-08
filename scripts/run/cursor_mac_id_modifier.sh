@@ -542,7 +542,7 @@ restore_feature() {
     if [ ! -d "$BACKUP_DIR" ]; then
         log_warn "备份目录不存在"
         return 1
-    }
+    fi
 
     # 使用find命令获取备份文件列表
     mapfile -t backup_files < <(find "$BACKUP_DIR" -name "*.backup_*" -type f 2>/dev/null | sort)
@@ -551,7 +551,7 @@ restore_feature() {
     if [ ${#backup_files[@]} -eq 0 ]; then
         log_warn "未找到任何备份文件"
         return 1
-    }
+    fi
     
     echo
     log_info "可用的备份文件："
@@ -585,7 +585,7 @@ restore_feature() {
     if [ ! -f "$selected_backup" ] || [ ! -r "$selected_backup" ]; then
         log_error "无法访问选择的备份文件"
         return 1
-    }
+    fi
     
     # 尝试恢复配置
     if cp "$selected_backup" "$STORAGE_FILE"; then
