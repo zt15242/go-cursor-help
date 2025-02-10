@@ -366,7 +366,7 @@ modify_cursor_app_files() {
         if [ ! -f "$file" ]; then
             log_warn "文件不存在: ${file/$temp_dir\//}"
             continue
-        }
+        fi
         
         log_debug "处理文件: ${file/$temp_dir\//}"
         
