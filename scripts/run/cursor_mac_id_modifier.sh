@@ -701,16 +701,25 @@ main() {
     # 添加MAC地址修改选项
     echo
     log_warn "是否要修改MAC地址？"
-    echo "0) 否 - 保持默认设置 (按回车键)"
+    echo "0) 否 - 保持默认设置 (默认)"
     echo "1) 是 - 修改MAC地址"
+    echo -n "请输入选择 [0-1] (默认 0): "
     read -r choice
     
-    if [ "$choice" = "1" ]; then
-        modify_mac_address
-    fi
+    # 处理用户输入（包括空输入和无效输入）
+    case "$choice" in
+        1)
+            if modify_mac_address; then
+                log_info "MAC地址修改完成！"
+            else
+                log_error "MAC地址修改失败"
+            fi
+            ;;
+        *)
+            log_info "已跳过MAC地址修改"
+            ;;
+    esac
     
-    echo
-    log_info "MAC地址修改完成！"
     show_file_tree
     show_follow_info
   
