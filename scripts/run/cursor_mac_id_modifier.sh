@@ -544,8 +544,11 @@ restore_feature() {
         return 1
     fi
 
-    # 使用find命令获取备份文件列表
-    mapfile -t backup_files < <(find "$BACKUP_DIR" -name "*.backup_*" -type f 2>/dev/null | sort)
+    # 使用 find 命令获取备份文件列表并存储到数组
+    backup_files=()
+    while IFS= read -r file; do
+        [ -f "$file" ] && backup_files+=("$file")
+    done < <(find "$BACKUP_DIR" -name "*.backup_*" -type f 2>/dev/null | sort)
     
     # 检查是否找到备份文件
     if [ ${#backup_files[@]} -eq 0 ]; then
