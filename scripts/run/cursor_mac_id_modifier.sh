@@ -299,50 +299,13 @@ generate_new_config() {
 modify_cursor_app_files() {
     log_info "正在修改 Cursor 主程序文件..."
     
-    # 检查 SIP 状态
-    if csrutil status | grep -q "enabled"; then
-        echo
-        log_warn "检测到系统完整性保护(SIP)处于启用状态"
-        echo
-        echo -e "${YELLOW}什么是系统完整性保护(SIP)？${NC}"
-        echo "SIP 是 macOS 的一项重要安全功能，它可以："
-        echo "1. 防止系统关键文件被修改"
-        echo "2. 保护系统进程不被注入代码"
-        echo "3. 限制具有 root 权限的操作"
-        echo "4. 保护系统免受恶意软件攻击"
-        echo
-        echo -e "${RED}关闭 SIP 的潜在风险：${NC}"
-        echo "1. 系统更容易受到恶意软件攻击"
-        echo "2. 可能导致系统不稳定"
-        echo "3. 降低系统整体安全性"
-        echo "4. 可能影响系统更新"
-        echo
-        echo -e "${YELLOW}如果您决定继续，需要：${NC}"
-        echo "1. 重启 Mac 并进入恢复模式（启动时按住 Command + R）"
-        echo "2. 打开终端，输入命令：csrutil disable"
-        echo "3. 重启后再运行此脚本"
-        echo "4. 完成修改后强烈建议重新启用 SIP（csrutil enable）"
-        echo
-        echo -e "${GREEN}安全建议：${NC}"
-        echo "1. 仅在必要时临时关闭 SIP"
-        echo "2. 完成修改后立即重新启用"
-        echo "3. 在关闭 SIP 期间不要浏览不信任的网站或运行不明来源的软件"
-        echo "4. 确保从可信来源下载和运行脚本"
-        echo
-        read -p "了解风险后，是否继续尝试修改文件？(y/N) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            log_info "已取消文件修改，建议保持 SIP 开启以确保系统安全"
-            return 0
-        fi
-        echo -e "${YELLOW}请记住在完成修改后重新启用 SIP 以确保系统安全${NC}"
-    fi
-
     local files=("$MAIN_JS_PATH" "$CLI_JS_PATH")
+    local modification_failed=false
     
     for file in "${files[@]}"; do
         if [ ! -f "$file" ]; then
             log_warn "文件不存在: $file"
+            modification_failed=true
             continue
         fi
         
@@ -352,13 +315,7 @@ modify_cursor_app_files() {
             log_info "正在备份 $file"
             if ! sudo cp "$file" "$backup_file" 2>/dev/null; then
                 log_error "无法备份文件: $file"
-                echo -e "${YELLOW}可能原因：${NC}"
-                echo "1. 系统完整性保护(SIP)已启用"
-                echo "2. 文件系统权限限制"
-                echo
-                echo -e "${YELLOW}建议操作：${NC}"
-                echo "1. 禁用 SIP 后重试"
-                echo "2. 手动复制文件进行备份"
+                modification_failed=true
                 continue
             fi
             sudo chmod 644 "$backup_file"
@@ -378,6 +335,7 @@ modify_cursor_app_files() {
         if ! echo "$content" | grep -q "$uuid_pattern"; then
             log_warn "在文件 $file 中未找到 $uuid_pattern"
             rm -f "$temp_file"
+            modification_failed=true
             continue
         fi
         
@@ -388,6 +346,7 @@ modify_cursor_app_files() {
         if ! sed -E "s/(case \"IOPlatformUUID\":)[^}]+}/\1 return crypto.randomUUID();/" "$file" > "$temp_file"; then
             log_error "处理文件内容失败: $file"
             rm -f "$temp_file"
+            modification_failed=true
             continue
         fi
         
@@ -395,16 +354,15 @@ modify_cursor_app_files() {
         if [ ! -s "$temp_file" ]; then
             log_error "生成的文件为空: $file"
             rm -f "$temp_file"
+            modification_failed=true
             continue
         fi
         
         # 验证文件内容是否包含必要的代码
-        log_debug "正在验证文件内容..."
         if ! grep -q "crypto\s*\.\s*randomUUID\s*(" "$temp_file"; then
-            log_debug "文件内容预览："
-            head -n 20 "$temp_file" | log_debug
             log_error "修改后的文件缺少必要的代码: $file"
             rm -f "$temp_file"
+            modification_failed=true
             continue
         fi
         
@@ -414,6 +372,7 @@ modify_cursor_app_files() {
         if ! mv "$temp_file" "$file"; then
             log_error "无法更新文件: $file"
             rm -f "$temp_file"
+            modification_failed=true
             continue
         fi
         
@@ -424,19 +383,28 @@ modify_cursor_app_files() {
         log_info "成功修改文件: $file"
     done
     
-    log_info "如果文件修改失败，请检查系统完整性保护(SIP)状态"
-    log_info "您可以在终端中运行 'csrutil status' 查看当前状态"
-    
-    if csrutil status | grep -q "disabled"; then
+    if [ "$modification_failed" = true ]; then
         echo
-        log_warn "检测到 SIP 当前已禁用"
-        echo -e "${YELLOW}安全提醒：${NC}"
-        echo "1. 请使用以下步骤重新启用 SIP："
-        echo "   - 重启 Mac 并进入恢复模式（Command + R）"
-        echo "   - 打开终端，输入：csrutil enable"
-        echo "   - 重启电脑"
-        echo "2. 保持 SIP 启用对系统安全性至关重要"
+        log_warn "部分或全部文件修改失败，您可以尝试手动修改："
         echo
+        echo -e "${YELLOW}手动修改步骤：${NC}"
+        echo "1. 首先备份以下文件："
+        echo "   - $MAIN_JS_PATH"
+        echo "   - $CLI_JS_PATH"
+        echo
+        echo "2. 使用文本编辑器打开这些文件"
+        echo
+        echo "3. 在每个文件中搜索 'IOPlatformUUID'"
+        echo
+        echo "4. 找到类似这样的代码段："
+        echo -e "${BLUE}case \"IOPlatformUUID\"${NC}"
+        echo
+        echo "5. 将其替换为："
+        echo -e "${GREEN}case \"IOPlatformUUID\": return crypto.randomUUID();${NC}"
+        echo
+        echo "6. 保存文件并重启 Cursor"
+        echo
+        log_warn "注意：修改前请务必备份原文件！"
     fi
 }
 
