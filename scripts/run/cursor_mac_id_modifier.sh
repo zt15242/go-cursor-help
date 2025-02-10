@@ -319,12 +319,18 @@ modify_cursor_app_files() {
     log_info "移除应用签名..."
     find "$temp_app" -type f -exec chmod 644 {} \;
     find "$temp_app" -type d -exec chmod 755 {} \;
-    codesign --remove-signature "$temp_app" >/dev/null 2>&1 || log_warn "签名移除失败（可能已无签名）"
+    timeout 120 codesign --remove-signature --all-architectures "$temp_app" > >(while read line; do echo -n .; done) 2>&1 || {
+        log_warn "签名移除超时，尝试快速模式..."
+        codesign --remove-signature --preserve-metadata=entitlements "$temp_app" >/dev/null 2>&1 || true
+    }
     
     # 处理所有Helper进程
     find "${temp_app}/Contents/Frameworks" -name "*Helper*.app" | while read helper; do
         log_debug "处理Helper进程: $helper"
-        codesign --remove-signature "$helper" >/dev/null 2>&1
+        timeout 30 codesign --remove-signature "$helper" >/dev/null 2>&1 || {
+            log_warn "无法移除 $helper 签名，尝试强制模式..."
+            codesign --remove-signature --force "$helper" >/dev/null 2>&1 || true
+        }
     done
     
     # 修改目标文件
