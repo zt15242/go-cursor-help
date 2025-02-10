@@ -309,17 +309,19 @@ modify_cursor_app_files() {
             continue
         fi
         
-        # 创建备份
-        local backup_file="${file}.bak"
+        # 创建备份（修改备份路径到用户目录）
+        local backup_file="$BACKUP_DIR/$(basename "$file").bak"
         if [ ! -f "$backup_file" ]; then
             log_info "正在备份 $file"
-            if ! sudo cp "$file" "$backup_file" 2>/dev/null; then
-                log_error "无法备份文件: $file"
-                modification_failed=true
-                continue
+            mkdir -p "$(dirname "$backup_file")"
+            if ! cp "$file" "$backup_file" 2>/dev/null; then
+                log_error "自动备份失败，但仍将继续尝试修改..."
+                log_warn "请手动执行备份命令："
+                echo -e "${YELLOW}sudo cp \"$file\" \"$backup_file\"${NC}"
+            else
+                chmod 644 "$backup_file"
+                chown "$CURRENT_USER" "$backup_file"
             fi
-            sudo chmod 644 "$backup_file"
-            sudo chown "$CURRENT_USER" "$backup_file"
         else
             log_debug "备份已存在: $backup_file"
         fi
@@ -366,7 +368,7 @@ modify_cursor_app_files() {
             continue
         fi
         
-        #log_debug "文件验证通过"
+        log_debug "$file -> 文件验证通过"
         
         # 替换原文件
         if ! mv "$temp_file" "$file"; then
@@ -383,29 +385,24 @@ modify_cursor_app_files() {
         log_info "成功修改文件: $file"
     done
     
+    # 新增手动修改指南
     if [ "$modification_failed" = true ]; then
         echo
-        log_warn "部分或全部文件修改失败，您可以尝试手动修改："
-        echo
-        echo -e "${YELLOW}手动修改步骤：${NC}"
-        echo "1. 首先备份以下文件："
-        echo "   - $MAIN_JS_PATH"
-        echo "   - $CLI_JS_PATH"
-        echo
-        echo "2. 使用文本编辑器打开这些文件"
-        echo
-        echo "3. 在每个文件中搜索 'IOPlatformUUID'"
-        echo
-        echo "4. 找到类似这样的代码段："
-        echo -e "${BLUE}case \"IOPlatformUUID\"${NC}"
-        echo
-        echo "5. 将其替换为："
-        echo -e "${GREEN}case \"IOPlatformUUID\": return crypto.randomUUID();${NC}"
-        echo
-        echo "6. 保存文件并重启 Cursor"
-        echo
-        log_warn "注意：修改前请务必备份原文件！"
+        log_warn "自动修改失败时的手动操作指南："
+        echo "1. 打开终端，执行以下命令备份原文件："
+        echo -e "   ${BLUE}sudo cp \"$MAIN_JS_PATH\" \"$MAIN_JS_PATH.bak\"${NC}"
+        echo -e "   ${BLUE}sudo cp \"$CLI_JS_PATH\" \"$CLI_JS_PATH.bak\"${NC}"
+        echo "2. 用文本编辑器打开文件："
+        echo -e "   ${BLUE}sudo nano \"$MAIN_JS_PATH\"${NC}"
+        echo -e "   ${BLUE}sudo nano \"$CLI_JS_PATH\"${NC}"
+        echo "3. 搜索 'IOPlatformUUID' 并修改为："
+        echo -e "   ${GREEN}case \"IOPlatformUUID\": return crypto.randomUUID();${NC}"
+        echo "4. 保存文件后执行："
+        echo -e "   ${BLUE}sudo chmod 644 \"$MAIN_JS_PATH\" \"$CLI_JS_PATH\"${NC}"
+        echo -e "   ${BLUE}sudo chown \"$CURRENT_USER\" \"$MAIN_JS_PATH\" \"$CLI_JS_PATH\"${NC}"
     fi
+
+    log_warn "如果打开Cursor后发现无法打开或者异常，请重新安装后重试！"
 }
 
 # 显示文件树结构
