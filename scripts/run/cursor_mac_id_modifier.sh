@@ -297,104 +297,168 @@ generate_new_config() {
 modify_cursor_app_files() {
     log_info "正在安全修改 Cursor 主程序文件..."
     
+    # 验证应用是否存在
+    if [ ! -d "$CURSOR_APP_PATH" ]; then
+        log_error "未找到 Cursor.app，请确认安装路径: $CURSOR_APP_PATH"
+        return 1
+    }
+
     # 创建临时工作目录
     local timestamp=$(date +%Y%m%d_%H%M%S)
     local temp_dir="/tmp/cursor_mod_${timestamp}"
     local temp_app="${temp_dir}/Cursor.app"
     
-    # 复制应用到临时目录
-    log_info "创建临时工作副本..."
+    # 清理可能存在的旧临时目录
+    [ -d "$temp_dir" ] && rm -rf "$temp_dir"
+    
+    # 创建新的临时目录
     mkdir -p "$temp_dir" || {
-        log_error "无法创建临时目录"
+        log_error "无法创建临时目录: $temp_dir"
         return 1
     }
-    log_debug "正在复制应用文件: $CURSOR_APP_PATH -> $temp_dir"
-    rsync -a --progress "$CURSOR_APP_PATH/" "$temp_app/" || {
+
+    # 复制应用到临时目录
+    log_info "创建临时工作副本..."
+    {
+        # 使用 pv 显示进度（如果可用）
+        if command -v pv >/dev/null 2>&1; then
+            tar cf - -C "$(dirname "$CURSOR_APP_PATH")" "$(basename "$CURSOR_APP_PATH")" | pv -s $(du -sb "$CURSOR_APP_PATH" | awk '{print $1}') | tar xf - -C "$temp_dir"
+        else
+            # 使用 rsync 显示进度
+            rsync -av --progress "$CURSOR_APP_PATH/" "$temp_app/"
+        fi
+    } || {
         log_error "复制应用失败"
+        rm -rf "$temp_dir"
+        return 1
+    }
+
+    # 验证复制完整性
+    local orig_size=$(du -s "$CURSOR_APP_PATH" | cut -f1)
+    local temp_size=$(du -s "$temp_app" | cut -f1)
+    if [ "$orig_size" != "$temp_size" ]; then
+        log_error "文件复制不完整，大小不匹配"
         rm -rf "$temp_dir"
         return 1
     }
     
     # 移除签名（增强兼容性）
     log_info "移除应用签名..."
-    find "$temp_app" -type f -exec chmod 644 {} \;
-    find "$temp_app" -type d -exec chmod 755 {} \;
-    timeout 120 codesign --remove-signature --all-architectures "$temp_app" > >(while read line; do echo -n .; done) 2>&1 || {
-        log_warn "签名移除超时，尝试快速模式..."
-        codesign --remove-signature --preserve-metadata=entitlements "$temp_app" >/dev/null 2>&1 || true
+    {
+        # 设置文件权限
+        find "$temp_app" -type f -exec chmod 644 {} \;
+        find "$temp_app" -type d -exec chmod 755 {} \;
+        
+        # 移除主应用签名
+        if ! timeout 60 codesign --remove-signature "$temp_app" 2>/dev/null; then
+            log_warn "标准签名移除超时，尝试快速模式..."
+            codesign --remove-signature --force "$temp_app" 2>/dev/null || true
+        fi
+        
+        # 处理所有Helper进程
+        local helper_count=0
+        while IFS= read -r helper; do
+            ((helper_count++))
+            log_debug "处理Helper进程 ($helper_count): $helper"
+            timeout 30 codesign --remove-signature "$helper" 2>/dev/null || {
+                log_warn "移除Helper签名失败: $(basename "$helper")"
+                codesign --remove-signature --force "$helper" 2>/dev/null || true
+            }
+        done < <(find "${temp_app}/Contents/Frameworks" -name "*Helper*.app")
+        
+        log_info "已处理 $helper_count 个Helper进程"
     }
     
-    # 处理所有Helper进程
-    find "${temp_app}/Contents/Frameworks" -name "*Helper*.app" | while read helper; do
-        log_debug "处理Helper进程: $helper"
-        timeout 30 codesign --remove-signature "$helper" >/dev/null 2>&1 || {
-            log_warn "无法移除 $helper 签名，尝试强制模式..."
-            codesign --remove-signature --force "$helper" >/dev/null 2>&1 || true
-        }
-    done
-    
     # 修改目标文件
-    local files=("${temp_app}/Contents/Resources/app/out/main.js" 
-                "${temp_app}/Contents/Resources/app/out/vs/code/node/cliProcessMain.js")
+    local modified_count=0
+    local files=(
+        "${temp_app}/Contents/Resources/app/out/main.js"
+        "${temp_app}/Contents/Resources/app/out/vs/code/node/cliProcessMain.js"
+    )
     
     for file in "${files[@]}"; do
-        [ ! -f "$file" ] && {
+        if [ ! -f "$file" ]; then
             log_warn "文件不存在: ${file/$temp_dir\//}"
             continue
         }
         
-        # 使用精确位置替换（避免sed正则问题）
         log_debug "处理文件: ${file/$temp_dir\//}"
+        
+        # 创建文件备份
+        cp "$file" "${file}.bak" || {
+            log_error "无法创建文件备份: ${file/$temp_dir\//}"
+            continue
+        }
+        
+        # 使用精确位置替换
         local content=$(<"$file")
         local uuid_pos=$(grep -b -o "IOPlatformUUID" <<< "$content" | cut -d: -f1)
-        [ -z "$uuid_pos" ] && {
-            log_warn "未找到IOPlatformUUID"
+        
+        if [ -z "$uuid_pos" ]; then
+            log_warn "未找到IOPlatformUUID标记: ${file/$temp_dir\//}"
             continue
         }
         
         # 定位最近的switch语句
         local switch_pos=$(grep -b -o "switch" <<< "${content:0:$uuid_pos}" | tail -1 | cut -d: -f1)
-        [ -z "$switch_pos" ] && {
-            log_warn "未找到switch语句"
+        
+        if [ -z "$switch_pos" ]; then
+            log_warn "未找到switch语句: ${file/$temp_dir\//}"
             continue
         }
         
         # 精确修改内容
-        new_content="${content:0:$switch_pos}return crypto.randomUUID();\n${content:$switch_pos}"
-        if ! printf "%b" "$new_content" > "$file"; then
-            log_error "文件写入失败"
-            return 1
+        local new_content="${content:0:$switch_pos}return crypto.randomUUID();\n${content:$switch_pos}"
+        if printf "%b" "$new_content" > "$file"; then
+            ((modified_count++))
+            log_info "成功修改文件: ${file/$temp_dir\//}"
+        else
+            log_error "文件写入失败: ${file/$temp_dir\//}"
+            mv "${file}.bak" "$file"
         fi
-        log_info "文件修改成功: ${file/$temp_dir\//}"
+        
+        # 清理备份
+        rm -f "${file}.bak"
     done
+    
+    if [ "$modified_count" -eq 0 ]; then
+        log_error "未能成功修改任何文件"
+        rm -rf "$temp_dir"
+        return 1
+    }
     
     # 重新签名应用
     log_info "重新签名应用..."
-    xattr -cr "$temp_app"  # 清除扩展属性
-    codesign --force --deep --sign - --preserve-metadata=entitlements,identifier,flags "$temp_app" >/dev/null 2>&1 || {
-        log_warn "重新签名失败，尝试以下方法："
-        log_warn "1. 前往 系统设置 -> 隐私与安全性"
-        log_warn "2. 在『安全性』中找到 Cursor 相关提示"
-        log_warn "3. 点击『仍要打开』"
+    {
+        # 清除扩展属性
+        xattr -cr "$temp_app"
+        
+        # 尝试重新签名
+        if ! codesign --force --deep --sign - --preserve-metadata=entitlements,identifier,flags "$temp_app" 2>/dev/null; then
+            log_warn "应用重新签名失败，您可能需要："
+            log_warn "1. 前往 系统设置 -> 隐私与安全性"
+            log_warn "2. 在『安全性』中找到 Cursor 相关提示"
+            log_warn "3. 点击『仍要打开』"
+        fi
     }
     
     # 创建应用备份
     local backup_app="/Applications/Cursor.backup.${timestamp}.app"
     log_info "创建应用备份: ${backup_app/$HOME/\~}"
-    mv "$CURSOR_APP_PATH" "$backup_app" || {
+    if ! mv "$CURSOR_APP_PATH" "$backup_app"; then
         log_error "创建备份失败"
         rm -rf "$temp_dir"
         return 1
-    }
+    fi
     
     # 替换原应用
     log_info "安装修改版应用..."
-    ditto "$temp_app" "$CURSOR_APP_PATH" || {
+    if ! ditto "$temp_app" "$CURSOR_APP_PATH"; then
         log_error "应用替换失败，正在恢复..."
         mv "$backup_app" "$CURSOR_APP_PATH"
         rm -rf "$temp_dir"
         return 1
-    }
+    fi
     
     # 清理临时文件
     rm -rf "$temp_dir"
@@ -404,10 +468,12 @@ modify_cursor_app_files() {
     find "$CURSOR_APP_PATH" -type d -exec chmod 755 {} \;
     find "$CURSOR_APP_PATH" -type f -exec chmod 644 {} \;
     
-    log_info "正在重建LaunchServices数据库..."
+    # 重建 LaunchServices 数据库
+    log_info "正在重建 LaunchServices 数据库..."
     /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$CURSOR_APP_PATH"
     
     log_info "Cursor 主程序文件修改完成！原版备份在: ${backup_app/$HOME/\~}"
+    return 0
 }
 
 # 显示文件树结构
