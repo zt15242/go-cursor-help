@@ -301,7 +301,7 @@ modify_cursor_app_files() {
     if [ ! -d "$CURSOR_APP_PATH" ]; then
         log_error "未找到 Cursor.app，请确认安装路径: $CURSOR_APP_PATH"
         return 1
-    }
+    fi
 
     # 创建临时工作目录
     local timestamp=$(date +%Y%m%d_%H%M%S)
@@ -340,7 +340,7 @@ modify_cursor_app_files() {
         log_error "文件复制不完整，大小不匹配"
         rm -rf "$temp_dir"
         return 1
-    }
+    fi
     
     # 移除签名（增强兼容性）
     log_info "移除应用签名..."
@@ -380,7 +380,7 @@ modify_cursor_app_files() {
         if [ ! -f "$file" ]; then
             log_warn "文件不存在: ${file/$temp_dir\//}"
             continue
-        }
+        fi
         
         log_debug "处理文件: ${file/$temp_dir\//}"
         
@@ -397,7 +397,7 @@ modify_cursor_app_files() {
         if [ -z "$uuid_pos" ]; then
             log_warn "未找到IOPlatformUUID标记: ${file/$temp_dir\//}"
             continue
-        }
+        fi
         
         # 定位最近的switch语句
         local switch_pos=$(grep -b -o "switch" <<< "${content:0:$uuid_pos}" | tail -1 | cut -d: -f1)
@@ -405,7 +405,7 @@ modify_cursor_app_files() {
         if [ -z "$switch_pos" ]; then
             log_warn "未找到switch语句: ${file/$temp_dir\//}"
             continue
-        }
+        fi
         
         # 精确修改内容
         local new_content="${content:0:$switch_pos}return crypto.randomUUID();\n${content:$switch_pos}"
@@ -425,7 +425,7 @@ modify_cursor_app_files() {
         log_error "未能成功修改任何文件"
         rm -rf "$temp_dir"
         return 1
-    }
+    fi
     
     # 重新签名应用
     log_info "重新签名应用..."
