@@ -46,10 +46,7 @@ fi
 STORAGE_FILE="$HOME/Library/Application Support/Cursor/User/globalStorage/storage.json"
 BACKUP_DIR="$HOME/Library/Application Support/Cursor/User/globalStorage/backups"
 
-# 定义 Cursor 应用程序文件路径
-CURSOR_APP_PATH="/Applications/Cursor.app"
-MAIN_JS_PATH="$CURSOR_APP_PATH/Contents/Resources/app/out/main.js"
-CLI_JS_PATH="$CURSOR_APP_PATH/Contents/Resources/app/out/vs/code/node/cliProcessMain.js"
+
 
 # 检查权限
 check_permissions() {
@@ -295,114 +292,102 @@ generate_new_config() {
     log_debug "sqmId: $sqm_id"
 }
 
-# 修改 Cursor 主程序文件
+# 修改 Cursor 主程序文件（安全模式）
 modify_cursor_app_files() {
-    log_info "正在修改 Cursor 主程序文件..."
+    log_info "正在安全修改 Cursor 主程序文件..."
     
-    local files=("$MAIN_JS_PATH" "$CLI_JS_PATH")
-    local modification_failed=false
+    # 创建临时工作目录
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local temp_dir="/tmp/cursor_mod_${timestamp}"
+    local temp_app="${temp_dir}/Cursor.app"
     
-    for file in "${files[@]}"; do
-        if [ ! -f "$file" ]; then
-            log_warn "文件不存在: $file"
-            modification_failed=true
-            continue
-        fi
-        
-        # 创建备份（修改备份路径到用户目录）
-        local backup_file="$BACKUP_DIR/$(basename "$file").bak"
-        if [ ! -f "$backup_file" ]; then
-            log_info "正在备份 $file"
-            mkdir -p "$(dirname "$backup_file")"
-            if ! cp "$file" "$backup_file" 2>/dev/null; then
-                log_error "自动备份失败，但仍将继续尝试修改..."
-                log_warn "请手动执行备份命令："
-                echo -e "${YELLOW}sudo cp \"$file\" \"$backup_file\"${NC}"
-            else
-                chmod 644 "$backup_file"
-                chown "$CURRENT_USER" "$backup_file"
-            fi
-        else
-            log_debug "备份已存在: $backup_file"
-        fi
-        
-        # 创建临时文件
-        local temp_file=$(mktemp)
-        
-        # 读取文件内容
-        local content=$(<"$file")
-        
-        # 查找关键位置
-        local uuid_pattern="IOPlatformUUID"
-        if ! echo "$content" | grep -q "$uuid_pattern"; then
-            log_warn "在文件 $file 中未找到 $uuid_pattern"
-            rm -f "$temp_file"
-            modification_failed=true
-            continue
-        fi
-        
-        # 构建替换内容
-        local replacement='case "IOPlatformUUID": return crypto.randomUUID();'
-        
-        # 使用 sed 进行替换
-        if ! sed -E "s/(case \"IOPlatformUUID\":)[^}]+}/\1 return crypto.randomUUID();/" "$file" > "$temp_file"; then
-            log_error "处理文件内容失败: $file"
-            rm -f "$temp_file"
-            modification_failed=true
-            continue
-        fi
-        
-        # 验证临时文件
-        if [ ! -s "$temp_file" ]; then
-            log_error "生成的文件为空: $file"
-            rm -f "$temp_file"
-            modification_failed=true
-            continue
-        fi
-        
-        # 验证文件内容是否包含必要的代码
-        if ! grep -q "crypto\s*\.\s*randomUUID\s*(" "$temp_file"; then
-            log_error "修改后的文件缺少必要的代码: $file"
-            rm -f "$temp_file"
-            modification_failed=true
-            continue
-        fi
-        
-        log_debug "$file -> 文件验证通过"
-        
-        # 替换原文件
-        if ! mv "$temp_file" "$file"; then
-            log_error "无法更新文件: $file"
-            rm -f "$temp_file"
-            modification_failed=true
-            continue
-        fi
-        
-        # 设置权限
-        chmod 644 "$file"
-        chown "$CURRENT_USER" "$file"
-        
-        log_info "成功修改文件: $file"
+    # 复制应用到临时目录
+    log_info "创建临时工作副本..."
+    mkdir -p "$temp_dir" || {
+        log_error "无法创建临时目录"
+        return 1
+    }
+    cp -R "$CURSOR_APP_PATH" "$temp_dir" || {
+        log_error "复制应用失败"
+        rm -rf "$temp_dir"
+        return 1
+    }
+    
+    # 移除签名（增强兼容性）
+    log_info "移除应用签名..."
+    codesign --remove-signature "$temp_app" >/dev/null 2>&1 || log_warn "签名移除失败（可能已无签名）"
+    
+    # 处理所有Helper进程
+    find "${temp_app}/Contents/Frameworks" -name "*Helper*.app" | while read helper; do
+        codesign --remove-signature "$helper" >/dev/null 2>&1
     done
     
-    # 新增手动修改指南
-    if [ "$modification_failed" = true ]; then
-        echo
-        log_warn "自动修改失败时的手动操作指南："
-        echo "1. 打开终端，执行以下命令备份原文件："
-        echo -e "   ${BLUE}sudo cp \"$MAIN_JS_PATH\" \"$MAIN_JS_PATH.bak\"${NC}"
-        echo -e "   ${BLUE}sudo cp \"$CLI_JS_PATH\" \"$CLI_JS_PATH.bak\"${NC}"
-        echo "2. 用文本编辑器打开文件："
-        echo -e "   ${BLUE}sudo nano \"$MAIN_JS_PATH\"${NC}"
-        echo -e "   ${BLUE}sudo nano \"$CLI_JS_PATH\"${NC}"
-        echo "3. 搜索 'IOPlatformUUID' 并修改为："
-        echo -e "   ${GREEN}case \"IOPlatformUUID\": return crypto.randomUUID();${NC}"
-        echo "4. 保存文件后执行："
-        echo -e "   ${BLUE}sudo chmod 644 \"$MAIN_JS_PATH\" \"$CLI_JS_PATH\"${NC}"
-        echo -e "   ${BLUE}sudo chown \"$CURRENT_USER\" \"$MAIN_JS_PATH\" \"$CLI_JS_PATH\"${NC}"
-    fi
-
-    log_warn "如果打开Cursor后发现无法打开或者异常，请重新安装后重试！"
+    # 修改目标文件
+    local files=("${temp_app}/Contents/Resources/app/out/main.js" 
+                "${temp_app}/Contents/Resources/app/out/vs/code/node/cliProcessMain.js")
+    
+    for file in "${files[@]}"; do
+        [ ! -f "$file" ] && {
+            log_warn "文件不存在: ${file/$temp_dir\//}"
+            continue
+        }
+        
+        # 使用精确位置替换（避免sed正则问题）
+        log_debug "处理文件: ${file/$temp_dir\//}"
+        local content=$(<"$file")
+        local uuid_pos=$(grep -b -o "IOPlatformUUID" <<< "$content" | cut -d: -f1)
+        [ -z "$uuid_pos" ] && {
+            log_warn "未找到IOPlatformUUID"
+            continue
+        }
+        
+        # 定位最近的switch语句
+        local switch_pos=$(grep -b -o "switch" <<< "${content:0:$uuid_pos}" | tail -1 | cut -d: -f1)
+        [ -z "$switch_pos" ] && {
+            log_warn "未找到switch语句"
+            continue
+        }
+        
+        # 精确修改内容
+        printf "%sreturn crypto.randomUUID();\n%s" \
+               "${content:0:$switch_pos}" \
+               "${content:$switch_pos}" > "$file" || {
+            log_error "文件写入失败"
+            return 1
+        }
+    done
+    
+    # 重新签名应用
+    log_info "重新签名应用..."
+    codesign --sign - --force --deep "$temp_app" >/dev/null 2>&1 || log_warn "重新签名失败（可能影响启动）"
+    
+    # 创建应用备份
+    local backup_app="/Applications/Cursor.backup.${timestamp}.app"
+    log_info "创建应用备份: ${backup_app/$HOME/\~}"
+    mv "$CURSOR_APP_PATH" "$backup_app" || {
+        log_error "创建备份失败"
+        rm -rf "$temp_dir"
+        return 1
+    }
+    
+    # 替换原应用
+    log_info "安装修改版应用..."
+    mv "$temp_app" "$CURSOR_APP_PATH" || {
+        log_error "应用替换失败，正在恢复..."
+        mv "$backup_app" "$CURSOR_APP_PATH"
+        rm -rf "$temp_dir"
+        return 1
+    }
+    
+    # 清理临时文件
+    rm -rf "$temp_dir"
+    
+    # 设置权限
+    chown -R "$CURRENT_USER:staff" "$CURSOR_APP_PATH"
+    find "$CURSOR_APP_PATH" -type d -exec chmod 755 {} \;
+    find "$CURSOR_APP_PATH" -type f -exec chmod 644 {} \;
+    
+    log_info "Cursor 主程序文件修改完成！原版备份在: ${backup_app/$HOME/\~}"
 }
 
 # 显示文件树结构
