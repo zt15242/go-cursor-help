@@ -308,7 +308,8 @@ modify_cursor_app_files() {
         log_error "无法创建临时目录"
         return 1
     }
-    cp -R "$CURSOR_APP_PATH" "$temp_dir" || {
+    log_debug "正在复制应用文件: $CURSOR_APP_PATH -> $temp_dir"
+    rsync -a --progress "$CURSOR_APP_PATH/" "$temp_app/" || {
         log_error "复制应用失败"
         rm -rf "$temp_dir"
         return 1
@@ -316,10 +317,13 @@ modify_cursor_app_files() {
     
     # 移除签名（增强兼容性）
     log_info "移除应用签名..."
+    find "$temp_app" -type f -exec chmod 644 {} \;
+    find "$temp_app" -type d -exec chmod 755 {} \;
     codesign --remove-signature "$temp_app" >/dev/null 2>&1 || log_warn "签名移除失败（可能已无签名）"
     
     # 处理所有Helper进程
     find "${temp_app}/Contents/Frameworks" -name "*Helper*.app" | while read helper; do
+        log_debug "处理Helper进程: $helper"
         codesign --remove-signature "$helper" >/dev/null 2>&1
     done
     
@@ -350,17 +354,23 @@ modify_cursor_app_files() {
         }
         
         # 精确修改内容
-        printf "%sreturn crypto.randomUUID();\n%s" \
-               "${content:0:$switch_pos}" \
-               "${content:$switch_pos}" > "$file" || {
+        new_content="${content:0:$switch_pos}return crypto.randomUUID();\n${content:$switch_pos}"
+        if ! printf "%b" "$new_content" > "$file"; then
             log_error "文件写入失败"
             return 1
-        }
+        fi
+        log_info "文件修改成功: ${file/$temp_dir\//}"
     done
     
     # 重新签名应用
     log_info "重新签名应用..."
-    codesign --sign - --force --deep "$temp_app" >/dev/null 2>&1 || log_warn "重新签名失败（可能影响启动）"
+    xattr -cr "$temp_app"  # 清除扩展属性
+    codesign --force --deep --sign - --preserve-metadata=entitlements,identifier,flags "$temp_app" >/dev/null 2>&1 || {
+        log_warn "重新签名失败，尝试以下方法："
+        log_warn "1. 前往 系统设置 -> 隐私与安全性"
+        log_warn "2. 在『安全性』中找到 Cursor 相关提示"
+        log_warn "3. 点击『仍要打开』"
+    }
     
     # 创建应用备份
     local backup_app="/Applications/Cursor.backup.${timestamp}.app"
@@ -373,7 +383,7 @@ modify_cursor_app_files() {
     
     # 替换原应用
     log_info "安装修改版应用..."
-    mv "$temp_app" "$CURSOR_APP_PATH" || {
+    ditto "$temp_app" "$CURSOR_APP_PATH" || {
         log_error "应用替换失败，正在恢复..."
         mv "$backup_app" "$CURSOR_APP_PATH"
         rm -rf "$temp_dir"
@@ -387,6 +397,9 @@ modify_cursor_app_files() {
     chown -R "$CURRENT_USER:staff" "$CURSOR_APP_PATH"
     find "$CURSOR_APP_PATH" -type d -exec chmod 755 {} \;
     find "$CURSOR_APP_PATH" -type f -exec chmod 644 {} \;
+    
+    log_info "正在重建LaunchServices数据库..."
+    /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$CURSOR_APP_PATH"
     
     log_info "Cursor 主程序文件修改完成！原版备份在: ${backup_app/$HOME/\~}"
 }
@@ -680,7 +693,7 @@ main() {
     log_info "请重启 Cursor 以应用新的配置"
 
     # 新增恢复功能选项
-    restore_feature
+    #restore_feature
 
     # 显示最后的提示信息
     show_follow_info
