@@ -46,7 +46,8 @@ fi
 STORAGE_FILE="$HOME/Library/Application Support/Cursor/User/globalStorage/storage.json"
 BACKUP_DIR="$HOME/Library/Application Support/Cursor/User/globalStorage/backups"
 
-
+# 定义 Cursor 应用程序路径
+CURSOR_APP_PATH="/Applications/Cursor.app"
 
 # 检查权限
 check_permissions() {
