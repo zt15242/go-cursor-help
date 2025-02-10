@@ -301,7 +301,7 @@ modify_cursor_app_files() {
     if [ ! -d "$CURSOR_APP_PATH" ]; then
         log_error "未找到 Cursor.app，请确认安装路径: $CURSOR_APP_PATH"
         return 1
-    }
+    fi
 
     # 创建临时工作目录
     local timestamp=$(date +%Y%m%d_%H%M%S)
@@ -384,7 +384,7 @@ modify_cursor_app_files() {
         if [ -z "$uuid_pos" ]; then
             log_warn "在 $file 中未找到 IOPlatformUUID"
             continue
-        }
+        fi
 
         # 从 UUID 位置向前查找 switch
         local before_uuid=${content:0:$uuid_pos}
@@ -392,7 +392,7 @@ modify_cursor_app_files() {
         if [ -z "$switch_pos" ]; then
             log_warn "在 $file 中未找到 switch 关键字"
             continue
-        }
+        fi
 
         # 构建新的文件内容
         if printf "%sreturn crypto.randomUUID();\n%s" "${content:0:$switch_pos}" "${content:$switch_pos}" > "$file"; then
@@ -411,7 +411,7 @@ modify_cursor_app_files() {
         log_error "未能成功修改任何文件"
         rm -rf "$temp_dir"
         return 1
-    }
+    fi
     
     # 重新签名应用
     log_info "重新签名应用..."
@@ -431,7 +431,7 @@ modify_cursor_app_files() {
         log_error "创建备份失败"
         rm -rf "$temp_dir"
         return 1
-    }
+    fi
     
     # 替换原应用
     log_info "安装修改版应用..."
@@ -440,7 +440,7 @@ modify_cursor_app_files() {
         mv "$backup_app" "$CURSOR_APP_PATH"
         rm -rf "$temp_dir"
         return 1
-    }
+    fi
     
     # 清理临时文件
     rm -rf "$temp_dir"
