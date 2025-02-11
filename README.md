@@ -20,8 +20,29 @@
 > - ✅ Mac/Linux: Latest 0.45.x versions (Supported, feedback welcome)
 >
 > Please check your Cursor version before using this tool.
->
-> ⚠️ **MAC Address Modification Warning**
+
+<details open>
+<summary><b>📦 Version History & Downloads</b></summary>
+
+<div class="version-card" style="background: linear-gradient(135deg, #6e8efb, #a777e3); border-radius: 8px; padding: 15px; margin: 10px 0; color: white;">
+
+### 🌟 Latest Versions
+- v0.45.11 (2024-02-07) - Latest Release
+- v0.44.11 (2024-01-03) - Most Stable Release
+
+[View Full Version History](CursorHistoryDown.md.md)
+
+</div>
+
+### 📥 Direct Download Links
+
+**v0.44.11 (Recommended Stable Version)**
+- Windows: [Official](https://downloader.cursor.sh/builds/250103fqxdt5u9z/windows/nsis/x64) | [Mirror](https://download.todesktop.com/230313mzl4w4u92/Cursor%20Setup%200.44.11%20-%20Build%20250103fqxdt5u9z-x64.exe)
+- Mac: [Apple Silicon](https://dl.todesktop.com/230313mzl4w4u92/versions/0.44.11/mac/zip/arm64)
+
+</details>
+
+⚠️ **MAC Address Modification Warning**
 > 
 > For Mac users: This script includes a MAC address modification feature that will:
 > - Modify your network interface's MAC address
