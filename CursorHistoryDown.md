@@ -935,6 +935,7 @@
 </details>
 
 <style>
+
 details {
     margin: 1em 0;
     padding: 0.5em 1em;
@@ -978,4 +979,5 @@ a {
 a:hover {
     text-decoration: underline;
 }
+
 </style>
