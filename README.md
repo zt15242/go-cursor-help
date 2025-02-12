@@ -30,7 +30,7 @@
 - v0.45.11 (2024-02-07) - Latest Release
 - v0.44.11 (2024-01-03) - Most Stable Release
 
-[View Full Version History](CursorHistoryDown.md.md)
+[View Full Version History](CursorHistoryDown.md)
 
 </div>
 
