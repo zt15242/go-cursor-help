@@ -191,26 +191,68 @@ $randomPart = Get-RandomHex -length 32
 $MACHINE_ID = "$prefixHex$randomPart"
 $SQM_ID = "{$([System.Guid]::NewGuid().ToString().ToUpper())}"
 
-# 在生成新ID后直接执行注册表操作，移除询问
+# 在Update-MachineGuid函数前添加权限检查
+if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Host "$RED[错误]$NC 请使用管理员权限运行此脚本"
+    Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    exit
+}
+
 function Update-MachineGuid {
     try {
-        $newMachineGuid = [System.Guid]::NewGuid().ToString()
+        # 增强注册表查询
+        $regResult = reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography" /v MachineGuid 2>&1
+        
+        # 错误处理
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "$RED[错误]$NC 注册表查询失败，错误代码：$LASTEXITCODE"
+            Write-Host "$YELLOW[调试]$NC 原始输出：$regResult"
+            exit 1
+        }
+
+        # 精确解析GUID
+        if ($regResult -match "MachineGuid\s+REG_SZ\s+([0-9a-fA-F-]{36})") {
+            $originalGuid = $matches[1].ToLower()
+            Write-Host "$GREEN[信息]$NC 当前注册表值："
+            Write-Host "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography" 
+            Write-Host "    MachineGuid    REG_SZ    $originalGuid"
+        } else {
+            Write-Host "$RED[错误]$NC GUID格式解析失败"
+            Write-Host "$YELLOW[提示]$NC 原始注册表值：$regResult"
+            exit 1
+        }
+
+        # 生成新GUID
+        $newGuid = [System.Guid]::NewGuid().ToString()
         $registryPath = "HKLM:\SOFTWARE\Microsoft\Cryptography"
         
-        # 备份原始值
-        $originalGuid = (Get-ItemProperty -Path $registryPath -Name "MachineGuid").MachineGuid
-        $backupFile = "$BACKUP_DIR\MachineGuid.backup_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
-        $originalGuid | Out-File $backupFile -Encoding UTF8
-        
+        # 创建备份文件
+        $backupFile = "$BACKUP_DIR\MachineGuid_$(Get-Date -Format 'yyyyMMdd_HHmmss').reg"
+        reg export "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography" $backupFile | Out-Null
+        Write-Host "$GREEN[信息]$NC 注册表项已备份到：$backupFile"
+
         # 更新注册表
-        Set-ItemProperty -Path $registryPath -Name "MachineGuid" -Value $newMachineGuid
-        Write-Host "$GREEN[信息]$NC 已更新系统 MachineGuid: $newMachineGuid"
-        Write-Host "$GREEN[信息]$NC 原始值已备份至: $backupFile"
-        Write-Host "$GREEN[信息]$NC 注册表路径: 计算机\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography"
-        Write-Host "$GREEN[信息]$NC 注册表项名: MachineGuid"
+        Set-ItemProperty -Path $registryPath -Name MachineGuid -Value $newGuid -Force
+        
+        # 双重验证
+        $currentValue = (Get-ItemProperty -Path $registryPath).MachineGuid
+        if ($currentValue -ne $newGuid) {
+            throw "注册表验证失败，当前值：$currentValue"
+        }
+
+        Write-Host "$GREEN[信息]$NC 注册表更新成功："
+        Write-Host "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography"
+        Write-Host "    MachineGuid    REG_SZ    $newGuid"
     }
     catch {
-        Write-Host "$RED[错误]$NC 更新系统 MachineGuid 失败: $_"
+        Write-Host "$RED[错误]$NC 注册表操作失败：$_"
+        # 自动恢复备份
+        if (Test-Path $backupFile) {
+            Write-Host "$YELLOW[恢复]$NC 正在从备份恢复..."
+            reg import $backupFile | Out-Null
+            Write-Host "$GREEN[恢复成功]$NC 已还原原始注册表值"
+        }
+        exit 1
     }
 }
 
@@ -412,6 +454,11 @@ try {
     else {
         Write-Host "$GREEN[信息]$NC 保持默认设置，不进行更改"
     }
+
+    # 在主要配置修改后添加注册表修改
+    Generate-NewConfig
+    Update-MachineGuid
+    Show-FileTree
 
 } catch {
     Write-Host "$RED[错误]$NC 主要操作失败: $_"
