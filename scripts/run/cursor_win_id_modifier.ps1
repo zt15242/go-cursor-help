@@ -200,65 +200,72 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 function Update-MachineGuid {
     try {
-        # 增强注册表查询
-        $regResult = reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography" /v MachineGuid 2>&1
-        
-        # 错误处理
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "$RED[错误]$NC 注册表查询失败，错误代码：$LASTEXITCODE"
-            Write-Host "$YELLOW[调试]$NC 原始输出：$regResult"
-            exit 1
+        # 先检查注册表路径是否存在
+        $registryPath = "HKLM:\SOFTWARE\Microsoft\Cryptography"
+        if (-not (Test-Path $registryPath)) {
+            throw "注册表路径不存在: $registryPath"
         }
 
-        # 精确解析GUID（增加空值检查）
-        if ($regResult -match "MachineGuid\s+REG_SZ\s+([0-9a-fA-F-]{36})") {
-            $originalGuid = $matches[1].ToLower()
-            Write-Host "$GREEN[信息]$NC 当前注册表值："
-            Write-Host "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography" 
-            Write-Host "    MachineGuid    REG_SZ    $originalGuid"
+        # 获取当前的 MachineGuid
+        $currentGuid = Get-ItemProperty -Path $registryPath -Name MachineGuid -ErrorAction Stop
+        if (-not $currentGuid) {
+            throw "无法获取当前的 MachineGuid"
+        }
+
+        $originalGuid = $currentGuid.MachineGuid
+        Write-Host "$GREEN[信息]$NC 当前注册表值："
+        Write-Host "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography" 
+        Write-Host "    MachineGuid    REG_SZ    $originalGuid"
+
+        # 创建备份目录（如果不存在）
+        if (-not (Test-Path $BACKUP_DIR)) {
+            New-Item -ItemType Directory -Path $BACKUP_DIR -Force | Out-Null
+        }
+
+        # 创建备份文件
+        $backupFile = "$BACKUP_DIR\MachineGuid_$(Get-Date -Format 'yyyyMMdd_HHmmss').reg"
+        $backupResult = Start-Process "reg.exe" -ArgumentList "export", "`"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography`"", "`"$backupFile`"" -NoNewWindow -Wait -PassThru
+        
+        if ($backupResult.ExitCode -eq 0) {
+            Write-Host "$GREEN[信息]$NC 注册表项已备份到：$backupFile"
         } else {
-            Write-Host "$RED[错误]$NC GUID格式解析失败"
-            Write-Host "$YELLOW[提示]$NC 原始注册表值：$regResult"
-            exit 1
+            Write-Host "$YELLOW[警告]$NC 备份创建失败，继续执行..."
         }
 
         # 生成新GUID
         $newGuid = [System.Guid]::NewGuid().ToString()
-        $registryPath = "HKLM:\SOFTWARE\Microsoft\Cryptography"
-        
-        # 创建备份文件（增加路径验证）
-        $backupFile = if (Test-Path $BACKUP_DIR) {
-            "$BACKUP_DIR\MachineGuid_$(Get-Date -Format 'yyyyMMdd_HHmmss').reg"
-        } else {
-            "$env:TEMP\MachineGuid_$(Get-Date -Format 'yyyyMMdd_HHmmss').reg"
-        }
-        reg export "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography" $backupFile | Out-Null
-        Write-Host "$GREEN[信息]$NC 注册表项已备份到：$backupFile"
 
         # 更新注册表
-        Set-ItemProperty -Path $registryPath -Name MachineGuid -Value $newGuid -Force
+        Set-ItemProperty -Path $registryPath -Name MachineGuid -Value $newGuid -Force -ErrorAction Stop
         
-        # 双重验证
-        $currentValue = (Get-ItemProperty -Path $registryPath).MachineGuid
-        if ($currentValue -ne $newGuid) {
-            throw "注册表验证失败，当前值：$currentValue"
+        # 验证更新
+        $verifyGuid = (Get-ItemProperty -Path $registryPath -Name MachineGuid -ErrorAction Stop).MachineGuid
+        if ($verifyGuid -ne $newGuid) {
+            throw "注册表验证失败：更新后的值 ($verifyGuid) 与预期值 ($newGuid) 不匹配"
         }
 
         Write-Host "$GREEN[信息]$NC 注册表更新成功："
         Write-Host "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography"
         Write-Host "    MachineGuid    REG_SZ    $newGuid"
+        return $true
     }
     catch {
-        Write-Host "$RED[错误]$NC 注册表操作失败：$_"
-        # 自动恢复备份（增加空值检查）
+        Write-Host "$RED[错误]$NC 注册表操作失败：$($_.Exception.Message)"
+        
+        # 尝试恢复备份
         if ($backupFile -and (Test-Path $backupFile)) {
             Write-Host "$YELLOW[恢复]$NC 正在从备份恢复..."
-            reg import $backupFile | Out-Null
-            Write-Host "$GREEN[恢复成功]$NC 已还原原始注册表值"
+            $restoreResult = Start-Process "reg.exe" -ArgumentList "import", "`"$backupFile`"" -NoNewWindow -Wait -PassThru
+            
+            if ($restoreResult.ExitCode -eq 0) {
+                Write-Host "$GREEN[恢复成功]$NC 已还原原始注册表值"
+            } else {
+                Write-Host "$RED[错误]$NC 恢复失败，请手动导入备份文件：$backupFile"
+            }
         } else {
-            Write-Host "$YELLOW[警告]$NC 未找到备份文件，无法自动恢复"
+            Write-Host "$YELLOW[警告]$NC 未找到备份文件或备份创建失败，无法自动恢复"
         }
-        exit 1
+        return $false
     }
 }
 
