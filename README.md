@@ -454,7 +454,11 @@ Modifying this registry key may affect:
 <tr>
 <td align="center">
 <b>ETC Sponsor</b><br>
-<img src="img/etc.png" width="500" alt="ETC Address"><br>
+<img src="img/alipay_scan_pay.jpg" width="300" alt="ETC Address"><br>
+</td>
+<td align="center">
+<b>ETC Sponsor</b><br>
+<img src="img/etc.png" width="300" alt="ETC Address"><br>
 ETC: 0xa2745f4CD5d32310AC01694ABDB28bA32D125a6b
 </td>
 </tr>
