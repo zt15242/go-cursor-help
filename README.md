@@ -447,19 +447,23 @@ Modifying this registry key may affect:
 
 ---
 
-## Contact & Support
+##  Support
 
 <div align="center">
+<b>If you find this helpful, consider buying me a spicy gluten snack (Latiao) as appreciation~ 💁☕️</b>
 <table>
 <tr>
 <td align="center">
-<b>ETC Sponsor</b><br>
-<img src="img/alipay_scan_pay.jpg" width="300" alt="ETC Address"><br>
+<b>Alipay</b><br>
+<img src="img/alipay_scan_pay.jpg" width="500" alt="Alipay"><br>
+<em>1 Latiao = 1 AI thought cycle</em>
 </td>
 <td align="center">
-<b>ETC Sponsor</b><br>
-<img src="img/etc.png" width="300" alt="ETC Address"><br>
+<b>ETC</b><br>
+<img src="img/etc.png" width="200" alt="ETC Address"><br>
 ETC: 0xa2745f4CD5d32310AC01694ABDB28bA32D125a6b
+</td>
+<td align="center">
 </td>
 </tr>
 </table>
