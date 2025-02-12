@@ -210,7 +210,7 @@ function Update-MachineGuid {
             exit 1
         }
 
-        # 精确解析GUID
+        # 精确解析GUID（增加空值检查）
         if ($regResult -match "MachineGuid\s+REG_SZ\s+([0-9a-fA-F-]{36})") {
             $originalGuid = $matches[1].ToLower()
             Write-Host "$GREEN[信息]$NC 当前注册表值："
@@ -226,8 +226,12 @@ function Update-MachineGuid {
         $newGuid = [System.Guid]::NewGuid().ToString()
         $registryPath = "HKLM:\SOFTWARE\Microsoft\Cryptography"
         
-        # 创建备份文件
-        $backupFile = "$BACKUP_DIR\MachineGuid_$(Get-Date -Format 'yyyyMMdd_HHmmss').reg"
+        # 创建备份文件（增加路径验证）
+        $backupFile = if (Test-Path $BACKUP_DIR) {
+            "$BACKUP_DIR\MachineGuid_$(Get-Date -Format 'yyyyMMdd_HHmmss').reg"
+        } else {
+            "$env:TEMP\MachineGuid_$(Get-Date -Format 'yyyyMMdd_HHmmss').reg"
+        }
         reg export "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography" $backupFile | Out-Null
         Write-Host "$GREEN[信息]$NC 注册表项已备份到：$backupFile"
 
@@ -246,11 +250,13 @@ function Update-MachineGuid {
     }
     catch {
         Write-Host "$RED[错误]$NC 注册表操作失败：$_"
-        # 自动恢复备份
-        if (Test-Path $backupFile) {
+        # 自动恢复备份（增加空值检查）
+        if ($backupFile -and (Test-Path $backupFile)) {
             Write-Host "$YELLOW[恢复]$NC 正在从备份恢复..."
             reg import $backupFile | Out-Null
             Write-Host "$GREEN[恢复成功]$NC 已还原原始注册表值"
+        } else {
+            Write-Host "$YELLOW[警告]$NC 未找到备份文件，无法自动恢复"
         }
         exit 1
     }
