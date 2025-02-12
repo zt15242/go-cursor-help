@@ -447,6 +447,22 @@ Modifying this registry key may affect:
 
 ---
 
+## Contact & Support
+
+<div align="center">
+<table>
+<tr>
+<td align="center">
+<b>ETC Sponsor</b><br>
+<img src="img/etc.png" width="500" alt="ETC Address"><br>
+ETC: 0xa2745f4CD5d32310AC01694ABDB28bA32D125a6b
+</td>
+</tr>
+</table>
+</div>
+
+---
+
 ## ⭐ Project Stats
 
 <div align="center">
