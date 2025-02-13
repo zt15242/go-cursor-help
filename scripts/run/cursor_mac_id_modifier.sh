@@ -301,7 +301,7 @@ modify_cursor_app_files() {
     if [ ! -d "$CURSOR_APP_PATH" ]; then
         log_error "未找到 Cursor.app，请确认安装路径: $CURSOR_APP_PATH"
         return 1
-    }
+    fi
 
     # 创建临时工作目录
     local timestamp=$(date +%Y%m%d_%H%M%S)
