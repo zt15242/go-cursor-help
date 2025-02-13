@@ -301,12 +301,13 @@ modify_cursor_app_files() {
     if [ ! -d "$CURSOR_APP_PATH" ]; then
         log_error "未找到 Cursor.app，请确认安装路径: $CURSOR_APP_PATH"
         return 1
-    fi
+    }
 
     # 创建临时工作目录
     local timestamp=$(date +%Y%m%d_%H%M%S)
     local temp_dir="/tmp/cursor_reset_${timestamp}"
     local temp_app="${temp_dir}/Cursor.app"
+    local backup_app="/tmp/Cursor.app.backup_${timestamp}"
     
     # 清理可能存在的旧临时目录
     if [ -d "$temp_dir" ]; then
@@ -320,11 +321,19 @@ modify_cursor_app_files() {
         return 1
     }
 
+    # 备份原应用
+    log_info "备份原应用..."
+    cp -R "$CURSOR_APP_PATH" "$backup_app" || {
+        log_error "无法创建应用备份"
+        rm -rf "$temp_dir"
+        return 1
+    }
+
     # 复制应用到临时目录
     log_info "创建临时工作副本..."
     cp -R "$CURSOR_APP_PATH" "$temp_dir" || {
         log_error "无法复制应用到临时目录"
-        rm -rf "$temp_dir"
+        rm -rf "$temp_dir" "$backup_app"
         return 1
     }
 
@@ -451,38 +460,22 @@ modify_cursor_app_files() {
         return 1
     fi
 
-    # 替换原应用前增加签名验证
-    if ! codesign --verify -vvvv "$temp_app" &>/dev/null; then
-        log_error "最终签名验证失败，中止替换操作"
-        log_info "临时文件保留在：${temp_dir}"
-        return 1
-    fi
-
-    # 关闭原应用
-    log_info "正在关闭 Cursor..."
-    osascript -e 'tell application "Cursor" to quit' || true
-    sleep 2
-    
-    
     # 替换原应用
     log_info "安装修改版应用..."
-    if ! mv "$temp_app" "/Applications/"; then
+    if ! sudo rm -rf "$CURSOR_APP_PATH" || ! sudo cp -R "$temp_app" "/Applications/"; then
         log_error "应用替换失败，正在恢复..."
-        mv "$backup_app" "$CURSOR_APP_PATH"
-        rm -rf "$temp_dir"
+        sudo rm -rf "$CURSOR_APP_PATH"
+        sudo cp -R "$backup_app" "$CURSOR_APP_PATH"
+        rm -rf "$temp_dir" "$backup_app"
         return 1
     fi
     
     # 清理临时文件
-    rm -rf "$temp_dir"
+    rm -rf "$temp_dir" "$backup_app"
     
     # 设置权限
-    chown -R "$CURRENT_USER:staff" "$CURSOR_APP_PATH"
-    chmod -R 755 "$CURSOR_APP_PATH"
-    
-    # 重建 LaunchServices 数据库
-    # log_info "正在重建 LaunchServices 数据库..."
-    # /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$CURSOR_APP_PATH"
+    sudo chown -R "$CURRENT_USER:staff" "$CURSOR_APP_PATH"
+    sudo chmod -R 755 "$CURSOR_APP_PATH"
     
     log_info "Cursor 主程序文件修改完成！原版备份在: ${backup_app/$HOME/\~}"
     return 0
