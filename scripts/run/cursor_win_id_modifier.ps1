@@ -468,10 +468,8 @@ try {
         Write-Host "$GREEN[信息]$NC 保持默认设置，不进行更改"
     }
 
-    # 在主要配置修改后添加注册表修改
-    Generate-NewConfig
+    # 保留有效的注册表更新
     Update-MachineGuid
-    Show-FileTree
 
 } catch {
     Write-Host "$RED[错误]$NC 主要操作失败: $_"
