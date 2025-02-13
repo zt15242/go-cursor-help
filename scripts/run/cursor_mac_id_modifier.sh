@@ -413,25 +413,56 @@ modify_cursor_app_files() {
         return 1
     fi
     
-    # 重新签名应用
-    log_info "重新签名应用..."
-    codesign --sign - "$temp_app" --force --deep || {
-        log_warn "应用重新签名失败"
-    }
+    # 重新签名应用（增加重试机制）
+    local max_retry=3
+    local retry_count=0
+    local sign_success=false
+    
+    while [ $retry_count -lt $max_retry ]; do
+        ((retry_count++))
+        log_info "尝试签名 (第 $retry_count 次)..."
+        
+        # 使用更详细的签名参数
+        if codesign --sign - --force --deep --preserve-metadata=entitlements,identifier,flags "$temp_app" 2>&1 | tee /tmp/codesign.log; then
+            # 验证签名
+            if codesign --verify -vvvv "$temp_app" 2>/dev/null; then
+                sign_success=true
+                log_info "应用签名验证通过"
+                break
+            else
+                log_warn "签名验证失败，错误日志："
+                cat /tmp/codesign.log
+            fi
+        else
+            log_warn "签名失败，错误日志："
+            cat /tmp/codesign.log
+        fi
+        
+        sleep 1
+    done
+
+    if ! $sign_success; then
+        log_error "经过 $max_retry 次尝试仍无法完成签名"
+        log_error "请手动执行以下命令完成签名："
+        echo -e "${BLUE}sudo codesign --sign - --force --deep '${temp_app}'${NC}"
+        echo -e "${YELLOW}操作完成后，请手动将应用复制到原路径：${NC}"
+        echo -e "${BLUE}sudo cp -R '${temp_app}' '/Applications/'${NC}"
+        log_info "临时文件保留在：${temp_dir}"
+        return 1
+    fi
+
+    # 替换原应用前增加签名验证
+    if ! codesign --verify -vvvv "$temp_app" &>/dev/null; then
+        log_error "最终签名验证失败，中止替换操作"
+        log_info "临时文件保留在：${temp_dir}"
+        return 1
+    fi
 
     # 关闭原应用
     log_info "正在关闭 Cursor..."
     osascript -e 'tell application "Cursor" to quit' || true
     sleep 2
     
-    # 创建应用备份
-    local backup_app="/Applications/Cursor.backup.${timestamp}.app"
-    log_info "创建应用备份: ${backup_app/$HOME/\~}"
-    if ! mv "$CURSOR_APP_PATH" "$backup_app"; then
-        log_error "创建备份失败"
-        rm -rf "$temp_dir"
-        return 1
-    fi
     
     # 替换原应用
     log_info "安装修改版应用..."
