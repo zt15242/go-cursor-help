@@ -27,8 +27,8 @@
 <div class="version-card" style="background: linear-gradient(135deg, #6e8efb, #a777e3); border-radius: 8px; padding: 15px; margin: 10px 0; color: white;">
 
 ### 🌟 最新版本
-- v0.45.11 (2024-02-07) - 最新发布
-- v0.44.11 (2024-01-03) - 最稳定版本
+- v0.45.11 (2025-02-07) - 最新发布
+- v0.44.11 (2025-01-03) - 最稳定版本
 
 [查看完整版本历史](CursorHistoryDown.md)
 

@@ -27,8 +27,8 @@
 <div class="version-card" style="background: linear-gradient(135deg, #6e8efb, #a777e3); border-radius: 8px; padding: 15px; margin: 10px 0; color: white;">
 
 ### 🌟 Latest Versions
-- v0.45.11 (2024-02-07) - Latest Release
-- v0.44.11 (2024-01-03) - Most Stable Release
+- v0.45.11 (2025-02-07) - Latest Release
+- v0.44.11 (2025-01-03) - Most Stable Release
 
 [View Full Version History](CursorHistoryDown.md)
 
