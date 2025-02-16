@@ -135,7 +135,7 @@ backup_config() {
     if [ ! -f "$STORAGE_FILE" ]; then
         log_warn "配置文件不存在，跳过备份"
         return 0
-    }
+    fi
     
     mkdir -p "$BACKUP_DIR"
     local backup_file="$BACKUP_DIR/storage.json.backup_$(date +%Y%m%d_%H%M%S)"
@@ -170,7 +170,7 @@ modify_or_add_config() {
     if [ ! -f "$file" ]; then
         log_error "文件不存在: $file"
         return 1
-    }
+    fi
     
     # 确保文件可写
     chmod 644 "$file" || {
@@ -203,7 +203,7 @@ modify_or_add_config() {
         log_error "生成的临时文件为空"
         rm -f "$temp_file"
         return 1
-    }
+    fi
     
     # 使用 cat 替换原文件内容
     cat "$temp_file" > "$file" || {
@@ -416,7 +416,7 @@ main() {
     if [[ $(uname) != "Linux" ]]; then
         log_error "本脚本仅支持 Linux 系统"
         exit 1
-    }
+    fi
     
     clear
     # 显示 Logo
