@@ -303,6 +303,43 @@ modify_cursor_app_files() {
         return 1
     fi
 
+    # 定义目标文件
+    local target_files=(
+        "${CURSOR_APP_PATH}/Contents/Resources/app/out/main.js"
+        "${CURSOR_APP_PATH}/Contents/Resources/app/out/vs/code/node/cliProcessMain.js"
+    )
+    
+    # 检查文件是否存在并且是否已修改
+    local need_modification=false
+    local missing_files=false
+    
+    for file in "${target_files[@]}"; do
+        if [ ! -f "$file" ]; then
+            log_warn "文件不存在: ${file/$CURSOR_APP_PATH\//}"
+            missing_files=true
+            continue
+        fi
+        
+        if ! grep -q "return crypto.randomUUID()" "$file" 2>/dev/null; then
+            log_info "文件需要修改: ${file/$CURSOR_APP_PATH\//}"
+            need_modification=true
+            break
+        else
+            log_info "文件已修改: ${file/$CURSOR_APP_PATH\//}"
+        fi
+    done
+    
+    # 如果所有文件都已修改或不存在，则退出
+    if [ "$missing_files" = true ]; then
+        log_error "部分目标文件不存在，请确认 Cursor 安装是否完整"
+        return 1
+    fi
+    
+    if [ "$need_modification" = false ]; then
+        log_info "所有目标文件已经被修改过，无需重复操作"
+        return 0
+    fi
+
     # 创建临时工作目录
     local timestamp=$(date +%Y%m%d_%H%M%S)
     local temp_dir="/tmp/cursor_reset_${timestamp}"
