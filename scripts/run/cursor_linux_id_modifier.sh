@@ -167,6 +167,10 @@ modify_or_add_config() {
     local value="$2"
     local file="$3"
     
+    # 转义特殊字符
+    local key_escaped=$(sed 's/[\/&]/\\&/g' <<< "$key")
+    local value_escaped=$(sed 's/[\/&]/\\&/g' <<< "$value")
+    
     if [ ! -f "$file" ]; then
         log_error "文件不存在: $file"
         return 1
@@ -183,15 +187,15 @@ modify_or_add_config() {
     
     # 检查key是否存在
     if grep -q "\"$key\":" "$file"; then
-        # key存在,执行替换
-        sed "s|\"$key\":[[:space:]]*\"[^\"]*\"|\"$key\": \"$value\"|" "$file" > "$temp_file" || {
+        # 使用#作为分隔符避免冲突，并转义特殊字符
+        sed "s#\"${key_escaped}\":[[:space:]]*\"[^\"]*\"#\"${key_escaped}\": \"${value_escaped}\"#" "$file" > "$temp_file" || {
             log_error "修改配置失败: $key"
             rm -f "$temp_file"
             return 1
         }
     else
-        # key不存在,添加新的key-value对
-        sed "s/}$/,\n    \"$key\": \"$value\"\n}/" "$file" > "$temp_file" || {
+        # 添加新键值对时转义特殊字符
+        sed "s/}$/,\n    \"${key_escaped}\": \"${value_escaped}\"\n}/" "$file" > "$temp_file" || {
             log_error "添加配置失败: $key"
             rm -f "$temp_file"
             return 1
