@@ -152,8 +152,8 @@ backup_config() {
 
 # 生成随机 ID
 generate_random_id() {
-    # 生成32字节(64个十六进制字符)的随机数
-    head -c 32 /dev/urandom | xxd -p
+    # 生成32字节(64个十六进制字符)的随机数，并确保一行输出
+    head -c 32 /dev/urandom | xxd -p -c 32
 }
 
 # 生成随机 UUID
@@ -174,6 +174,15 @@ modify_or_add_config() {
     if [ ! -f "$file" ]; then
         log_error "文件不存在: $file"
         return 1
+    fi
+    
+    # 检查并移除chattr只读属性（如果存在）
+    if lsattr "$file" 2>/dev/null | grep -q '^....i'; then
+        log_debug "移除文件不可变属性..."
+        sudo chattr -i "$file" || {
+            log_error "无法移除文件不可变属性"
+            return 1
+        }
     fi
     
     # 确保文件可写
