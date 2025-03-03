@@ -69,11 +69,12 @@ check_and_kill_cursor() {
     get_process_details() {
         local process_name="$1"
         log_debug "正在获取 $process_name 进程详细信息："
-        ps aux | grep -i "$process_name" | grep -v grep
+        ps aux | grep -i "/Applications/Cursor.app" | grep -v grep
     }
     
     while [ $attempt -le $max_attempts ]; do
-        CURSOR_PIDS=$(pgrep -i "cursor" || true)
+        # 使用更精确的匹配来获取 Cursor 进程
+        CURSOR_PIDS=$(ps aux | grep -i "/Applications/Cursor.app" | grep -v grep | awk '{print $2}')
         
         if [ -z "$CURSOR_PIDS" ]; then
             log_info "未发现运行中的 Cursor 进程"
@@ -94,7 +95,8 @@ check_and_kill_cursor() {
         
         sleep 1
         
-        if ! pgrep -i "cursor" > /dev/null; then
+        # 同样使用更精确的匹配来检查进程是否还在运行
+        if ! ps aux | grep -i "/Applications/Cursor.app" | grep -v grep > /dev/null; then
             log_info "Cursor 进程已成功关闭"
             return 0
         fi
