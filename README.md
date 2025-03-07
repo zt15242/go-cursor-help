@@ -138,6 +138,14 @@ Request ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 You've reached your trial request limit.
 ```
 
+#### Issue 4: Claude 3.7 High Load <p align="right"><a href="#issue4"><img src="https://img.shields.io/badge/Move%20to%20Solution-purple?style=plastic" alt="Back To Top"></a></p>
+
+```text
+High Load 
+We're experiencing high demand for Claude 3.7 Sonnet right now. Please upgrade to Pro, or switch to the
+'default' model, Claude 3.5 sonnet, another model, or try again in a few moments.
+```
+
 <br>
 
 <p id="issue2"></p>
@@ -175,6 +183,17 @@ If the above solutions don't work, try:
 - Switch to low-latency nodes (Recommended regions: Japan, Singapore, US, Hong Kong)
 - Ensure network stability
 - Clear browser cache and retry
+
+#### Solution 4: Claude 3.7 Access Issue (High Load)
+
+If you see the "High Load" message for Claude 3.7 Sonnet, this indicates Cursor is limiting free trial accounts from using the 3.7 model during certain times of the day. Try:
+
+1. Switch to a new account created with Gmail, possibly connecting through a different IP address
+2. Try accessing during off-peak hours (typically 5-10 AM or 3-7 PM when restrictions are often lighter)
+3. Consider upgrading to Pro for guaranteed access
+4. Use Claude 3.5 Sonnet as a fallback option
+
+> Note: These access patterns may change as Cursor adjusts their resource allocation policies.
 
 ### 💻 System Support
 
@@ -454,13 +473,23 @@ Modifying this registry key may affect:
 <table>
 <tr>
 <td align="center">
+<b>微信赞赏</b><br>
+<img src="img/wx_zsm2.png" width="500" alt="微信赞赏码"><br>
+<small>要到饭咧？啊咧？啊咧？不给也没事~ 请随意打赏</small>
+</td>
+<td align="center">
+<b>支付宝赞赏</b><br>
+<img src="img/alipay.png" width="500" alt="支付宝赞赏码"><br>
+<small>如果觉得有帮助,来包辣条犒劳一下吧~</small>
+</td>
+<td align="center">
 <b>Alipay</b><br>
 <img src="img/alipay_scan_pay.jpg" width="500" alt="Alipay"><br>
 <em>1 Latiao = 1 AI thought cycle</em>
 </td>
 <td align="center">
 <b>ETC</b><br>
-<img src="img/etc.png" width="200" alt="ETC Address"><br>
+<img src="img/etc.png" width="100" alt="ETC Address"><br>
 ETC: 0xa2745f4CD5d32310AC01694ABDB28bA32D125a6b
 </td>
 <td align="center">

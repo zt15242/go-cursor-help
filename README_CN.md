@@ -50,6 +50,98 @@
 > - 此修改可能会暂时影响网络连接
 > - 执行过程中可以选择跳过此步骤
 
+---
+
+### 📝 问题描述
+
+> 当您遇到以下任何消息时：
+
+#### 问题 1: 试用账号限制 <p align="right"><a href="#solution1"><img src="https://img.shields.io/badge/跳转到解决方案-Blue?style=plastic" alt="跳转到顶部"></a></p>
+
+```text
+Too many free trial accounts used on this machine.
+Please upgrade to pro. We have this limit in place
+to prevent abuse. Please let us know if you believe
+this is a mistake.
+```
+
+#### 问题 2: API密钥限制 <p align="right"><a href="#solution2"><img src="https://img.shields.io/badge/跳转到解决方案-green?style=plastic" alt="跳转到顶部"></a></p>
+
+```text
+[New Issue]
+
+Composer relies on custom models that cannot be billed to an API key.
+Please disable API keys and use a Pro or Business subscription.
+Request ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+#### 问题 3: 试用请求限制
+
+> 这表明您在VIP免费试用期间已达到使用限制：
+
+```text
+You've reached your trial request limit.
+```
+
+#### 问题 4: Claude 3.7 高负载 （High Load）  <p align="right"><a href="#solution4"><img src="https://img.shields.io/badge/跳转到解决方案-purple?style=plastic" alt="跳转到顶部"></a></p>
+
+```text
+High Load 
+We're experiencing high demand for Claude 3.7 Sonnet right now. Please upgrade to Pro, or switch to the
+'default' model, Claude 3.5 sonnet, another model, or try again in a few moments.
+```
+
+<br>
+
+<p id="solution2"></p>
+
+#### 解决方案：完全卸载Cursor并重新安装（API密钥问题）
+
+1. 下载 [Geek.exe 卸载工具[免费]](https://geekuninstaller.com/download)
+2. 完全卸载Cursor应用
+3. 重新安装Cursor应用
+4. 继续执行解决方案1
+
+<br>
+
+<p id="solution1"></p>
+
+> 临时解决方案：
+
+#### 解决方案 1: 快速重置（推荐）
+
+1. 关闭Cursor应用
+2. 运行机器码重置脚本（见下方安装说明）
+3. 重新打开Cursor继续使用
+
+#### 解决方案 2: 切换账号
+
+1. 文件 -> Cursor设置 -> 退出登录
+2. 关闭Cursor
+3. 运行机器码重置脚本
+4. 使用新账号登录
+
+#### 解决方案 3: 网络优化
+
+如果上述解决方案不起作用，请尝试：
+
+- 切换到低延迟节点（推荐区域：日本、新加坡、美国、香港）
+- 确保网络稳定性
+- 清除浏览器缓存并重试
+
+<p id="solution4"></p>
+
+#### 解决方案 4: Claude 3.7 访问问题（High Load ）
+
+如果您看到Claude 3.7 Sonnet的"High Load"（高负载）消息，这表明Cursor在一天中某些时段限制免费试用账号使用3.7模型。请尝试：
+
+1. 使用Gmail邮箱创建新账号，可能需要通过不同IP地址连接
+2. 尝试在非高峰时段访问（通常在早上5-10点或下午3-7点之间限制较少）
+3. 考虑升级到Pro版本获取保证访问权限
+4. 使用Claude 3.5 Sonnet作为备选方案
+
+> 注意：随着Cursor调整资源分配策略，这些访问模式可能会发生变化。
+
 ### 🚀 系统支持
 
 <table>
