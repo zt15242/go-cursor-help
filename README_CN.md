@@ -410,8 +410,8 @@ touch ~/Library/Application\ Support/Caches/cursor-updater
 </td>
 <td align="center">
 <b>微信交流群</b><br>
-<img src="img/wx_group.jpg" width="250" alt="微信群二维码"><br>
-<small>7天内(3月10日前)有效，群满可以加公众号关注最新动态</small>
+<img src="img/wx_group6.jpg" width="500" alt="WeChat"><br>
+<small>二维码7天内(3月19日前)有效，过期请加微信</small>
 </td>
 <td align="center">
 <b>公众号</b><br>

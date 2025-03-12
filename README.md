@@ -483,6 +483,7 @@ Modifying this registry key may affect:
 <b>If you find this helpful, consider buying me a spicy gluten snack (Latiao) as appreciation~ 💁☕️</b>
 <table>
 <tr>
+
 <td align="center">
 <b>微信赞赏</b><br>
 <img src="img/wx_zsm2.png" width="500" alt="微信赞赏码"><br>
@@ -499,11 +500,16 @@ Modifying this registry key may affect:
 <em>1 Latiao = 1 AI thought cycle</em>
 </td>
 <td align="center">
+<b>WeChat</b><br>
+<img src="img/wx_group6.jpg" width="500" alt="WeChat"><br>
+<em>二维码7天内(3月19日前)有效，过期请加微信</em>
+</td>
+<!-- <td align="center">
 <b>ETC</b><br>
 <img src="img/etc.png" width="100" alt="ETC Address"><br>
 ETC: 0xa2745f4CD5d32310AC01694ABDB28bA32D125a6b
 </td>
-<td align="center">
+<td align="center"> -->
 </td>
 </tr>
 </table>
