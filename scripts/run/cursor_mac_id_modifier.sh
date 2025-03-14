@@ -394,7 +394,7 @@ modify_cursor_app_files() {
     if [ -d "$temp_dir" ]; then
         log_info "清理已存在的临时目录..."
         rm -rf "$temp_dir"
-    }
+    fi
     
     # 创建新的临时目录
     mkdir -p "$temp_dir" || {
