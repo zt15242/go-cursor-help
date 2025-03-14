@@ -3,6 +3,15 @@
 # 设置错误处理
 set -e
 
+# 定义日志文件路径
+LOG_FILE="/tmp/cursor_mac_id_modifier.log"
+
+# 初始化日志文件
+initialize_log() {
+    echo "========== Cursor ID 修改工具日志开始 $(date) ==========" > "$LOG_FILE"
+    chmod 644 "$LOG_FILE"
+}
+
 # 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -10,21 +19,35 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# 日志函数
+# 日志函数 - 同时输出到终端和日志文件
 log_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
+    echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') $1" >> "$LOG_FILE"
 }
 
 log_warn() {
     echo -e "${YELLOW}[WARN]${NC} $1"
+    echo "[WARN] $(date '+%Y-%m-%d %H:%M:%S') $1" >> "$LOG_FILE"
 }
 
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+    echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') $1" >> "$LOG_FILE"
 }
 
 log_debug() {
     echo -e "${BLUE}[DEBUG]${NC} $1"
+    echo "[DEBUG] $(date '+%Y-%m-%d %H:%M:%S') $1" >> "$LOG_FILE"
+}
+
+# 记录命令输出到日志文件
+log_cmd_output() {
+    local cmd="$1"
+    local msg="$2"
+    echo "[CMD] $(date '+%Y-%m-%d %H:%M:%S') 执行命令: $cmd" >> "$LOG_FILE"
+    echo "[CMD] $msg:" >> "$LOG_FILE"
+    eval "$cmd" 2>&1 | tee -a "$LOG_FILE"
+    echo "" >> "$LOG_FILE"
 }
 
 # 获取当前用户
@@ -226,15 +249,19 @@ generate_new_config() {
   
     # 修改系统 ID
     log_info "正在修改系统 ID..."
+    echo "[CONFIG] 开始修改系统 ID" >> "$LOG_FILE"
     
     # 备份当前系统 ID
     backup_system_id
     
     # 生成新的系统 UUID
     local new_system_uuid=$(uuidgen)
+    echo "[CONFIG] 生成新的系统 UUID: $new_system_uuid" >> "$LOG_FILE"
     
     # 修改系统 UUID
     sudo nvram SystemUUID="$new_system_uuid"
+    echo "[CONFIG] 已设置系统 UUID" >> "$LOG_FILE"
+    
     printf "${YELLOW}系统 UUID 已更新为: $new_system_uuid${NC}\n"
     printf "${YELLOW}请重启系统以使更改生效${NC}\n"
     
@@ -246,6 +273,12 @@ generate_new_config() {
     local mac_machine_id=$(generate_random_id)
     local device_id=$(generate_uuid | tr '[:upper:]' '[:lower:]')
     local sqm_id="{$(generate_uuid | tr '[:lower:]' '[:upper:]')}"
+    
+    echo "[CONFIG] 生成的 ID:" >> "$LOG_FILE"
+    echo "[CONFIG] machine_id: $machine_id" >> "$LOG_FILE"
+    echo "[CONFIG] mac_machine_id: $mac_machine_id" >> "$LOG_FILE"
+    echo "[CONFIG] device_id: $device_id" >> "$LOG_FILE"
+    echo "[CONFIG] sqm_id: $sqm_id" >> "$LOG_FILE"
     
     log_info "正在修改配置文件..."
     # 检查配置文件是否存在
@@ -298,6 +331,7 @@ generate_new_config() {
 # 修改 Cursor 主程序文件（安全模式）
 modify_cursor_app_files() {
     log_info "正在安全修改 Cursor 主程序文件..."
+    log_info "详细日志将记录到: $LOG_FILE"
     
     # 验证应用是否存在
     if [ ! -d "$CURSOR_APP_PATH" ]; then
@@ -315,15 +349,20 @@ modify_cursor_app_files() {
     local need_modification=false
     local missing_files=false
     
+    log_debug "检查目标文件..."
     for file in "${target_files[@]}"; do
         if [ ! -f "$file" ]; then
             log_warn "文件不存在: ${file/$CURSOR_APP_PATH\//}"
+            echo "[FILE_CHECK] 文件不存在: $file" >> "$LOG_FILE"
             missing_files=true
             continue
         fi
         
+        echo "[FILE_CHECK] 文件存在: $file ($(wc -c < "$file") 字节)" >> "$LOG_FILE"
+        
         if ! grep -q "return crypto.randomUUID()" "$file" 2>/dev/null; then
             log_info "文件需要修改: ${file/$CURSOR_APP_PATH\//}"
+            grep -n "IOPlatformUUID" "$file" | head -3 >> "$LOG_FILE" || echo "[FILE_CHECK] 未找到 IOPlatformUUID" >> "$LOG_FILE"
             need_modification=true
             break
         else
@@ -348,33 +387,47 @@ modify_cursor_app_files() {
     local temp_app="${temp_dir}/Cursor.app"
     local backup_app="/tmp/Cursor.app.backup_${timestamp}"
     
+    log_debug "创建临时目录: $temp_dir"
+    echo "[TEMP_DIR] 创建临时目录: $temp_dir" >> "$LOG_FILE"
+    
     # 清理可能存在的旧临时目录
     if [ -d "$temp_dir" ]; then
         log_info "清理已存在的临时目录..."
         rm -rf "$temp_dir"
-    fi
+    }
     
     # 创建新的临时目录
     mkdir -p "$temp_dir" || {
         log_error "无法创建临时目录: $temp_dir"
+        echo "[ERROR] 无法创建临时目录: $temp_dir" >> "$LOG_FILE"
         return 1
     }
 
     # 备份原应用
     log_info "备份原应用..."
+    echo "[BACKUP] 开始备份: $CURSOR_APP_PATH -> $backup_app" >> "$LOG_FILE"
+    
     cp -R "$CURSOR_APP_PATH" "$backup_app" || {
         log_error "无法创建应用备份"
+        echo "[ERROR] 备份失败: $CURSOR_APP_PATH -> $backup_app" >> "$LOG_FILE"
         rm -rf "$temp_dir"
         return 1
     }
+    
+    echo "[BACKUP] 备份完成" >> "$LOG_FILE"
 
     # 复制应用到临时目录
     log_info "创建临时工作副本..."
+    echo "[COPY] 开始复制: $CURSOR_APP_PATH -> $temp_dir" >> "$LOG_FILE"
+    
     cp -R "$CURSOR_APP_PATH" "$temp_dir" || {
         log_error "无法复制应用到临时目录"
+        echo "[ERROR] 复制失败: $CURSOR_APP_PATH -> $temp_dir" >> "$LOG_FILE"
         rm -rf "$temp_dir" "$backup_app"
         return 1
     }
+    
+    echo "[COPY] 复制完成" >> "$LOG_FILE"
 
     # 确保临时目录的权限正确
     chown -R "$CURRENT_USER:staff" "$temp_dir"
@@ -382,8 +435,11 @@ modify_cursor_app_files() {
 
     # 移除签名（增强兼容性）
     log_info "移除应用签名..."
-    codesign --remove-signature "$temp_app" || {
+    echo "[CODESIGN] 移除签名: $temp_app" >> "$LOG_FILE"
+    
+    codesign --remove-signature "$temp_app" 2>> "$LOG_FILE" || {
         log_warn "移除应用签名失败"
+        echo "[WARN] 移除签名失败: $temp_app" >> "$LOG_FILE"
     }
 
     # 移除所有相关组件的签名
@@ -416,50 +472,37 @@ modify_cursor_app_files() {
             continue
         fi
         
-        log_debug "分析文件内容..."
-        log_debug "文件大小: $(wc -c < "$file") 字节"
-
-        # 尝试查找文件中的关键部分
-        log_debug "搜索关键函数..."
-        grep -n "IOPlatformUUID" "$file" | head -3 || log_debug "未找到 IOPlatformUUID"
-        grep -n "function.*getMachineId" "$file" | head -3 || log_debug "未找到 getMachineId 函数"
-        grep -n "function.*getDeviceId" "$file" | head -3 || log_debug "未找到 getDeviceId 函数"
-        grep -n "function t\\$" "$file" | head -3 || log_debug "未找到 t$ 函数"
-        grep -n "function a\\$" "$file" | head -3 || log_debug "未找到 a$ 函数"
-
-        # 在出错时捕获更多信息
-        trap 'log_error "脚本在 $LINENO 行附近失败了，命令: $BASH_COMMAND"; dump_debug_info "$file"' ERR
-
-        dump_debug_info() {
-            local file="$1"
-            log_debug "=== 调试信息 ==="
-            log_debug "文件: $file"
-            log_debug "文件存在: $(test -f "$file" && echo "是" || echo "否")"
-            log_debug "文件大小: $(wc -c < "$file" 2>/dev/null || echo "无法读取")"
-            log_debug "文件权限: $(ls -l "$file" 2>/dev/null || echo "无法获取")"
-            log_debug "部分内容: $(head -5 "$file" 2>/dev/null | tr '\n' ' ' || echo "无法读取")"
-            log_debug "================="
-        }
+        log_debug "处理文件: ${file/$temp_dir\//}"
+        echo "[PROCESS] 开始处理文件: $file" >> "$LOG_FILE"
+        echo "[PROCESS] 文件大小: $(wc -c < "$file") 字节" >> "$LOG_FILE"
+        
+        # 输出文件部分内容到日志
+        echo "[FILE_CONTENT] 文件头部 100 行:" >> "$LOG_FILE"
+        head -100 "$file" 2>/dev/null | grep -v "^$" | head -50 >> "$LOG_FILE"
+        echo "[FILE_CONTENT] ..." >> "$LOG_FILE"
         
         # 创建文件备份
         cp "$file" "${file}.bak" || {
             log_error "无法创建文件备份: ${file/$temp_dir\//}"
+            echo "[ERROR] 无法创建文件备份: $file" >> "$LOG_FILE"
             continue
         }
 
         # 使用 sed 替换而不是字符串操作
         if grep -q "IOPlatformUUID" "$file"; then
             log_debug "找到 IOPlatformUUID 关键字"
+            echo "[FOUND] 找到 IOPlatformUUID 关键字" >> "$LOG_FILE"
+            grep -n "IOPlatformUUID" "$file" | head -5 >> "$LOG_FILE"
             
             # 定位 IOPlatformUUID 相关函数
-            if grep -q "function a\\$" "$file"; then
+            if grep -q "function a\$" "$file"; then
                 # 针对 main.js 中发现的代码结构进行修改
                 if sed -i.tmp 's/function a\$(t){switch/function a\$(t){return crypto.randomUUID(); switch/' "$file"; then
-                    log_debug "成功注入 randomUUID 调用到 a$ 函数"
+                    log_debug "成功注入 randomUUID 调用到 a\$ 函数"
                     ((modified_count++))
                     log_info "成功修改文件: ${file/$temp_dir\//}"
                 else
-                    log_error "修改 a$ 函数失败"
+                    log_error "修改 a\$ 函数失败"
                     cp "${file}.bak" "$file"
                 fi
             elif grep -q "async function v5" "$file"; then
@@ -567,8 +610,13 @@ global.macMachineId = '${mac_machine_id}';
             fi
         fi
         
+        # 添加在关键操作后记录日志
+        echo "[MODIFIED] 文件修改后内容:" >> "$LOG_FILE"
+        grep -n "return crypto.randomUUID()" "$file" | head -3 >> "$LOG_FILE"
+        
         # 清理临时文件
         rm -f "${file}.tmp" "${file}.bak"
+        echo "[PROCESS] 文件处理完成: $file" >> "$LOG_FILE"
     done
     
     if [ "$modified_count" -eq 0 ]; then
@@ -881,12 +929,22 @@ restore_feature() {
 # 主函数
 main() {
     
+    # 初始化日志文件
+    initialize_log
+    log_info "脚本启动..."
+    
+    # 记录系统信息
+    log_info "系统信息: $(uname -a)"
+    log_info "当前用户: $CURRENT_USER"
+    log_cmd_output "sw_vers" "macOS 版本信息"
+    log_cmd_output "which codesign" "codesign 路径"
+    log_cmd_output "ls -la \"$CURSOR_APP_PATH\"" "Cursor 应用信息"
+    
     # 新增环境检查
     if [[ $(uname) != "Darwin" ]]; then
         log_error "本脚本仅支持 macOS 系统"
         exit 1
     fi
-    
     
     clear
     # 显示 Logo
@@ -972,7 +1030,15 @@ main() {
     # 显示最后的提示信息
     show_follow_info
 
+    # 记录脚本完成信息
+    log_info "脚本执行完成"
+    echo "========== Cursor ID 修改工具日志结束 $(date) ==========" >> "$LOG_FILE"
     
+    # 显示日志文件位置
+    echo
+    log_info "详细日志已保存到: $LOG_FILE"
+    echo "如遇问题请将此日志文件提供给开发者以协助排查"
+    echo
 }
 
 # 执行主函数
