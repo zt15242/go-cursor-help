@@ -1034,48 +1034,7 @@ main() {
     echo -e "${YELLOW}[重要提示]${NC} 本工具免费，如果对您有帮助，请关注公众号【煎饼果子卷AI】"
     echo
     
-    # 询问用户是否需要修复Cursor
-    echo
-    log_warn "Cursor 修复选项"
-    echo "0) 正常模式 - 继续正常执行脚本 (默认)"
-    echo "1) 修复模式 - 仅恢复原始的 Cursor 安装，修复之前修改导致的错误"
-    echo "2) 强制修复 - 恢复原始安装并继续进行修改"
-    echo ""
-    printf "请选择操作模式 [0-2] (默认 0): "
-    
-    # 清空输入缓冲区
-    while read -r -t 0.1; do read -r; done
-    
-    # 使用/dev/tty确保直接从终端读取输入
-    fix_choice=""
-    read -r fix_choice </dev/tty
-    
-    # 处理用户选择
-    case "$fix_choice" in
-        1)
-            log_info "您选择了修复模式"
-            # 清理Cursor应用
-            if clean_cursor_app; then
-                log_info "Cursor 已恢复到原始状态"
-                log_info "如果您需要应用ID修改，请重新运行此脚本"
-                exit 0
-            else
-                log_warn "未能找到备份，无法自动恢复"
-                log_warn "建议重新安装 Cursor"
-                exit 1
-            fi
-            ;;
-        2)
-            log_info "您选择了强制修复模式"
-            # 清理应用但继续执行
-            clean_cursor_app
-            log_info "继续执行脚本..."
-            ;;
-        *)
-            log_info "您选择了正常模式"
-            ;;
-    esac
-    
+    # 删除开头的修复选项部分，直接执行主要功能
     check_permissions
     check_and_kill_cursor
     backup_config
@@ -1156,6 +1115,39 @@ main() {
 
     # 显示最后的提示信息
     show_follow_info
+
+    # 提供修复选项（移到最后）
+    echo
+    log_warn "Cursor 修复选项"
+    echo "0) 忽略 - 不执行修复操作 (默认)"
+    echo "1) 修复模式 - 恢复原始的 Cursor 安装，修复之前修改导致的错误"
+    echo ""
+    printf "是否需要恢复原始 Cursor？ [0-1] (默认 0): "
+    
+    # 清空输入缓冲区
+    while read -r -t 0.1; do read -r; done
+    
+    # 使用/dev/tty确保直接从终端读取输入
+    fix_choice=""
+    read -r fix_choice </dev/tty
+    
+    # 处理用户选择
+    case "$fix_choice" in
+        1)
+            log_info "您选择了修复模式"
+            # 清理Cursor应用
+            if clean_cursor_app; then
+                log_info "Cursor 已恢复到原始状态"
+                log_info "如果您需要应用ID修改，请重新运行此脚本"
+            else
+                log_warn "未能找到备份，无法自动恢复"
+                log_warn "建议重新安装 Cursor"
+            fi
+            ;;
+        *)
+            log_info "已跳过修复操作"
+            ;;
+    esac
 
     # 记录脚本完成信息
     log_info "脚本执行完成"
