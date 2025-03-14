@@ -416,7 +416,30 @@ modify_cursor_app_files() {
             continue
         fi
         
-        log_debug "处理文件: ${file/$temp_dir\//}"
+        log_debug "分析文件内容..."
+        log_debug "文件大小: $(wc -c < "$file") 字节"
+
+        # 尝试查找文件中的关键部分
+        log_debug "搜索关键函数..."
+        grep -n "IOPlatformUUID" "$file" | head -3 || log_debug "未找到 IOPlatformUUID"
+        grep -n "function.*getMachineId" "$file" | head -3 || log_debug "未找到 getMachineId 函数"
+        grep -n "function.*getDeviceId" "$file" | head -3 || log_debug "未找到 getDeviceId 函数"
+        grep -n "function t\\$" "$file" | head -3 || log_debug "未找到 t$ 函数"
+        grep -n "function a\\$" "$file" | head -3 || log_debug "未找到 a$ 函数"
+
+        # 在出错时捕获更多信息
+        trap 'log_error "脚本在 $LINENO 行附近失败了，命令: $BASH_COMMAND"; dump_debug_info "$file"' ERR
+
+        dump_debug_info() {
+            local file="$1"
+            log_debug "=== 调试信息 ==="
+            log_debug "文件: $file"
+            log_debug "文件存在: $(test -f "$file" && echo "是" || echo "否")"
+            log_debug "文件大小: $(wc -c < "$file" 2>/dev/null || echo "无法读取")"
+            log_debug "文件权限: $(ls -l "$file" 2>/dev/null || echo "无法获取")"
+            log_debug "部分内容: $(head -5 "$file" 2>/dev/null | tr '\n' ' ' || echo "无法读取")"
+            log_debug "================="
+        }
         
         # 创建文件备份
         cp "$file" "${file}.bak" || {
@@ -424,35 +447,128 @@ modify_cursor_app_files() {
             continue
         }
 
-        # 读取文件内容
-        local content=$(cat "$file")
-        
-        # 查找 IOPlatformUUID 的位置
-        local uuid_pos=$(printf "%s" "$content" | grep -b -o "IOPlatformUUID" | cut -d: -f1)
-        if [ -z "$uuid_pos" ]; then
-            log_warn "在 $file 中未找到 IOPlatformUUID"
-            continue
-        fi
-
-        # 从 UUID 位置向前查找 switch
-        local before_uuid=${content:0:$uuid_pos}
-        local switch_pos=$(printf "%s" "$before_uuid" | grep -b -o "switch" | tail -n1 | cut -d: -f1)
-        if [ -z "$switch_pos" ]; then
-            log_warn "在 $file 中未找到 switch 关键字"
-            continue
-        fi
-
-        # 构建新的文件内容
-        if printf "%sreturn crypto.randomUUID();\n%s" "${content:0:$switch_pos}" "${content:$switch_pos}" > "$file"; then
-            ((modified_count++))
-            log_info "成功修改文件: ${file/$temp_dir\//}"
+        # 使用 sed 替换而不是字符串操作
+        if grep -q "IOPlatformUUID" "$file"; then
+            log_debug "找到 IOPlatformUUID 关键字"
+            
+            # 定位 IOPlatformUUID 相关函数
+            if grep -q "function a\\$" "$file"; then
+                # 针对 main.js 中发现的代码结构进行修改
+                if sed -i.tmp 's/function a\$(t){switch/function a\$(t){return crypto.randomUUID(); switch/' "$file"; then
+                    log_debug "成功注入 randomUUID 调用到 a$ 函数"
+                    ((modified_count++))
+                    log_info "成功修改文件: ${file/$temp_dir\//}"
+                else
+                    log_error "修改 a$ 函数失败"
+                    cp "${file}.bak" "$file"
+                fi
+            elif grep -q "async function v5" "$file"; then
+                # 替代方法 - 修改 v5 函数
+                if sed -i.tmp 's/async function v5(t){let e=/async function v5(t){return crypto.randomUUID(); let e=/' "$file"; then
+                    log_debug "成功注入 randomUUID 调用到 v5 函数"
+                    ((modified_count++))
+                    log_info "成功修改文件: ${file/$temp_dir\//}"
+                else
+                    log_error "修改 v5 函数失败"
+                    cp "${file}.bak" "$file"
+                fi
+            else
+                # 使用更通用的注入方法
+                log_warn "未找到具体函数，尝试使用通用修改方法"
+                inject_code="
+// 随机设备ID生成器注入
+const randomDeviceId = () => {
+    try {
+        return require('crypto').randomUUID();
+    } catch (e) {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = Math.random() * 16 | 0;
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    }
+};
+"
+                # 将代码注入到文件开头
+                echo "$inject_code" > "${file}.new"
+                cat "$file" >> "${file}.new"
+                mv "${file}.new" "$file"
+                
+                # 替换调用点
+                sed -i.tmp 's/await v5(!1)/randomDeviceId()/g' "$file"
+                sed -i.tmp 's/a\$(t)/randomDeviceId()/g' "$file"
+                
+                log_debug "完成通用修改"
+                ((modified_count++))
+                log_info "使用通用方法成功修改文件: ${file/$temp_dir\//}"
+            fi
         else
-            log_error "文件写入失败: ${file/$temp_dir\//}"
-            mv "${file}.bak" "$file"
+            # 未找到 IOPlatformUUID，可能是文件结构变化
+            log_warn "未找到 IOPlatformUUID，尝试替代方法"
+            
+            # 尝试找其他关键函数如 getMachineId 或 getDeviceId
+            if grep -q "function t\$()" "$file" || grep -q "async function y5" "$file"; then
+                log_debug "找到设备ID相关函数"
+                
+                # 修改 MAC 地址获取函数
+                if grep -q "function t\$()" "$file"; then
+                    sed -i.tmp 's/function t\$(){/function t\$(){return "00:00:00:00:00:00";/' "$file"
+                    log_debug "修改 MAC 地址获取函数成功"
+                fi
+                
+                # 修改设备ID获取函数
+                if grep -q "async function y5" "$file"; then
+                    sed -i.tmp 's/async function y5(t){/async function y5(t){return crypto.randomUUID();/' "$file"
+                    log_debug "修改设备ID获取函数成功"
+                fi
+                
+                ((modified_count++))
+                log_info "使用替代方法成功修改文件: ${file/$temp_dir\//}"
+            else
+                # 最后尝试的通用方法 - 在文件顶部插入重写函数定义
+                log_warn "未找到任何已知函数，使用最通用的方法"
+                
+                inject_universal_code="
+// 全局拦截设备标识符
+const originalRequire = require;
+require = function(module) {
+    const result = originalRequire(module);
+    if (module === 'crypto' && result.randomUUID) {
+        const originalRandomUUID = result.randomUUID;
+        result.randomUUID = function() {
+            return '${new_uuid}';
+        };
+    }
+    return result;
+};
+
+// 覆盖所有可能的系统ID获取函数
+global.getMachineId = function() { return '${machine_id}'; };
+global.getDeviceId = function() { return '${device_id}'; };
+global.macMachineId = '${mac_machine_id}';
+"
+                # 将代码注入到文件开头
+                local new_uuid=$(uuidgen | tr '[:upper:]' '[:lower:]')
+                local machine_id="auth0|user_$(openssl rand -hex 16)"
+                local device_id=$(uuidgen | tr '[:upper:]' '[:lower:]')
+                local mac_machine_id=$(openssl rand -hex 32)
+                
+                inject_universal_code=${inject_universal_code//\$\{new_uuid\}/$new_uuid}
+                inject_universal_code=${inject_universal_code//\$\{machine_id\}/$machine_id}
+                inject_universal_code=${inject_universal_code//\$\{device_id\}/$device_id}
+                inject_universal_code=${inject_universal_code//\$\{mac_machine_id\}/$mac_machine_id}
+                
+                echo "$inject_universal_code" > "${file}.new"
+                cat "$file" >> "${file}.new"
+                mv "${file}.new" "$file"
+                
+                log_debug "完成通用覆盖"
+                ((modified_count++))
+                log_info "使用最通用方法成功修改文件: ${file/$temp_dir\//}"
+            fi
         fi
         
-        # 清理备份
-        rm -f "${file}.bak"
+        # 清理临时文件
+        rm -f "${file}.tmp" "${file}.bak"
     done
     
     if [ "$modified_count" -eq 0 ]; then
@@ -788,7 +904,7 @@ main() {
     echo -e "${YELLOW}  一起交流更多Cursor技巧和AI知识(脚本免费、关注公众号加群有更多技巧和大佬)  ${NC}"
     echo -e "${BLUE}================================${NC}"
     echo
-    echo -e "${YELLOW}[重要提示]${NC} 本工具支持 Cursor v0.45.x"
+    echo -e "${YELLOW}[重要提示]${NC} 本工具支持 Cursor v0.47.x"
     echo -e "${YELLOW}[重要提示]${NC} 本工具免费，如果对您有帮助，请关注公众号【煎饼果子卷AI】"
     echo
     
@@ -796,7 +912,29 @@ main() {
     check_and_kill_cursor
     backup_config
     generate_new_config
-    modify_cursor_app_files
+    
+    # 询问用户是否要修改主程序文件
+    echo
+    log_warn "是否要修改 Cursor 主程序文件？"
+    echo "0) 否 - 仅修改配置文件 (更安全但可能需要更频繁地重置)"
+    echo "1) 是 - 同时修改主程序文件 (更持久但有小概率导致程序不稳定)"
+    echo -n "请输入选择 [0-1] (默认 1): "
+    read -r choice
+    
+    # 处理用户选择
+    case "$choice" in
+        0)
+            log_info "已跳过主程序文件修改"
+            ;;
+        *)
+            if modify_cursor_app_files; then
+                log_info "主程序文件修改成功！"
+            else
+                log_warn "主程序文件修改失败，但配置文件修改可能已成功"
+                log_warn "如果重启后 Cursor 仍然提示设备被禁用，请重新运行此脚本"
+            fi
+            ;;
+    esac
     
     # 添加MAC地址修改选项
     echo
