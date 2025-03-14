@@ -328,10 +328,48 @@ generate_new_config() {
     log_debug "sqmId: $sqm_id"
 }
 
+# 清理 Cursor 之前的修改
+clean_cursor_app() {
+    log_info "尝试清理 Cursor 之前的修改..."
+    
+    # 如果存在备份，直接恢复备份
+    local latest_backup=""
+    
+    # 查找最新的备份
+    latest_backup=$(find /tmp -name "Cursor.app.backup_*" -type d -print 2>/dev/null | sort -r | head -1)
+    
+    if [ -n "$latest_backup" ] && [ -d "$latest_backup" ]; then
+        log_info "找到现有备份: $latest_backup"
+        log_info "正在恢复原始版本..."
+        
+        # 停止 Cursor 进程
+        check_and_kill_cursor
+        
+        # 恢复备份
+        sudo rm -rf "$CURSOR_APP_PATH"
+        sudo cp -R "$latest_backup" "$CURSOR_APP_PATH"
+        sudo chown -R "$CURRENT_USER:staff" "$CURSOR_APP_PATH"
+        sudo chmod -R 755 "$CURSOR_APP_PATH"
+        
+        log_info "已恢复原始版本"
+        return 0
+    else
+        log_warn "未找到现有备份，尝试重新安装 Cursor..."
+        echo "您可以从 https://cursor.sh 下载并重新安装 Cursor"
+        echo "或者继续执行此脚本，将尝试修复现有安装"
+        
+        # 可以在这里添加重新下载和安装的逻辑
+        return 1
+    fi
+}
+
 # 修改 Cursor 主程序文件（安全模式）
 modify_cursor_app_files() {
     log_info "正在安全修改 Cursor 主程序文件..."
     log_info "详细日志将记录到: $LOG_FILE"
+    
+    # 先清理之前的修改
+    clean_cursor_app
     
     # 验证应用是否存在
     if [ ! -d "$CURSOR_APP_PATH" ]; then
@@ -496,6 +534,13 @@ modify_cursor_app_files() {
             
             # 定位 IOPlatformUUID 相关函数
             if grep -q "function a\$" "$file"; then
+                # 检查是否已经修改过
+                if grep -q "return crypto.randomUUID()" "$file"; then
+                    log_info "文件已经包含 randomUUID 调用，跳过修改"
+                    ((modified_count++))
+                    continue
+                fi
+                
                 # 针对 main.js 中发现的代码结构进行修改
                 if sed -i.tmp 's/function a\$(t){switch/function a\$(t){return crypto.randomUUID(); switch/' "$file"; then
                     log_debug "成功注入 randomUUID 调用到 a\$ 函数"
@@ -506,6 +551,13 @@ modify_cursor_app_files() {
                     cp "${file}.bak" "$file"
                 fi
             elif grep -q "async function v5" "$file"; then
+                # 检查是否已经修改过
+                if grep -q "return crypto.randomUUID()" "$file"; then
+                    log_info "文件已经包含 randomUUID 调用，跳过修改"
+                    ((modified_count++))
+                    continue
+                fi
+                
                 # 替代方法 - 修改 v5 函数
                 if sed -i.tmp 's/async function v5(t){let e=/async function v5(t){return crypto.randomUUID(); let e=/' "$file"; then
                     log_debug "成功注入 randomUUID 调用到 v5 函数"
@@ -516,11 +568,19 @@ modify_cursor_app_files() {
                     cp "${file}.bak" "$file"
                 fi
             else
+                # 检查是否已经注入了自定义代码
+                if grep -q "// Cursor ID 修改工具注入" "$file"; then
+                    log_info "文件已经包含自定义注入代码，跳过修改"
+                    ((modified_count++))
+                    continue
+                fi
+                
                 # 使用更通用的注入方法
                 log_warn "未找到具体函数，尝试使用通用修改方法"
                 inject_code="
-// 随机设备ID生成器注入
-const randomDeviceId = () => {
+// Cursor ID 修改工具注入 - $(date +%Y%m%d%H%M%S)
+// 随机设备ID生成器注入 - $(date +%s)
+const randomDeviceId_$(date +%s) = () => {
     try {
         return require('crypto').randomUUID();
     } catch (e) {
@@ -537,8 +597,8 @@ const randomDeviceId = () => {
                 mv "${file}.new" "$file"
                 
                 # 替换调用点
-                sed -i.tmp 's/await v5(!1)/randomDeviceId()/g' "$file"
-                sed -i.tmp 's/a\$(t)/randomDeviceId()/g' "$file"
+                sed -i.tmp 's/await v5(!1)/randomDeviceId_'"$(date +%s)"'()/g' "$file"
+                sed -i.tmp 's/a\$(t)/randomDeviceId_'"$(date +%s)"'()/g' "$file"
                 
                 log_debug "完成通用修改"
                 ((modified_count++))
@@ -547,6 +607,13 @@ const randomDeviceId = () => {
         else
             # 未找到 IOPlatformUUID，可能是文件结构变化
             log_warn "未找到 IOPlatformUUID，尝试替代方法"
+            
+            # 检查是否已经注入或修改过
+            if grep -q "return crypto.randomUUID()" "$file" || grep -q "// Cursor ID 修改工具注入" "$file"; then
+                log_info "文件已经被修改过，跳过修改"
+                ((modified_count++))
+                continue
+            fi
             
             # 尝试找其他关键函数如 getMachineId 或 getDeviceId
             if grep -q "function t\$()" "$file" || grep -q "async function y5" "$file"; then
@@ -571,12 +638,13 @@ const randomDeviceId = () => {
                 log_warn "未找到任何已知函数，使用最通用的方法"
                 
                 inject_universal_code="
-// 全局拦截设备标识符
-const originalRequire = require;
+// Cursor ID 修改工具注入 - $(date +%Y%m%d%H%M%S)
+// 全局拦截设备标识符 - $(date +%s)
+const originalRequire_$(date +%s) = require;
 require = function(module) {
-    const result = originalRequire(module);
+    const result = originalRequire_$(date +%s)(module);
     if (module === 'crypto' && result.randomUUID) {
-        const originalRandomUUID = result.randomUUID;
+        const originalRandomUUID_$(date +%s) = result.randomUUID;
         result.randomUUID = function() {
             return '${new_uuid}';
         };
@@ -965,6 +1033,48 @@ main() {
     echo -e "${YELLOW}[重要提示]${NC} 本工具支持 Cursor v0.47.x"
     echo -e "${YELLOW}[重要提示]${NC} 本工具免费，如果对您有帮助，请关注公众号【煎饼果子卷AI】"
     echo
+    
+    # 询问用户是否需要修复Cursor
+    echo
+    log_warn "Cursor 修复选项"
+    echo "0) 正常模式 - 继续正常执行脚本 (默认)"
+    echo "1) 修复模式 - 仅恢复原始的 Cursor 安装，修复之前修改导致的错误"
+    echo "2) 强制修复 - 恢复原始安装并继续进行修改"
+    echo ""
+    printf "请选择操作模式 [0-2] (默认 0): "
+    
+    # 清空输入缓冲区
+    while read -r -t 0.1; do read -r; done
+    
+    # 使用/dev/tty确保直接从终端读取输入
+    fix_choice=""
+    read -r fix_choice </dev/tty
+    
+    # 处理用户选择
+    case "$fix_choice" in
+        1)
+            log_info "您选择了修复模式"
+            # 清理Cursor应用
+            if clean_cursor_app; then
+                log_info "Cursor 已恢复到原始状态"
+                log_info "如果您需要应用ID修改，请重新运行此脚本"
+                exit 0
+            else
+                log_warn "未能找到备份，无法自动恢复"
+                log_warn "建议重新安装 Cursor"
+                exit 1
+            fi
+            ;;
+        2)
+            log_info "您选择了强制修复模式"
+            # 清理应用但继续执行
+            clean_cursor_app
+            log_info "继续执行脚本..."
+            ;;
+        *)
+            log_info "您选择了正常模式"
+            ;;
+    esac
     
     check_permissions
     check_and_kill_cursor
