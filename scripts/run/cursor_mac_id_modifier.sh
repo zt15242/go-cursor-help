@@ -976,15 +976,24 @@ main() {
     log_warn "是否要修改 Cursor 主程序文件？"
     echo "0) 否 - 仅修改配置文件 (更安全但可能需要更频繁地重置)"
     echo "1) 是 - 同时修改主程序文件 (更持久但有小概率导致程序不稳定)"
-    echo -n "请输入选择 [0-1] (默认 1): "
-    read -r choice
+    echo ""
+    printf "请输入选择 [0-1] (默认 1): "
+    
+    # 清空输入缓冲区
+    while read -r -t 0.1; do read -r; done
+    
+    # 使用/dev/tty确保直接从终端读取输入
+    app_choice=""
+    read -r app_choice </dev/tty
     
     # 处理用户选择
-    case "$choice" in
+    case "$app_choice" in
         0)
+            log_info "您选择了跳过主程序文件修改"
             log_info "已跳过主程序文件修改"
             ;;
         *)
+            log_info "您选择了修改主程序文件"
             if modify_cursor_app_files; then
                 log_info "主程序文件修改成功！"
             else
@@ -999,12 +1008,20 @@ main() {
     log_warn "是否要修改MAC地址？"
     echo "0) 否 - 保持默认设置 (默认)"
     echo "1) 是 - 修改MAC地址"
-    echo -n "请输入选择 [0-1] (默认 0): "
-    read -r choice
+    echo ""
+    printf "请输入选择 [0-1] (默认 0): "
+    
+    # 清空输入缓冲区
+    while read -r -t 0.1; do read -r; done
+    
+    # 使用/dev/tty确保直接从终端读取输入
+    mac_choice=""
+    read -r mac_choice </dev/tty
     
     # 处理用户输入（包括空输入和无效输入）
-    case "$choice" in
+    case "$mac_choice" in
         1)
+            log_info "您选择了修改MAC地址"
             if modify_mac_address; then
                 log_info "MAC地址修改完成！"
             else
