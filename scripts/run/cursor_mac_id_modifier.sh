@@ -1048,29 +1048,53 @@ main() {
     echo ""
     printf "请输入选择 [0-1] (默认 1): "
     
-    # 清空输入缓冲区
-    while read -r -t 0.1; do read -r; done
-    
-    # 使用/dev/tty确保直接从终端读取输入
+    # 使用更健壮的方式读取用户输入
     app_choice=""
-    read -r app_choice </dev/tty
+    
+    # 尝试通过多种方式清空输入缓冲区
+    # 方法1: 使用read -t
+    while read -r -t 0.1; do read -r; done 2>/dev/null
+    
+    # 方法2: 重定向方式
+    exec <&-
+    exec < /dev/tty
+    
+    # 尝试使用默认输入和/dev/tty两种方式读取
+    app_choice=$(read -r choice; echo "$choice")
+    if [ -z "$app_choice" ]; then
+        # 如果上面的方法失败，尝试直接使用/dev/tty
+        if [ -e "/dev/tty" ] && [ -r "/dev/tty" ] && [ -w "/dev/tty" ]; then
+            app_choice=$(head -n 1 < /dev/tty 2>/dev/null)
+        fi
+    fi
+    
+    # 记录日志以便调试
+    echo "[INPUT_DEBUG] 读取到的选择: '$app_choice'" >> "$LOG_FILE"
+    
+    # 确保脚本不会因为输入问题而终止
+    set +e
     
     # 处理用户选择
-    case "$app_choice" in
-        0)
-            log_info "您选择了跳过主程序文件修改"
-            log_info "已跳过主程序文件修改"
-            ;;
-        *)
-            log_info "您选择了修改主程序文件"
+    if [ "$app_choice" = "0" ]; then
+        log_info "您选择了跳过主程序文件修改"
+        log_info "已跳过主程序文件修改"
+    else
+        # 默认或输入1都执行修改
+        log_info "正在执行主程序文件修改..."
+        
+        # 使用子shell执行修改，避免错误导致整个脚本退出
+        (
             if modify_cursor_app_files; then
                 log_info "主程序文件修改成功！"
             else
                 log_warn "主程序文件修改失败，但配置文件修改可能已成功"
                 log_warn "如果重启后 Cursor 仍然提示设备被禁用，请重新运行此脚本"
             fi
-            ;;
-    esac
+        )
+    fi
+    
+    # 恢复错误处理
+    set -e
     
     # 添加MAC地址修改选项
     echo
@@ -1080,27 +1104,49 @@ main() {
     echo ""
     printf "请输入选择 [0-1] (默认 0): "
     
-    # 清空输入缓冲区
-    while read -r -t 0.1; do read -r; done
-    
-    # 使用/dev/tty确保直接从终端读取输入
+    # 使用更健壮的方式读取用户输入
     mac_choice=""
-    read -r mac_choice </dev/tty
     
-    # 处理用户输入（包括空输入和无效输入）
-    case "$mac_choice" in
-        1)
-            log_info "您选择了修改MAC地址"
+    # 尝试通过多种方式清空输入缓冲区
+    # 方法1: 使用read -t
+    while read -r -t 0.1; do read -r; done 2>/dev/null
+    
+    # 方法2: 重定向方式
+    exec <&-
+    exec < /dev/tty
+    
+    # 尝试使用默认输入和/dev/tty两种方式读取
+    mac_choice=$(read -r choice; echo "$choice")
+    if [ -z "$mac_choice" ]; then
+        # 如果上面的方法失败，尝试直接使用/dev/tty
+        if [ -e "/dev/tty" ] && [ -r "/dev/tty" ] && [ -w "/dev/tty" ]; then
+            mac_choice=$(head -n 1 < /dev/tty 2>/dev/null)
+        fi
+    fi
+    
+    # 记录日志以便调试
+    echo "[INPUT_DEBUG] MAC地址选择: '$mac_choice'" >> "$LOG_FILE"
+    
+    # 确保脚本不会因为输入问题而终止
+    set +e
+    
+    # 处理用户选择
+    if [ "$mac_choice" = "1" ]; then
+        log_info "您选择了修改MAC地址"
+        # 使用子shell执行修改，避免错误导致整个脚本退出
+        (
             if modify_mac_address; then
                 log_info "MAC地址修改完成！"
             else
                 log_error "MAC地址修改失败"
             fi
-            ;;
-        *)
-            log_info "已跳过MAC地址修改"
-            ;;
-    esac
+        )
+    else
+        log_info "已跳过MAC地址修改"
+    fi
+    
+    # 恢复错误处理
+    set -e
     
     show_file_tree
     show_follow_info
@@ -1124,18 +1170,37 @@ main() {
     echo ""
     printf "是否需要恢复原始 Cursor？ [0-1] (默认 0): "
     
-    # 清空输入缓冲区
-    while read -r -t 0.1; do read -r; done
-    
-    # 使用/dev/tty确保直接从终端读取输入
+    # 使用更健壮的方式读取用户输入
     fix_choice=""
-    read -r fix_choice </dev/tty
+    
+    # 尝试通过多种方式清空输入缓冲区
+    # 方法1: 使用read -t
+    while read -r -t 0.1; do read -r; done 2>/dev/null
+    
+    # 方法2: 重定向方式
+    exec <&-
+    exec < /dev/tty
+    
+    # 尝试使用默认输入和/dev/tty两种方式读取
+    fix_choice=$(read -r choice; echo "$choice")
+    if [ -z "$fix_choice" ]; then
+        # 如果上面的方法失败，尝试直接使用/dev/tty
+        if [ -e "/dev/tty" ] && [ -r "/dev/tty" ] && [ -w "/dev/tty" ]; then
+            fix_choice=$(head -n 1 < /dev/tty 2>/dev/null)
+        fi
+    fi
+    
+    # 记录日志以便调试
+    echo "[INPUT_DEBUG] 修复选项选择: '$fix_choice'" >> "$LOG_FILE"
+    
+    # 确保脚本不会因为输入问题而终止
+    set +e
     
     # 处理用户选择
-    case "$fix_choice" in
-        1)
-            log_info "您选择了修复模式"
-            # 清理Cursor应用
+    if [ "$fix_choice" = "1" ]; then
+        log_info "您选择了修复模式"
+        # 使用子shell执行清理，避免错误导致整个脚本退出
+        (
             if clean_cursor_app; then
                 log_info "Cursor 已恢复到原始状态"
                 log_info "如果您需要应用ID修改，请重新运行此脚本"
@@ -1143,11 +1208,13 @@ main() {
                 log_warn "未能找到备份，无法自动恢复"
                 log_warn "建议重新安装 Cursor"
             fi
-            ;;
-        *)
-            log_info "已跳过修复操作"
-            ;;
-    esac
+        )
+    else
+        log_info "已跳过修复操作"
+    fi
+    
+    # 恢复错误处理
+    set -e
 
     # 记录脚本完成信息
     log_info "脚本执行完成"
