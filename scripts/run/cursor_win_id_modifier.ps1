@@ -554,7 +554,7 @@ if ($cursorVersion) {
     $compareResult = Compare-Version $cursorVersion "0.45.0"
     if ($compareResult -ge 0) {
         Write-Host "$RED[错误]$NC 当前版本 ($cursorVersion) 暂不支持"
-        Write-Host "$YELLOW[建议]$NC 请使用 v0.44.11 及以下版本"
+        Write-Host "$YELLOW[建议]$NC 请使用 v0.45.x 及以下版本"
         Write-Host "$YELLOW[建议]$NC 可以从以下地址下载支持的版本:"
         Write-Host "Windows: https://download.todesktop.com/230313mzl4w4u92/Cursor%20Setup%200.44.11%20-%20Build%20250103fqxdt5u9z-x64.exe"
         Write-Host "Mac ARM64: https://dl.todesktop.com/230313mzl4w4u92/versions/0.44.11/mac/zip/arm64"

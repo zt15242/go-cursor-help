@@ -15,7 +15,7 @@
 > ⚠️ **IMPORTANT NOTICE**
 > 
 > This tool currently supports:
-> - ✅ Cursor v0.44.11 and below
+> - ✅ Cursor v0.45.x and below
 > - ✅ Windows: Latest 0.47.x versions (Supported)
 > - ✅ Mac/Linux: Latest 0.47.x versions (Supported, feedback welcome)
 >
@@ -28,7 +28,7 @@
 
 ### 🌟 Latest Versions
 - v0.45.11 (2025-02-07) - Latest Release
-- v0.44.11 (2025-01-03) - Most Stable Release
+- v0.45.x (2025-01-03) - Most Stable Release
 
 [View Full Version History](CursorHistoryDown.md)
 
@@ -36,7 +36,7 @@
 
 ### 📥 Direct Download Links
 
-**v0.44.11 (Recommended Stable Version)**
+**v0.45.x (Recommended Stable Version)**
 - Windows: [Official](https://downloader.cursor.sh/builds/250103fqxdt5u9z/windows/nsis/x64) | [Mirror](https://download.todesktop.com/230313mzl4w4u92/Cursor%20Setup%200.44.11%20-%20Build%20250103fqxdt5u9z-x64.exe)
 - Mac: [Apple Silicon](https://dl.todesktop.com/230313mzl4w4u92/versions/0.44.11/mac/zip/arm64)
 
@@ -50,7 +50,7 @@
 > - This modification may temporarily affect network connectivity
 > - You can skip this step when prompted during execution
 >
-> 💾 **Download Cursor v0.44.11**
+> 💾 **Download Cursor v0.45.x**
 > 
 > Windows:
 > - [Download from Cursor Official](https://downloader.cursor.sh/builds/250103fqxdt5u9z/windows/nsis/x64)
