@@ -246,9 +246,6 @@ If you see the "High Load" message for Claude 3.7 Sonnet, this indicates Cursor 
 **macOS**
 
 ```bash
-# Method one
-curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | tee /tmp/cursor_mac_id_modifier.sh && sudo chown root:wheel /tmp/cursor_mac_id_modifier.sh && sudo chmod +x /tmp/cursor_mac_id_modifier.sh && sudo bash /tmp/cursor_mac_id_modifier.sh && rm /tmp/cursor_mac_id_modifier.sh 
-
 # Method two
 curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh -o ./cursor_mac_id_modifier.sh && sudo bash ./cursor_mac_id_modifier.sh && rm ./cursor_mac_id_modifier.sh
 ```
@@ -277,10 +274,6 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/
 **macOS**
 
 ```bash
-# 方式一
-curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh | tee /tmp/cursor_mac_id_modifier.sh && sudo chown root:wheel /tmp/cursor_mac_id_modifier.sh && sudo chmod +x /tmp/cursor_mac_id_modifier.sh && sudo bash /tmp/cursor_mac_id_modifier.sh && rm /tmp/cursor_mac_id_modifier.sh 
-
-# 方式二
 curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_mac_id_modifier.sh -o ./cursor_mac_id_modifier.sh && sudo bash ./cursor_mac_id_modifier.sh && rm ./cursor_mac_id_modifier.sh
 ```
 
