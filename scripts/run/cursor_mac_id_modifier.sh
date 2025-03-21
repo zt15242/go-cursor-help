@@ -994,6 +994,43 @@ restore_feature() {
     fi
 }
 
+# 解决"应用已损坏，无法打开"问题
+fix_damaged_app() {
+    log_info "正在修复"应用已损坏"问题..."
+    
+    # 检查Cursor应用是否存在
+    if [ ! -d "$CURSOR_APP_PATH" ]; then
+        log_error "未找到Cursor应用: $CURSOR_APP_PATH"
+        return 1
+    fi
+    
+    log_info "尝试移除隔离属性..."
+    if sudo xattr -rd com.apple.quarantine "$CURSOR_APP_PATH" 2>/dev/null; then
+        log_info "成功移除隔离属性"
+    else
+        log_warn "移除隔离属性失败，尝试其他方法..."
+    fi
+    
+    log_info "尝试重新签名应用..."
+    if sudo codesign --force --deep --sign - "$CURSOR_APP_PATH" 2>/dev/null; then
+        log_info "应用重新签名成功"
+    else
+        log_warn "应用重新签名失败"
+    fi
+    
+    echo
+    log_info "修复完成！请尝试重新打开Cursor应用"
+    echo
+    echo -e "${YELLOW}如果仍然无法打开，您可以尝试以下方法：${NC}"
+    echo "1. 在系统偏好设置->安全性与隐私中，点击"仍要打开"按钮"
+    echo "2. 暂时关闭Gatekeeper（不建议）: sudo spctl --master-disable"
+    echo "3. 重新下载安装Cursor应用"
+    echo
+    echo -e "${BLUE}参考链接: https://sysin.org/blog/macos-if-crashes-when-opening/${NC}"
+    
+    return 0
+}
+
 # 主函数
 main() {
     
@@ -1225,6 +1262,46 @@ main() {
     log_info "详细日志已保存到: $LOG_FILE"
     echo "如遇问题请将此日志文件提供给开发者以协助排查"
     echo
+    
+    # 添加修复"应用已损坏"选项
+    echo
+    log_warn "应用修复选项"
+    echo "0) 忽略 - 不执行修复操作 (默认)"
+    echo "1) 修复"应用已损坏"问题 - 解决macOS提示应用已损坏无法打开的问题"
+    echo ""
+    printf "是否需要修复"应用已损坏"问题？ [0-1] (默认 0): "
+    
+    # 读取用户输入
+    damaged_choice=""
+    while read -r -t 0.1; do read -r; done 2>/dev/null
+    exec <&-
+    exec < /dev/tty
+    damaged_choice=$(read -r choice; echo "$choice")
+    if [ -z "$damaged_choice" ]; then
+        if [ -e "/dev/tty" ] && [ -r "/dev/tty" ] && [ -w "/dev/tty" ]; then
+            damaged_choice=$(head -n 1 < /dev/tty 2>/dev/null)
+        fi
+    fi
+    
+    echo "[INPUT_DEBUG] 应用修复选项选择: '$damaged_choice'" >> "$LOG_FILE"
+    
+    set +e
+    
+    # 处理用户选择
+    if [ "$damaged_choice" = "1" ]; then
+        log_info "您选择了修复"应用已损坏"问题"
+        (
+            if fix_damaged_app; then
+                log_info "修复"应用已损坏"问题完成"
+            else
+                log_warn "修复"应用已损坏"问题失败"
+            fi
+        )
+    else
+        log_info "已跳过应用修复操作"
+    fi
+    
+    set -e
 }
 
 # 执行主函数
