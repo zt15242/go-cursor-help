@@ -950,30 +950,24 @@ restore_feature() {
     
     echo
     log_info "可用的备份文件："
-    echo "0) 退出 (默认)"
     
-    # 显示备份文件列表
+    # 构建菜单选项字符串
+    menu_options="退出 - 不恢复任何文件"
     for i in "${!backup_files[@]}"; do
-        echo "$((i+1))) $(basename "${backup_files[$i]}")"
+        menu_options="$menu_options|$(basename "${backup_files[$i]}")"
     done
     
-    echo
-    echo -n "请选择要恢复的备份文件编号 [0-${#backup_files[@]}] (默认: 0): "
-    read -r choice
+    # 使用菜单选择函数
+    select_menu_option "请使用上下箭头选择要恢复的备份文件，按Enter确认:" "$menu_options" 0
+    choice=$?
     
     # 处理用户输入
-    if [ -z "$choice" ] || [ "$choice" = "0" ]; then
+    if [ "$choice" = "0" ]; then
         log_info "跳过恢复操作"
         return 0
     fi
     
-    # 验证输入
-    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -gt "${#backup_files[@]}" ]; then
-        log_error "无效的选择"
-        return 1
-    fi
-    
-    # 获取选择的备份文件
+    # 获取选择的备份文件 (减1是因为第一个选项是"退出")
     local selected_backup="${backup_files[$((choice-1))]}"
     
     # 验证文件存在性和可读性
@@ -1031,6 +1025,78 @@ fix_damaged_app() {
     return 0
 }
 
+# 新增：通用菜单选择函数
+# 参数: 
+# $1 - 提示信息
+# $2 - 选项数组，格式为 "选项1|选项2|选项3"
+# $3 - 默认选项索引 (从0开始)
+# 返回: 选中的选项索引 (从0开始)
+select_menu_option() {
+    local prompt="$1"
+    IFS='|' read -ra options <<< "$2"
+    local default_index=${3:-0}
+    local selected_index=$default_index
+    local key_input
+    local cursor_up='\033[A'
+    local cursor_down='\033[B'
+    local enter_key=$'\n'
+    
+    # 保存光标位置
+    tput sc
+    
+    # 显示提示信息
+    echo -e "$prompt"
+    
+    # 第一次显示菜单
+    for i in "${!options[@]}"; do
+        if [ $i -eq $selected_index ]; then
+            echo -e " ${GREEN}►${NC} ${options[$i]}"
+        else
+            echo -e "   ${options[$i]}"
+        fi
+    done
+    
+    # 循环处理键盘输入
+    while true; do
+        # 读取单个按键
+        read -rsn3 key_input
+        
+        # 检测按键
+        case "$key_input" in
+            # 上箭头键
+            $'\033[A')
+                if [ $selected_index -gt 0 ]; then
+                    ((selected_index--))
+                fi
+                ;;
+            # 下箭头键
+            $'\033[B')
+                if [ $selected_index -lt $((${#options[@]}-1)) ]; then
+                    ((selected_index++))
+                fi
+                ;;
+            # Enter键
+            "")
+                echo # 换行
+                log_info "您选择了: ${options[$selected_index]}"
+                return $selected_index
+                ;;
+        esac
+        
+        # 恢复光标位置
+        tput rc
+        
+        # 重新显示菜单
+        for i in "${!options[@]}"; do
+            if [ $i -eq $selected_index ]; then
+                echo -e " ${GREEN}►${NC} ${options[$i]}"
+            else
+                echo -e "   ${options[$i]}"
+            fi
+        done
+    done
+}
+
 # 主函数
 main() {
     
@@ -1080,33 +1146,13 @@ main() {
     # 询问用户是否要修改主程序文件
     echo
     log_warn "是否要修改 Cursor 主程序文件？"
-    echo "0) 否 - 仅修改配置文件 (更安全但可能需要更频繁地重置)"
-    echo "1) 是 - 同时修改主程序文件 (更持久但有小概率导致程序不稳定)"
-    echo ""
-    printf "请输入选择 [0-1] (默认 1): "
     
-    # 使用更健壮的方式读取用户输入
-    app_choice=""
+    # 使用新的菜单选择函数
+    select_menu_option "请使用上下箭头选择，按Enter确认:" "否 - 仅修改配置文件 (更安全但可能需要更频繁地重置)|是 - 同时修改主程序文件 (更持久但有小概率导致程序不稳定)" 1
+    app_choice=$?
     
-    # 尝试通过多种方式清空输入缓冲区
-    # 方法1: 使用read -t
-    while read -r -t 0.1; do read -r; done 2>/dev/null
-    
-    # 方法2: 重定向方式
-    exec <&-
-    exec < /dev/tty
-    
-    # 尝试使用默认输入和/dev/tty两种方式读取
-    app_choice=$(read -r choice; echo "$choice")
-    if [ -z "$app_choice" ]; then
-        # 如果上面的方法失败，尝试直接使用/dev/tty
-        if [ -e "/dev/tty" ] && [ -r "/dev/tty" ] && [ -w "/dev/tty" ]; then
-            app_choice=$(head -n 1 < /dev/tty 2>/dev/null)
-        fi
-    fi
-    
-    # 记录日志以便调试
-    echo "[INPUT_DEBUG] 读取到的选择: '$app_choice'" >> "$LOG_FILE"
+    # 记录到日志
+    echo "[INPUT_DEBUG] 读取到的选择: $app_choice" >> "$LOG_FILE"
     
     # 确保脚本不会因为输入问题而终止
     set +e
@@ -1136,38 +1182,18 @@ main() {
     # 添加MAC地址修改选项
     echo
     log_warn "是否要修改MAC地址？"
-    echo "0) 否 - 保持默认设置 (默认)"
-    echo "1) 是 - 修改MAC地址"
-    echo ""
-    printf "请输入选择 [0-1] (默认 0): "
     
-    # 使用更健壮的方式读取用户输入
-    mac_choice=""
+    # 使用新的菜单选择函数
+    select_menu_option "请使用上下箭头选择，按Enter确认:" "否 - 保持默认设置|是 - 修改MAC地址 (推荐)" 1
+    mac_choice=$?
     
-    # 尝试通过多种方式清空输入缓冲区
-    # 方法1: 使用read -t
-    while read -r -t 0.1; do read -r; done 2>/dev/null
-    
-    # 方法2: 重定向方式
-    exec <&-
-    exec < /dev/tty
-    
-    # 尝试使用默认输入和/dev/tty两种方式读取
-    mac_choice=$(read -r choice; echo "$choice")
-    if [ -z "$mac_choice" ]; then
-        # 如果上面的方法失败，尝试直接使用/dev/tty
-        if [ -e "/dev/tty" ] && [ -r "/dev/tty" ] && [ -w "/dev/tty" ]; then
-            mac_choice=$(head -n 1 < /dev/tty 2>/dev/null)
-        fi
-    fi
-    
-    # 记录日志以便调试
-    echo "[INPUT_DEBUG] MAC地址选择: '$mac_choice'" >> "$LOG_FILE"
+    # 记录到日志
+    echo "[INPUT_DEBUG] MAC地址选择: $mac_choice" >> "$LOG_FILE"
     
     # 确保脚本不会因为输入问题而终止
     set +e
     
-    # 处理用户选择
+    # 处理用户选择 - 索引1对应"是"选项
     if [ "$mac_choice" = "1" ]; then
         log_info "您选择了修改MAC地址"
         # 使用子shell执行修改，避免错误导致整个脚本退出
@@ -1202,38 +1228,18 @@ main() {
     # 提供修复选项（移到最后）
     echo
     log_warn "Cursor 修复选项"
-    echo "0) 忽略 - 不执行修复操作 (默认)"
-    echo "1) 修复模式 - 恢复原始的 Cursor 安装，修复之前修改导致的错误"
-    echo ""
-    printf "是否需要恢复原始 Cursor？ [0-1] (默认 0): "
     
-    # 使用更健壮的方式读取用户输入
-    fix_choice=""
-    
-    # 尝试通过多种方式清空输入缓冲区
-    # 方法1: 使用read -t
-    while read -r -t 0.1; do read -r; done 2>/dev/null
-    
-    # 方法2: 重定向方式
-    exec <&-
-    exec < /dev/tty
-    
-    # 尝试使用默认输入和/dev/tty两种方式读取
-    fix_choice=$(read -r choice; echo "$choice")
-    if [ -z "$fix_choice" ]; then
-        # 如果上面的方法失败，尝试直接使用/dev/tty
-        if [ -e "/dev/tty" ] && [ -r "/dev/tty" ] && [ -w "/dev/tty" ]; then
-            fix_choice=$(head -n 1 < /dev/tty 2>/dev/null)
-        fi
-    fi
+    # 使用新的菜单选择函数
+    select_menu_option "请使用上下箭头选择，按Enter确认:" "忽略 - 不执行修复操作|修复模式 - 恢复原始的 Cursor 安装" 0
+    fix_choice=$?
     
     # 记录日志以便调试
-    echo "[INPUT_DEBUG] 修复选项选择: '$fix_choice'" >> "$LOG_FILE"
+    echo "[INPUT_DEBUG] 修复选项选择: $fix_choice" >> "$LOG_FILE"
     
     # 确保脚本不会因为输入问题而终止
     set +e
     
-    # 处理用户选择
+    # 处理用户选择 - 索引1对应"修复模式"选项
     if [ "$fix_choice" = "1" ]; then
         log_info "您选择了修复模式"
         # 使用子shell执行清理，避免错误导致整个脚本退出
@@ -1266,28 +1272,16 @@ main() {
     # 添加修复"应用已损坏"选项
     echo
     log_warn "应用修复选项"
-    echo "0) 忽略 - 不执行修复操作 (默认)"
-    echo "1) 修复"应用已损坏"问题 - 解决macOS提示应用已损坏无法打开的问题"
-    echo ""
-    printf "是否需要修复"应用已损坏"问题？ [0-1] (默认 0): "
     
-    # 读取用户输入
-    damaged_choice=""
-    while read -r -t 0.1; do read -r; done 2>/dev/null
-    exec <&-
-    exec < /dev/tty
-    damaged_choice=$(read -r choice; echo "$choice")
-    if [ -z "$damaged_choice" ]; then
-        if [ -e "/dev/tty" ] && [ -r "/dev/tty" ] && [ -w "/dev/tty" ]; then
-            damaged_choice=$(head -n 1 < /dev/tty 2>/dev/null)
-        fi
-    fi
+    # 使用新的菜单选择函数
+    select_menu_option "请使用上下箭头选择，按Enter确认:" "忽略 - 不执行修复操作|修复"应用已损坏"问题 - 解决macOS提示应用已损坏无法打开的问题" 0
+    damaged_choice=$?
     
-    echo "[INPUT_DEBUG] 应用修复选项选择: '$damaged_choice'" >> "$LOG_FILE"
+    echo "[INPUT_DEBUG] 应用修复选项选择: $damaged_choice" >> "$LOG_FILE"
     
     set +e
     
-    # 处理用户选择
+    # 处理用户选择 - 索引1对应"修复应用已损坏"选项
     if [ "$damaged_choice" = "1" ]; then
         log_info "您选择了修复"应用已损坏"问题"
         (
