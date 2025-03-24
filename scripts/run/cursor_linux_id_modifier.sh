@@ -1010,15 +1010,15 @@ main() {
     # 记录系统信息
     log_info "系统信息: $(uname -a)"
     log_info "当前用户: $CURRENT_USER"
-    log_cmd_output "sw_vers" "macOS 版本信息"
+    log_cmd_output "sw_vers" " 版本信息"
     log_cmd_output "which codesign" "codesign 路径"
     log_cmd_output "ls -la \"$CURSOR_APP_PATH\"" "Cursor 应用信息"
     
-    # 新增环境检查
-    if [[ $(uname) != "Darwin" ]]; then
-        log_error "本脚本仅支持 macOS 系统"
-        exit 1
-    fi
+    # # 新增环境检查
+    # if [[ $(uname) != "" ]]; then
+    #     log_error "本脚本仅支持 Linux 系统"
+    #     exit 1
+    # fi
     
     clear
     # 显示 Logo
@@ -1121,7 +1121,7 @@ main() {
     log_warn "应用修复选项"
     
     # 使用新的菜单选择函数
-    select_menu_option "请使用上下箭头选择，按Enter确认:" "忽略 - 不执行修复操作|修复"应用已损坏"问题 - 解决macOS提示应用已损坏无法打开的问题" 0
+    select_menu_option "请使用上下箭头选择，按Enter确认:" "忽略 - 不执行修复操作|修复"应用已损坏"问题 - 解决提示应用已损坏无法打开的问题" 0
     damaged_choice=$?
     
     echo "[INPUT_DEBUG] 应用修复选项选择: $damaged_choice" >> "$LOG_FILE"
