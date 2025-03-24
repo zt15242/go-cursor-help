@@ -134,26 +134,6 @@ check_and_kill_cursor() {
     exit 1
 }
 
-# 备份系统 ID
-backup_system_id() {
-    log_info "正在备份系统 ID..."
-    local system_id_file="$BACKUP_DIR/system_id.backup_$(date +%Y%m%d_%H%M%S)"
-    
-    # 获取并备份 IOPlatformExpertDevice 信息
-    {
-        echo "# Original System ID Backup" > "$system_id_file"
-        echo "## IOPlatformExpertDevice Info:" >> "$system_id_file"
-        ioreg -rd1 -c IOPlatformExpertDevice >> "$system_id_file"
-        
-        chmod 444 "$system_id_file"
-        chown "$CURRENT_USER" "$system_id_file"
-        log_info "系统 ID 已备份到: $system_id_file"
-    } || {
-        log_error "备份系统 ID 失败"
-        return 1
-    }
-}
-
 # 备份配置文件
 backup_config() {
     if [ ! -f "$STORAGE_FILE" ]; then
@@ -246,86 +226,61 @@ modify_or_add_config() {
 
 # 生成新的配置
 generate_new_config() {
-  
-    # 修改系统 ID
-    log_info "正在修改系统 ID..."
-    echo "[CONFIG] 开始修改系统 ID" >> "$LOG_FILE"
+    echo
+    log_warn "机器码重置选项"
     
-    # 备份当前系统 ID
-    backup_system_id
+    # 使用菜单选择函数询问用户是否重置机器码
+    select_menu_option "是否需要重置机器码? (通常情况下，只修改js文件即可)：" "不重置 - 仅修改js文件即可|重置 - 同时修改配置文件和机器码" 0
+    reset_choice=$?
     
-    # 生成新的系统 UUID
-    local new_system_uuid=$(uuidgen)
-    echo "[CONFIG] 生成新的系统 UUID: $new_system_uuid" >> "$LOG_FILE"
+    # 记录日志以便调试
+    echo "[INPUT_DEBUG] 机器码重置选项选择: $reset_choice" >> "$LOG_FILE"
     
-    # 修改系统 UUID
-    sudo nvram SystemUUID="$new_system_uuid"
-    echo "[CONFIG] 已设置系统 UUID" >> "$LOG_FILE"
-    
-    printf "${YELLOW}系统 UUID 已更新为: $new_system_uuid${NC}\n"
-    printf "${YELLOW}请重启系统以使更改生效${NC}\n"
-    
-    # 将 auth0|user_ 转换为字节数组的十六进制
-    local prefix_hex=$(echo -n "auth0|user_" | xxd -p)
-    local random_part=$(generate_random_id)
-    local machine_id="${prefix_hex}${random_part}"
-    
-    local mac_machine_id=$(generate_random_id)
-    local device_id=$(generate_uuid | tr '[:upper:]' '[:lower:]')
-    local sqm_id="{$(generate_uuid | tr '[:lower:]' '[:upper:]')}"
-    
-    echo "[CONFIG] 生成的 ID:" >> "$LOG_FILE"
-    echo "[CONFIG] machine_id: $machine_id" >> "$LOG_FILE"
-    echo "[CONFIG] mac_machine_id: $mac_machine_id" >> "$LOG_FILE"
-    echo "[CONFIG] device_id: $device_id" >> "$LOG_FILE"
-    echo "[CONFIG] sqm_id: $sqm_id" >> "$LOG_FILE"
-    
-    log_info "正在修改配置文件..."
-    # 检查配置文件是否存在
-    if [ ! -f "$STORAGE_FILE" ]; then
-        log_error "未找到配置文件: $STORAGE_FILE"
-        log_warn "请先安装并运行一次 Cursor 后再使用此脚本"
-        exit 1
-    fi
-    
-    # 确保配置文件目录存在
-    mkdir -p "$(dirname "$STORAGE_FILE")" || {
-        log_error "无法创建配置目录"
-        exit 1
-    }
-    
-    # 如果文件不存在，创建一个基本的 JSON 结构
-    if [ ! -s "$STORAGE_FILE" ]; then
-        echo '{}' > "$STORAGE_FILE" || {
-            log_error "无法初始化配置文件"
-            exit 1
-        }
-    fi
-    
-    # 修改现有文件
-    modify_or_add_config "telemetry.machineId" "$machine_id" "$STORAGE_FILE" || exit 1
-    modify_or_add_config "telemetry.macMachineId" "$mac_machine_id" "$STORAGE_FILE" || exit 1
-    modify_or_add_config "telemetry.devDeviceId" "$device_id" "$STORAGE_FILE" || exit 1
-    modify_or_add_config "telemetry.sqmId" "$sqm_id" "$STORAGE_FILE" || exit 1
-    
-    # 设置文件权限和所有者
-    chmod 444 "$STORAGE_FILE"  # 改为只读权限
-    chown "$CURRENT_USER" "$STORAGE_FILE"
-    
-    # 验证权限设置
-    if [ -w "$STORAGE_FILE" ]; then
-        log_warn "无法设置只读权限，尝试使用其他方法..."
-        chattr +i "$STORAGE_FILE" 2>/dev/null || true
+    # 处理用户选择 - 索引0对应"不重置"选项，索引1对应"重置"选项
+    if [ "$reset_choice" = "1" ]; then
+        log_info "您选择了重置机器码"
+        
+        # 确保配置文件目录存在
+        if [ -f "$STORAGE_FILE" ]; then
+            log_info "发现已有配置文件: $STORAGE_FILE"
+            
+            # 备份现有配置（以防万一）
+            backup_config
+            
+            # 生成并设置新的设备ID
+            local new_device_id=$(generate_uuid)
+            local new_machine_id="auth0|user_$(openssl rand -hex 16)"
+            
+            log_info "正在设置新的设备和机器ID..."
+            log_debug "新设备ID: $new_device_id"
+            log_debug "新机器ID: $new_machine_id"
+            
+            # 修改配置文件
+            if modify_or_add_config "deviceId" "$new_device_id" "$STORAGE_FILE" && \
+               modify_or_add_config "machineId" "$new_machine_id" "$STORAGE_FILE"; then
+                log_info "配置文件修改成功"
+            else
+                log_error "配置文件修改失败"
+            fi
+        else
+            log_warn "未找到配置文件，这是正常的，脚本将跳过ID修改"
+        fi
     else
-        log_info "成功设置文件只读权限"
+        log_info "您选择了不重置机器码，将仅修改js文件"
+        
+        # 确保配置文件目录存在
+        if [ -f "$STORAGE_FILE" ]; then
+            log_info "发现已有配置文件: $STORAGE_FILE"
+            
+            # 备份现有配置（以防万一）
+            backup_config
+        else
+            log_warn "未找到配置文件，这是正常的，脚本将跳过ID修改"
+        fi
     fi
     
     echo
-    log_info "已更新配置: $STORAGE_FILE"
-    log_debug "machineId: $machine_id"
-    log_debug "macMachineId: $mac_machine_id"
-    log_debug "devDeviceId: $device_id"
-    log_debug "sqmId: $sqm_id"
+    log_info "配置处理完成"
 }
 
 # 清理 Cursor 之前的修改
@@ -377,8 +332,9 @@ modify_cursor_app_files() {
         return 1
     fi
 
-    # 定义目标文件
+    # 定义目标文件 - 将extensionHostProcess.js放在最前面优先处理
     local target_files=(
+        "${CURSOR_APP_PATH}/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js"
         "${CURSOR_APP_PATH}/Contents/Resources/app/out/main.js"
         "${CURSOR_APP_PATH}/Contents/Resources/app/out/vs/code/node/cliProcessMain.js"
     )
@@ -497,9 +453,10 @@ modify_cursor_app_files() {
         fi
     done
     
-    # 修改目标文件
+    # 修改目标文件 - 优先处理js文件
     local modified_count=0
     local files=(
+        "${temp_app}/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js"
         "${temp_app}/Contents/Resources/app/out/main.js"
         "${temp_app}/Contents/Resources/app/out/vs/code/node/cliProcessMain.js"
     )
@@ -527,7 +484,45 @@ modify_cursor_app_files() {
         }
 
         # 使用 sed 替换而不是字符串操作
-        if grep -q "IOPlatformUUID" "$file"; then
+        if [[ "$file" == *"extensionHostProcess.js"* ]]; then
+            log_debug "处理 extensionHostProcess.js 文件..."
+            echo "[PROCESS_DETAIL] 开始处理 extensionHostProcess.js 文件" >> "$LOG_FILE"
+            
+            # 检查是否包含目标代码
+            if grep -q 'i.header.set("x-cursor-checksum' "$file"; then
+                log_debug "找到 x-cursor-checksum 设置代码"
+                echo "[FOUND] 找到 x-cursor-checksum 设置代码" >> "$LOG_FILE"
+                
+                # 记录匹配的行到日志
+                grep -n 'i.header.set("x-cursor-checksum' "$file" >> "$LOG_FILE"
+                
+                # 执行特定的替换
+                if sed -i.tmp 's/i\.header\.set("x-cursor-checksum",e===void 0?`${p}${t}`:`${p}${t}\/${e}`)/i.header.set("x-cursor-checksum",e===void 0?`${p}${t}`:`${p}${t}\/${p}`)/' "$file"; then
+                    log_info "成功修改 x-cursor-checksum 设置代码"
+                    echo "[SUCCESS] 成功完成 x-cursor-checksum 设置代码替换" >> "$LOG_FILE"
+                    # 记录修改后的行
+                    grep -n 'i.header.set("x-cursor-checksum' "$file" >> "$LOG_FILE"
+                    ((modified_count++))
+                    log_info "成功修改文件: ${file/$temp_dir\//}"
+                else
+                    log_error "修改 x-cursor-checksum 设置代码失败"
+                    echo "[ERROR] 替换 x-cursor-checksum 设置代码失败" >> "$LOG_FILE"
+                    cp "${file}.bak" "$file"
+                fi
+            else
+                log_warn "未找到 x-cursor-checksum 设置代码"
+                echo "[FILE_CHECK] 未找到 x-cursor-checksum 设置代码" >> "$LOG_FILE"
+                
+                # 记录文件部分内容到日志以便排查
+                echo "[FILE_CONTENT] 文件中包含 'header.set' 的行:" >> "$LOG_FILE"
+                grep -n "header.set" "$file" | head -20 >> "$LOG_FILE"
+                
+                echo "[FILE_CONTENT] 文件中包含 'checksum' 的行:" >> "$LOG_FILE"
+                grep -n "checksum" "$file" | head -20 >> "$LOG_FILE"
+            fi
+            
+            echo "[PROCESS_DETAIL] 完成处理 extensionHostProcess.js 文件" >> "$LOG_FILE"
+        elif grep -q "IOPlatformUUID" "$file"; then
             log_debug "找到 IOPlatformUUID 关键字"
             echo "[FOUND] 找到 IOPlatformUUID 关键字" >> "$LOG_FILE"
             grep -n "IOPlatformUUID" "$file" | head -5 >> "$LOG_FILE"
@@ -836,98 +831,6 @@ disable_auto_update() {
     log_info "完成后请重启 Cursor"
 }
 
-# 生成随机MAC地址
-generate_random_mac() {
-    # 生成随机MAC地址,保持第一个字节的第二位为0(保证是单播地址)
-    printf '02:%02x:%02x:%02x:%02x:%02x' $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256))
-}
-
-# 获取网络接口列表
-get_network_interfaces() {
-    networksetup -listallhardwareports | awk '/Hardware Port|Ethernet Address/ {print $NF}' | paste - - | grep -v 'N/A'
-}
-
-# 备份MAC地址
-backup_mac_addresses() {
-    log_info "正在备份MAC地址..."
-    local backup_file="$BACKUP_DIR/mac_addresses.backup_$(date +%Y%m%d_%H%M%S)"
-    
-    {
-        echo "# Original MAC Addresses Backup - $(date)" > "$backup_file"
-        echo "## Network Interfaces:" >> "$backup_file"
-        networksetup -listallhardwareports >> "$backup_file"
-        
-        chmod 444 "$backup_file"
-        chown "$CURRENT_USER" "$backup_file"
-        log_info "MAC地址已备份到: $backup_file"
-    } || {
-        log_error "备份MAC地址失败"
-        return 1
-    }
-}
-
-# 修改MAC地址
-modify_mac_address() {
-    log_info "正在获取网络接口信息..."
-    
-    # 备份当前MAC地址
-    backup_mac_addresses
-    
-    # 获取所有网络接口
-    local interfaces=$(get_network_interfaces)
-    
-    if [ -z "$interfaces" ]; then
-        log_error "未找到可用的网络接口"
-        return 1
-    fi
-    
-    echo
-    log_info "发现以下网络接口:"
-    echo "$interfaces" | nl -w2 -s') '
-    echo
-    
-    echo -n "请选择要修改的接口编号 (按回车跳过): "
-    read -r choice
-    
-    if [ -z "$choice" ]; then
-        log_info "跳过MAC地址修改"
-        return 0
-    fi
-    
-    # 获取选择的接口名称
-    local selected_interface=$(echo "$interfaces" | sed -n "${choice}p" | awk '{print $1}')
-    
-    if [ -z "$selected_interface" ]; then
-        log_error "无效的选择"
-        return 1
-    fi
-    
-    # 生成新的MAC地址
-    local new_mac=$(generate_random_mac)
-    
-    log_info "正在修改接口 $selected_interface 的MAC地址..."
-    
-    # 关闭网络接口
-    sudo ifconfig "$selected_interface" down || {
-        log_error "无法关闭网络接口"
-        return 1
-    }
-    
-    # 修改MAC地址
-    if sudo ifconfig "$selected_interface" ether "$new_mac"; then
-        # 重新启用网络接口
-        sudo ifconfig "$selected_interface" up
-        log_info "成功修改MAC地址为: $new_mac"
-        echo
-        log_warn "请注意: MAC地址修改可能需要重新连接网络才能生效"
-    else
-        log_error "修改MAC地址失败"
-        # 尝试恢复网络接口
-        sudo ifconfig "$selected_interface" up
-        return 1
-    fi
-}
-
 # 新增恢复功能选项
 restore_feature() {
     # 检查备份目录是否存在
@@ -1128,85 +1031,35 @@ main() {
     ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
     "
     echo -e "${BLUE}================================${NC}"
-    echo -e "${GREEN}   Cursor 设备ID 修改工具          ${NC}"
+    echo -e "${GREEN}   Cursor 启动工具          ${NC}"
     echo -e "${YELLOW}  关注公众号【煎饼果子卷AI】     ${NC}"
     echo -e "${YELLOW}  一起交流更多Cursor技巧和AI知识(脚本免费、关注公众号加群有更多技巧和大佬)  ${NC}"
     echo -e "${BLUE}================================${NC}"
     echo
-    echo -e "${YELLOW}[重要提示]${NC} 本工具支持 Cursor v0.47.x"
+    echo -e "${YELLOW}[重要提示]${NC} 本工具优先修改js文件，更加安全可靠"
     echo -e "${YELLOW}[重要提示]${NC} 本工具免费，如果对您有帮助，请关注公众号【煎饼果子卷AI】"
     echo
     
-    # 删除开头的修复选项部分，直接执行主要功能
+    # 执行主要功能
     check_permissions
     check_and_kill_cursor
     backup_config
+    
+    # 询问用户是否需要重置机器码（默认不重置）
     generate_new_config
     
-    # 询问用户是否要修改主程序文件
-    echo
-    log_warn "是否要修改 Cursor 主程序文件？"
+    # 执行主程序文件修改
+    log_info "正在执行主程序文件修改..."
     
-    # 使用新的菜单选择函数
-    select_menu_option "请使用上下箭头选择，按Enter确认:" "否 - 仅修改配置文件 (更安全但可能需要更频繁地重置)|是 - 同时修改主程序文件 (更持久但有小概率导致程序不稳定)" 1
-    app_choice=$?
-    
-    # 记录到日志
-    echo "[INPUT_DEBUG] 读取到的选择: $app_choice" >> "$LOG_FILE"
-    
-    # 确保脚本不会因为输入问题而终止
-    set +e
-    
-    # 处理用户选择
-    if [ "$app_choice" = "0" ]; then
-        log_info "您选择了跳过主程序文件修改"
-        log_info "已跳过主程序文件修改"
-    else
-        # 默认或输入1都执行修改
-        log_info "正在执行主程序文件修改..."
-        
-        # 使用子shell执行修改，避免错误导致整个脚本退出
-        (
-            if modify_cursor_app_files; then
-                log_info "主程序文件修改成功！"
-            else
-                log_warn "主程序文件修改失败，但配置文件修改可能已成功"
-                log_warn "如果重启后 Cursor 仍然提示设备被禁用，请重新运行此脚本"
-            fi
-        )
-    fi
-    
-    # 恢复错误处理
-    set -e
-    
-    # 添加MAC地址修改选项
-    echo
-    log_warn "是否要修改MAC地址？"
-    
-    # 使用新的菜单选择函数
-    select_menu_option "请使用上下箭头选择，按Enter确认:" "否 - 保持默认设置|是 - 修改MAC地址 (推荐)" 1
-    mac_choice=$?
-    
-    # 记录到日志
-    echo "[INPUT_DEBUG] MAC地址选择: $mac_choice" >> "$LOG_FILE"
-    
-    # 确保脚本不会因为输入问题而终止
-    set +e
-    
-    # 处理用户选择 - 索引1对应"是"选项
-    if [ "$mac_choice" = "1" ]; then
-        log_info "您选择了修改MAC地址"
-        # 使用子shell执行修改，避免错误导致整个脚本退出
-        (
-            if modify_mac_address; then
-                log_info "MAC地址修改完成！"
-            else
-                log_error "MAC地址修改失败"
-            fi
-        )
-    else
-        log_info "已跳过MAC地址修改"
-    fi
+    # 使用子shell执行修改，避免错误导致整个脚本退出
+    (
+        if modify_cursor_app_files; then
+            log_info "主程序文件修改成功！"
+        else
+            log_warn "主程序文件修改失败，但配置文件修改可能已成功"
+            log_warn "如果重启后 Cursor 仍然提示设备被禁用，请重新运行此脚本"
+        fi
+    )
     
     # 恢复错误处理
     set -e
@@ -1218,9 +1071,6 @@ main() {
     disable_auto_update
 
     log_info "请重启 Cursor 以应用新的配置"
-
-    # 新增恢复功能选项
-    #restore_feature
 
     # 显示最后的提示信息
     show_follow_info
