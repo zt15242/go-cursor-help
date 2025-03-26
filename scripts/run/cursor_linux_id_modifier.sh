@@ -777,7 +777,7 @@ show_file_tree() {
 show_follow_info() {
     echo
     echo -e "${GREEN}================================${NC}"
-    echo -e "${YELLOW}  脚本由Neo优化，Wechat：Neo20250310 ${NC}"
+    echo -e "${YELLOW}  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识(脚本免费、关注公众号加群有更多技巧和大佬) ${NC}"
     echo -e "${GREEN}================================${NC}"
     echo
 }
