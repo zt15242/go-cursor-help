@@ -227,56 +227,25 @@ modify_or_add_config() {
 # 生成新的配置
 generate_new_config() {
     echo
-    log_warn "机器码重置选项"
+    log_warn "机器码处理"
     
-    # 使用菜单选择函数询问用户是否重置机器码
-    select_menu_option "是否需要重置机器码? (通常情况下，只修改js文件即可)：" "不重置 - 仅修改js文件即可|重置 - 同时修改配置文件和机器码" 0
-    reset_choice=$?
+    # 默认不重置机器码
+    reset_choice=0
     
     # 记录日志以便调试
-    echo "[INPUT_DEBUG] 机器码重置选项选择: $reset_choice" >> "$LOG_FILE"
+    echo "[INPUT_DEBUG] 机器码重置选项: 不重置 (默认)" >> "$LOG_FILE"
     
-    # 处理用户选择 - 索引0对应"不重置"选项，索引1对应"重置"选项
-    if [ "$reset_choice" = "1" ]; then
-        log_info "您选择了重置机器码"
+    # 处理 - 默认为不重置
+    log_info "默认不重置机器码，将仅修改js文件"
+    
+    # 确保配置文件目录存在
+    if [ -f "$STORAGE_FILE" ]; then
+        log_info "发现已有配置文件: $STORAGE_FILE"
         
-        # 确保配置文件目录存在
-        if [ -f "$STORAGE_FILE" ]; then
-            log_info "发现已有配置文件: $STORAGE_FILE"
-            
-            # 备份现有配置（以防万一）
-            backup_config
-            
-            # 生成并设置新的设备ID
-            local new_device_id=$(generate_uuid)
-            local new_machine_id="auth0|user_$(openssl rand -hex 16)"
-            
-            log_info "正在设置新的设备和机器ID..."
-            log_debug "新设备ID: $new_device_id"
-            log_debug "新机器ID: $new_machine_id"
-            
-            # 修改配置文件
-            if modify_or_add_config "deviceId" "$new_device_id" "$STORAGE_FILE" && \
-               modify_or_add_config "machineId" "$new_machine_id" "$STORAGE_FILE"; then
-                log_info "配置文件修改成功"
-            else
-                log_error "配置文件修改失败"
-            fi
-        else
-            log_warn "未找到配置文件，这是正常的，脚本将跳过ID修改"
-        fi
+        # 备份现有配置（以防万一）
+        backup_config
     else
-        log_info "您选择了不重置机器码，将仅修改js文件"
-        
-        # 确保配置文件目录存在
-        if [ -f "$STORAGE_FILE" ]; then
-            log_info "发现已有配置文件: $STORAGE_FILE"
-            
-            # 备份现有配置（以防万一）
-            backup_config
-        else
-            log_warn "未找到配置文件，这是正常的，脚本将跳过ID修改"
-        fi
+        log_warn "未找到配置文件，这是正常的，脚本将跳过ID修改"
     fi
     
     echo
@@ -778,6 +747,7 @@ show_follow_info() {
     echo
     echo -e "${GREEN}================================${NC}"
     echo -e "${YELLOW}  关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识(脚本免费、关注公众号加群有更多技巧和大佬) ${NC}"
+    echo -e "${YELLOW}  脚本由Neo优化，Wechat：Neo20250310 ${NC}"
     echo -e "${GREEN}================================${NC}"
     echo
 }
@@ -1045,7 +1015,7 @@ main() {
     check_and_kill_cursor
     backup_config
     
-    # 询问用户是否需要重置机器码（默认不重置）
+    # 处理配置文件，默认不重置机器码
     generate_new_config
     
     # 执行主程序文件修改
