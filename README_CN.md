@@ -395,8 +395,30 @@ touch ~/Library/Application\ Support/Caches/cursor-updater
 - ✅ 错误处理和恢复
 </details>
 
+<details>
+<summary><b>重置 Cursor 免费试用</b></summary>
 
+### 使用 `cursor_free_trial_reset.sh` 脚本
 
+#### macOS
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_free_trial_reset.sh -o ./cursor_free_trial_reset.sh && sudo bash ./cursor_free_trial_reset.sh && rm ./cursor_free_trial_reset.sh
+```
+
+#### Linux
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_free_trial_reset.sh | sudo bash
+```
+
+#### Windows
+
+```powershell
+irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_free_trial_reset.sh | iex
+```
+
+</details>
 
 ## 联系方式
 
