@@ -164,12 +164,12 @@ check_and_kill_cursor() {
     get_process_details() {
         local process_name="$1"
         log_debug "正在获取 $process_name 进程详细信息："
-        ps aux | grep -i "cursor" | grep -v grep
+        ps aux | grep -i "cursor" | grep -v grep | grep -v "cursor_linux_id_modifier.sh"
     }
     
     while [ $attempt -le $max_attempts ]; do
-        # 使用更精确的匹配来获取 Cursor 进程
-        CURSOR_PIDS=$(pgrep -f "cursor" || true)
+        # 使用更精确的匹配来获取 Cursor 进程，排除当前脚本和grep进程
+        CURSOR_PIDS=$(ps aux | grep -i "cursor" | grep -v "grep" | grep -v "cursor_linux_id_modifier.sh" | awk '{print $2}' || true)
         
         if [ -z "$CURSOR_PIDS" ]; then
             log_info "未发现运行中的 Cursor 进程"
@@ -190,8 +190,8 @@ check_and_kill_cursor() {
         
         sleep 1
         
-        # 再次检查进程是否还在运行
-        if ! pgrep -f "cursor" > /dev/null; then
+        # 再次检查进程是否还在运行，排除当前脚本和grep进程
+        if ! ps aux | grep -i "cursor" | grep -v "grep" | grep -v "cursor_linux_id_modifier.sh" > /dev/null; then
             log_info "Cursor 进程已成功关闭"
             return 0
         fi
@@ -587,7 +587,7 @@ global.macMachineId = '$mac_machine_id';
                     
                     log_debug "完成最通用注入"
                     ((modified_count++))
-                }
+                fi
             else
                 log_info "文件已经被修改过，跳过修改"
             fi
