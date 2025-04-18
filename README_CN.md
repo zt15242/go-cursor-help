@@ -15,10 +15,9 @@
 > ⚠️ **重要提示**
 > 
 > 本工具当前支持版本：
-> - ✅ Cursor v0.45.x 及以下版本
 > - ✅ Windows: 最新的 0.47.x 版本（已支持）
 > - ✅ Mac/Linux: 最新的 0.47.x 版本（已支持，欢迎测试并反馈问题）
->
+ 
 > 使用前请确认您的 Cursor 版本。
 
 <details open>
@@ -26,19 +25,11 @@
 
 <div class="version-card" style="background: linear-gradient(135deg, #6e8efb, #a777e3); border-radius: 8px; padding: 15px; margin: 10px 0; color: white;">
 
-### 🌟 最新版本
-- v0.45.11 (2025-02-07) - 最新发布
-- v0.45.x (2025-01-03) - 最稳定版本
 
-[查看完整版本历史](CursorHistoryDown.md)
+[查看完整版本历史]([CursorHistoryDown.md](https://github.com/oslook/cursor-ai-downloads?tab=readme-ov-file))
 
 </div>
 
-### 📥 直接下载链接
-
-**v0.45.x (推荐稳定版)**
-- Windows: [官方下载](https://downloader.cursor.sh/builds/250103fqxdt5u9z/windows/nsis/x64) | [镜像下载](https://download.todesktop.com/230313mzl4w4u92/Cursor%20Setup%200.44.11%20-%20Build%20250103fqxdt5u9z-x64.exe)
-- Mac: [Apple Silicon](https://dl.todesktop.com/230313mzl4w4u92/versions/0.44.11/mac/zip/arm64)
 
 </details>
 
@@ -432,8 +423,8 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/
 </td>
 <td align="center">
 <b>微信交流群</b><br>
-<img src="img/qun-10.jpg" width="500" alt="WeChat"><br>
-<small>二维码7天内(4月15日前)有效，过期请加微信</small>
+<img src="img/qun11.jpg" width="500" alt="WeChat"><br>
+<small>二维码7天内(4月25日前)有效，过期请加微信</small>
 </td>
 <td align="center">
 <b>公众号</b><br>

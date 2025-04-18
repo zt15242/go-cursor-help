@@ -15,7 +15,6 @@
 > ⚠️ **重要なお知らせ**
 > 
 > このツールは現在以下のバージョンをサポートしています：
-> - ✅ Cursor v0.45.x およびそれ以前のバージョン
 > - ✅ Windows: 最新の0.47.xバージョン（サポート済み）
 > - ✅ Mac/Linux: 最新の0.47.xバージョン（サポート済み、フィードバック歓迎）
 >
@@ -27,18 +26,10 @@
 <div class="version-card" style="background: linear-gradient(135deg, #6e8efb, #a777e3); border-radius: 8px; padding: 15px; margin: 10px 0; color: white;">
 
 ### 🌟 最新バージョン
-- v0.45.11 (2025-02-07) - 最新リリース
-- v0.45.x (2025-01-03) - 最も安定したリリース
 
-[完全なバージョン履歴を見る](CursorHistoryDown.md)
+[完全なバージョン履歴を見る]([CursorHistoryDown.md](https://github.com/oslook/cursor-ai-downloads?tab=readme-ov-file))
 
 </div>
-
-### 📥 直接ダウンロードリンク
-
-**v0.45.x (推奨安定版)**
-- Windows: [公式](https://downloader.cursor.sh/builds/250103fqxdt5u9z/windows/nsis/x64) | [ミラー](https://download.todesktop.com/230313mzl4w4u92/Cursor%20Setup%200.44.11%20-%20Build%20250103fqxdt5u9z-x64.exe)
-- Mac: [Apple Silicon](https://dl.todesktop.com/230313mzl4w4u92/versions/0.44.11/mac/zip/arm64)
 
 </details>
 
@@ -50,14 +41,6 @@
 > - この変更により一時的にネットワーク接続が影響を受ける可能性があります
 > - 実行中にこのステップをスキップすることができます
 >
-> 💾 **Cursor v0.45.xをダウンロード**
-> 
-> Windows:
-> - [Cursor公式からダウンロード](https://downloader.cursor.sh/builds/250103fqxdt5u9z/windows/nsis/x64)
-> - [ToDesktopからダウンロード](https://download.todesktop.com/230313mzl4w4u92/Cursor%20Setup%200.44.11%20-%20Build%20250103fqxdt5u9z-x64.exe)
->
-> Mac:
-> - [Mac用ダウンロード (Apple Silicon)](https://dl.todesktop.com/230313mzl4w4u92/versions/0.44.11/mac/zip/arm64)
 
 <details >
 <summary><b>🔒 自動更新機能の無効化</b></summary>
@@ -501,8 +484,8 @@ macOS/Linuxユーザーはシステム内で同様の`cursor-updater`ディレ�
 </td>
 <td align="center">
 <b>WeChat</b><br>
-<img src="img/qun-10.jpg" width="500" alt="WeChat"><br>
-<em>二维码7天内(4月15日前)有效，过期请加微信</em>
+<img src="img/qun11.jpg" width="500" alt="WeChat"><br>
+<em>二维码7天内(4月25日前)有效，过期请加微信</em>
 </td>
 <!-- <td align="center">
 <b>ETC</b><br>
