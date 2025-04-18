@@ -35,6 +35,20 @@
 
 </details>
 
+⚠️ **General Solutions for Cursor**
+> 1.  Close Cursor, log out of your account, and delete your account in the official website Settings (refresh IP node: Japan, Singapore, USA, Hong Kong, prioritizing low latency - not necessarily required but change if conditions allow; Windows users are recommended to refresh DNS cache: `ipconfig /flushdns`)
+> Go to the Cursor official website to delete your current account
+> Steps: User avatar -> Setting -> Advanced▼ in the bottom left -> Delete Account
+>
+> 2.  Run the machine code refresh script, see the script address below, available in China
+> 
+> 3.  Re-register an account, log in, and open Cursor to resume normal use.
+>
+> 4.  Alternative solution: If still unusable after step [**3**], or if you encounter problems such as account registration failure or inability to delete an account, this usually means your browser has been identified or restricted by the target website (risk control). In this case, try switching browsers, such as: Edge, Google Chrome, Firefox. (Or, consider using a browser that can modify or randomize browser fingerprint information).
+
+
+---
+
 ⚠️ **MAC Address Modification Warning**
 > 
 > For Mac users: This script includes a MAC address modification feature that will:
