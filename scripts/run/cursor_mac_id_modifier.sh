@@ -183,21 +183,63 @@ change_system_mac_address() {
     local random_mac=$(printf '02:%02x:%02x:%02x:%02x:%02x' $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)))
     log_info "生成新的随机 MAC 地址: $random_mac"
 
-    log_info "执行命令: sudo ifconfig $primary_interface ether $random_mac"
-    if sudo ifconfig "$primary_interface" ether "$random_mac"; then
-        log_info "成功将接口 '$primary_interface' 的 MAC 地址临时修改为: $random_mac"
-        local new_mac_check=$(ifconfig "$primary_interface" | awk '/ether/{print $2}')
-        log_info "验证新 MAC 地址: $new_mac_check"
-        if [ "$new_mac_check" != "$random_mac" ]; then
-             log_warn "验证失败，MAC 地址似乎未成功设置。"
-        fi
-        echo -e "${GREEN}已临时修改接口 '$primary_interface' 的 MAC 地址。重启后恢复。${NC}"
+    local mac_change_success=false
+
+    # 临时禁用接口
+    log_info "临时禁用接口 '$primary_interface' 以修改 MAC 地址 (网络会短暂中断)..."
+    if ! sudo ifconfig "$primary_interface" down; then
+        log_error "禁用接口 '$primary_interface' 失败，跳过 MAC 地址修改。"
+        echo -e "${RED}禁用网络接口失败。请检查日志: $LOG_FILE ${NC}"
+        # 即使禁用失败，仍然尝试启用接口
     else
-        log_error "修改接口 '$primary_interface' 的 MAC 地址失败。"
-        log_error "请检查接口名称是否正确，或尝试手动执行: sudo ifconfig $primary_interface ether <新MAC地址>"
-        echo -e "${RED}修改 MAC 地址失败。请检查日志: $LOG_FILE ${NC}"
-        # 即使失败也继续执行脚本的其他部分
+        log_info "接口 '$primary_interface' 已禁用，等待1秒..."
+        sleep 1 # 添加短暂延迟确保接口状态改变
+
+        # 尝试修改 MAC 地址
+        log_info "尝试执行命令: sudo ifconfig $primary_interface ether $random_mac"
+        if sudo ifconfig "$primary_interface" ether "$random_mac"; then
+            log_info "尝试修改接口 '$primary_interface' 的 MAC 地址为: $random_mac [成功]"
+            local new_mac_check=$(ifconfig "$primary_interface" | awk '/ether/{print $2}')
+            log_info "验证新 MAC 地址 (接口禁用状态下): $new_mac_check"
+            if [ "$new_mac_check" != "$random_mac" ]; then
+                 log_warn "验证失败，MAC 地址似乎未成功设置 (接口禁用状态下)。"
+            else
+                 mac_change_success=true
+            fi
+        else
+            log_error "尝试修改接口 '$primary_interface' 的 MAC 地址失败。"
+            log_error "请检查接口名称是否正确，或尝试手动执行: sudo ifconfig $primary_interface down && sudo ifconfig $primary_interface ether <新MAC地址> && sudo ifconfig $primary_interface up"
+            echo -e "${RED}修改 MAC 地址失败。请检查日志: $LOG_FILE ${NC}"
+        fi
     fi
+
+    # 重新启用接口
+    log_info "重新启用接口 '$primary_interface'..."
+    if ! sudo ifconfig "$primary_interface" up; then
+        log_error "重新启用接口 '$primary_interface' 失败。"
+        echo -e "${RED}重新启用网络接口失败。请检查日志: $LOG_FILE ${NC}"
+        # 即使启用失败，也报告 MAC 修改尝试的结果
+        if $mac_change_success; then
+             echo -e "${YELLOW}MAC 地址已修改，但重新启用接口失败。请手动检查网络连接。${NC}"
+        fi
+    else
+        log_info "接口 '$primary_interface' 已重新启用。等待网络恢复..."
+        sleep 2 # 等待网络恢复
+        # Optional: Add a network connectivity check here
+        if $mac_change_success; then
+            local final_mac_check=$(ifconfig "$primary_interface" | awk '/ether/{print $2}')
+            log_info "最终验证新 MAC 地址 (接口启用状态下): $final_mac_check"
+            if [ "$final_mac_check" == "$random_mac" ]; then
+                 echo -e "${GREEN}已成功临时修改接口 '$primary_interface' 的 MAC 地址。重启后恢复。${NC}"
+            else
+                 log_warn "最终验证失败，MAC 地址可能未生效或已被重置。"
+                 echo -e "${YELLOW}MAC 地址修改尝试完成，但最终验证失败。请检查接口状态和日志。${NC}"
+            fi
+        else
+            echo -e "${RED}MAC 地址修改尝试失败。请检查日志: $LOG_FILE ${NC}"
+        fi
+    fi
+    
     echo
 }
 
@@ -494,7 +536,6 @@ modify_cursor_app_files() {
                     log_info "成功修改文件: ${file/$temp_dir\//}"
                 else
                     log_error "修改 x-cursor-checksum 设置代码失败"
-                    echo "[ERROR] 替换 x-cursor-checksum 设置代码失败" >> "$LOG_FILE"
                     cp "${file}.bak" "$file"
                 fi
             else
