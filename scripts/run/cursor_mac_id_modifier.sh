@@ -154,6 +154,53 @@ backup_config() {
     fi
 }
 
+# 修改系统 MAC 地址 (临时)
+change_system_mac_address() {
+    log_info "开始尝试修改系统 MAC 地址..."
+    echo
+    echo -e "${YELLOW}[警告]${NC} 即将尝试修改您主网络接口的 MAC 地址。"
+    echo -e "${YELLOW}[警告]${NC} 此更改是 ${RED}临时${NC} 的，将在您重启 Mac 后恢复为原始地址。"
+    echo -e "${YELLOW}[警告]${NC} 修改 MAC 地址可能会导致临时的网络中断或连接问题。"
+    echo -e "${YELLOW}[警告]${NC} 请确保您了解相关风险。此操作主要影响本地网络识别，而非互联网身份。"
+    echo
+
+    # 尝试自动检测主网络接口 (Wi-Fi 或 Ethernet)
+    local primary_interface=$(networksetup -listallhardwareports | awk '/Hardware Port: (Wi-Fi|Ethernet)/{getline; print $2}' | head -n 1)
+
+    if [ -z "$primary_interface" ]; then
+        log_warn "未能自动检测到主要的 Wi-Fi 或以太网接口。默认尝试使用 'en0'。"
+        primary_interface="en0"
+    else
+        log_info "检测到主网络接口: $primary_interface"
+    fi
+
+    # 获取当前 MAC 地址用于日志记录
+    local current_mac=$(ifconfig "$primary_interface" | awk '/ether/{print $2}')
+    log_info "接口 '$primary_interface' 当前 MAC 地址: $current_mac"
+
+    # 生成随机 MAC 地址 (保留本地管理位，避免冲突)
+    # OUI (前三字节) 可以是任意的，这里使用 02 (本地管理) 开头确保不与厂商 OUI 冲突
+    local random_mac=$(printf '02:%02x:%02x:%02x:%02x:%02x' $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)))
+    log_info "生成新的随机 MAC 地址: $random_mac"
+
+    log_info "执行命令: sudo ifconfig $primary_interface ether $random_mac"
+    if sudo ifconfig "$primary_interface" ether "$random_mac"; then
+        log_info "成功将接口 '$primary_interface' 的 MAC 地址临时修改为: $random_mac"
+        local new_mac_check=$(ifconfig "$primary_interface" | awk '/ether/{print $2}')
+        log_info "验证新 MAC 地址: $new_mac_check"
+        if [ "$new_mac_check" != "$random_mac" ]; then
+             log_warn "验证失败，MAC 地址似乎未成功设置。"
+        fi
+        echo -e "${GREEN}已临时修改接口 '$primary_interface' 的 MAC 地址。重启后恢复。${NC}"
+    else
+        log_error "修改接口 '$primary_interface' 的 MAC 地址失败。"
+        log_error "请检查接口名称是否正确，或尝试手动执行: sudo ifconfig $primary_interface ether <新MAC地址>"
+        echo -e "${RED}修改 MAC 地址失败。请检查日志: $LOG_FILE ${NC}"
+        # 即使失败也继续执行脚本的其他部分
+    fi
+    echo
+}
+
 # 生成随机 ID
 generate_random_id() {
     # 生成32字节(64个十六进制字符)的随机数
@@ -222,34 +269,6 @@ modify_or_add_config() {
     chmod 444 "$file"
     
     return 0
-}
-
-# 生成新的配置
-generate_new_config() {
-    echo
-    log_warn "机器码处理"
-    
-    # 默认不重置机器码
-    reset_choice=0
-    
-    # 记录日志以便调试
-    echo "[INPUT_DEBUG] 机器码重置选项: 不重置 (默认)" >> "$LOG_FILE"
-    
-    # 处理 - 默认为不重置
-    log_info "默认不重置机器码，将仅修改js文件"
-    
-    # 确保配置文件目录存在
-    if [ -f "$STORAGE_FILE" ]; then
-        log_info "发现已有配置文件: $STORAGE_FILE"
-        
-        # 备份现有配置（以防万一）
-        backup_config
-    else
-        log_warn "未找到配置文件，这是正常的，脚本将跳过ID修改"
-    fi
-    
-    echo
-    log_info "配置处理完成"
 }
 
 # 清理 Cursor 之前的修改
@@ -981,7 +1000,7 @@ main() {
     log_info "当前用户: $CURRENT_USER"
     log_cmd_output "sw_vers" "macOS 版本信息"
     log_cmd_output "which codesign" "codesign 路径"
-    log_cmd_output "ls -la \"$CURSOR_APP_PATH\"" "Cursor 应用信息"
+    log_cmd_output "ls -ld "$CURSOR_APP_PATH"" "Cursor 应用信息"
     
     # 新增环境检查
     if [[ $(uname) != "Darwin" ]]; then
@@ -1005,7 +1024,7 @@ main() {
     echo -e "${YELLOW}  一起交流更多Cursor技巧和AI知识(脚本免费、关注公众号加群有更多技巧和大佬)  ${NC}"
     echo -e "${BLUE}================================${NC}"
     echo
-    echo -e "${YELLOW}[重要提示]${NC} 本工具优先修改js文件，更加安全可靠"
+    echo -e "${YELLOW}[重要提示]${NC} 本工具默认会修改系统 MAC 地址 (临时) 并修改 JS 文件以重置设备标识。"
     echo -e "${YELLOW}[重要提示]${NC} 本工具免费，如果对您有帮助，请关注公众号【煎饼果子卷AI】"
     echo
     
@@ -1014,8 +1033,8 @@ main() {
     check_and_kill_cursor
     backup_config
     
-    # 处理配置文件，默认不重置机器码
-    generate_new_config
+    # 新增：默认执行系统 MAC 地址修改
+    change_system_mac_address
     
     # 执行主程序文件修改
     log_info "正在执行主程序文件修改..."
