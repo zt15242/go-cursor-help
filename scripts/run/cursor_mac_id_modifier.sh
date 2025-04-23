@@ -598,7 +598,15 @@ modify_cursor_app_files() {
                     ((modified_count++))
                     continue
                 fi
-                
+
+                # 新增检查：检查是否已存在 randomDeviceId_ 时间戳模式
+                if grep -q "const randomDeviceId_[0-9]\\{10,\\}" "$file"; then
+                    log_info "文件已经包含 randomDeviceId_ 模式，跳过通用注入"
+                    echo "[FOUND] 文件已包含 randomDeviceId_ 模式，跳过通用注入: $file" >> "$LOG_FILE"
+                    ((modified_count++)) # 计为已修改，防止后续尝试其他方法
+                    continue
+                fi
+
                 # 使用更通用的注入方法
                 log_warn "未找到具体函数，尝试使用通用修改方法"
                 inject_code="
