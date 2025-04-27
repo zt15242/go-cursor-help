@@ -766,6 +766,7 @@ main() {
     echo -e "${BLUE}================================${NC}"
     echo
     echo -e "${YELLOW}[重要提示]${NC} 本工具优先修改js文件，更加安全可靠"
+    echo -e "${YELLOW}[重要提示]${NC} Linux 用户请注意：脚本将尝试通过检查常用路径 (${BLUE}/usr/bin, /usr/local/bin, \\$HOME/.local/bin, /opt/cursor, /snap/bin${NC}), 使用 ${BLUE}which cursor${NC}, 及搜索 ${BLUE}/usr, /opt, \\$HOME/.local${NC} 来定位 Cursor。若无法找到，请确保 Cursor 安装在上述位置之一或可通过这些方法访问。"
     echo
     
     # 执行主要功能

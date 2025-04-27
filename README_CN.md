@@ -195,6 +195,8 @@ curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com
 curl -fsSL https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/scripts/run/cursor_linux_id_modifier.sh | sudo bash
 ```
 
+> **Linux 用户请注意：** 该脚本通过检查常用路径（`/usr/bin`, `/usr/local/bin`, `$HOME/.local/bin`, `/opt/cursor`, `/snap/bin`）、使用 `which cursor` 命令以及在 `/usr`、`/opt` 和 `$HOME/.local` 目录内搜索，来尝试定位您的 Cursor 安装。如果 Cursor 安装在其他位置或通过这些方法无法找到，脚本可能会失败。请确保可以通过这些标准位置或方法之一访问到 Cursor。
+
 **Windows**
 
 ```powershell
@@ -386,7 +388,7 @@ mv app-update.yml app-update.yml.bak
 touch app-update.yml
 chmod 444 app-update.yml
 
-# 打开Cursor设置，将更新模式设置为“无”，该步骤必须执行，否则Cursor依然会自动检查更新
+# 打开Cursor设置，将更新模式设置为"无"，该步骤必须执行，否则Cursor依然会自动检查更新
 # 步骤：Settings -> Application -> Update, 将Mode设置为none
 
 # 注意: cursor-updater修改方法可能已失效。但为了以防万一，还是删除更新目录并创建阻止文件
