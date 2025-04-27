@@ -1169,7 +1169,7 @@ main() {
     backup_config
     
     # 新增：默认执行系统 MAC 地址修改
-    change_system_mac_address
+    change_system_mac_address || true
     
     # 执行主程序文件修改
     log_info "正在执行主程序文件修改..."
