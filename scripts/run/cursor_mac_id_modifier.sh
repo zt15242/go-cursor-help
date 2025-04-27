@@ -165,13 +165,17 @@ change_system_mac_address() {
     echo
 
     # 尝试自动检测主网络接口 (Wi-Fi 或 Ethernet)
-    local primary_interface=$(networksetup -listallhardwareports | awk '/Hardware Port: (Wi-Fi|Ethernet)/{getline; print $2}' | head -n 1)
+    # 旧方法: local primary_interface=$(networksetup -listallhardwareports | awk '/Hardware Port: (Wi-Fi|Ethernet)/{getline; print $2}' | head -n 1)
+    # 新方法: 使用路由表获取默认接口
+    log_info "尝试通过路由表获取默认网络接口..."
+    local primary_interface=$(route get default | grep 'interface:' | awk '{print $2}')
 
     if [ -z "$primary_interface" ]; then
-        log_warn "未能自动检测到主要的 Wi-Fi 或以太网接口。默认尝试使用 'en0'。"
+        # log_warn "未能自动检测到主要的 Wi-Fi 或以太网接口。默认尝试使用 'en0'。"
+        log_warn "未能通过路由表获取默认接口。默认尝试使用 'en0'。"
         primary_interface="en0"
     else
-        log_info "检测到主网络接口: $primary_interface"
+        log_info "检测到默认路由接口: $primary_interface"
     fi
 
     # 获取当前 MAC 地址用于日志记录
