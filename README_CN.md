@@ -442,7 +442,7 @@ irm https://raw.githubusercontent.com/yuaotian/go-cursor-help/refs/heads/master/
 </td>
 <td align="center">
 <b>微信交流群</b><br>
-<img src="img/qun11.jpg" width="500" alt="WeChat"><br>
+<img src="img/qun-12.png" width="500" alt="WeChat"><br>
 <small>二维码7天内(4月25日前)有效，过期请加微信</small>
 </td>
 <td align="center">
