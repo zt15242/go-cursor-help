@@ -72,7 +72,48 @@ BACKUP_DIR="$HOME/Library/Application Support/Cursor/User/globalStorage/backups"
 # 定义 Cursor 应用程序路径
 CURSOR_APP_PATH="/Applications/Cursor.app"
 
-# 新增：辅助函数，用于修改单个接口的 MAC 地址
+# 新增：判断接口类型是否为Wi-Fi
+is_wifi_interface() {
+    local interface_name="$1"
+    # 通过networksetup判断接口类型
+    networksetup -listallhardwareports | \
+        awk -v dev="$interface_name" 'BEGIN{found=0} /Hardware Port: Wi-Fi/{found=1} /Device:/{if(found && $2==dev){exit 0}else{found=0}}' && return 0 || return 1
+}
+
+# 新增：生成本地管理+单播MAC地址（IEEE标准）
+generate_local_unicast_mac() {
+    # 第一字节：LAA+单播（低两位10），其余随机
+    local first_byte=$(( (RANDOM & 0xFC) | 0x02 ))
+    local mac=$(printf '%02x:%02x:%02x:%02x:%02x:%02x' \
+        $first_byte $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)))
+    echo "$mac"
+}
+
+# 新增：自动检测并调用macchanger或spoof-mac
+try_third_party_mac_tool() {
+    local interface_name="$1"
+    local random_mac="$2"
+    local success=false
+    # 优先macchanger
+    if command -v macchanger >/dev/null 2>&1; then
+        log_info "尝试使用macchanger修改接口 '$interface_name' 的MAC地址..."
+        sudo macchanger -m "$random_mac" "$interface_name" >>"$LOG_FILE" 2>&1 && success=true
+    fi
+    # 若macchanger不可用，尝试spoof-mac
+    if ! $success && command -v spoof-mac >/dev/null 2>&1; then
+        log_info "尝试使用spoof-mac修改接口 '$interface_name' 的MAC地址..."
+        sudo spoof-mac set $random_mac $interface_name >>"$LOG_FILE" 2>&1 && success=true
+    fi
+    if $success; then
+        log_info "第三方工具修改MAC地址成功。"
+        return 0
+    else
+        log_warn "未检测到可用的macchanger或spoof-mac，或第三方工具修改失败。"
+        return 1
+    fi
+}
+
+# 修改_change_mac_for_one_interface，失败时自动调用第三方工具，并集成恢复/重试菜单
 _change_mac_for_one_interface() {
     local interface_name="$1"
     if [ -z "$interface_name" ]; then
@@ -82,7 +123,6 @@ _change_mac_for_one_interface() {
 
     log_info "开始处理接口: $interface_name"
 
-    # 获取当前 MAC 地址用于日志记录
     local current_mac=$(ifconfig "$interface_name" | awk '/ether/{print $2}')
     if [ -z "$current_mac" ]; then
         log_warn "无法获取接口 '$interface_name' 的当前 MAC 地址，可能已禁用或不存在。"
@@ -90,25 +130,27 @@ _change_mac_for_one_interface() {
         log_info "接口 '$interface_name' 当前 MAC 地址: $current_mac"
     fi
 
-    # 生成随机 MAC 地址 (保留本地管理位，避免冲突)
-    local random_mac=$(printf '02:%02x:%02x:%02x:%02x:%02x' $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)))
-    log_info "为接口 '$interface_name' 生成新的随机 MAC 地址: $random_mac"
+    local random_mac=$(generate_local_unicast_mac)
+    log_info "为接口 '$interface_name' 生成新的本地管理+单播 MAC 地址: $random_mac"
 
     local mac_change_success=false
 
-    # 临时禁用接口
+    if is_wifi_interface "$interface_name"; then
+        log_info "检测到接口 '$interface_name' 为Wi-Fi，先断开SSID..."
+        sudo /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -z 2>>"$LOG_FILE"
+        sleep 3
+    fi
+
     log_info "临时禁用接口 '$interface_name' 以修改 MAC 地址 (网络会短暂中断)..."
     if ! sudo ifconfig "$interface_name" down; then
         log_error "禁用接口 '$interface_name' 失败，跳过该接口的 MAC 地址修改。"
         echo -e "${RED}禁用网络接口 '$interface_name' 失败。请检查日志: $LOG_FILE ${NC}"
-        # 即使禁用失败，仍然尝试启用接口 (如果之前是启用的)
         sudo ifconfig "$interface_name" up 2>/dev/null || true
         return 1
     else
-        log_info "接口 '$interface_name' 已禁用，等待1秒..."
-        sleep 1 # 添加短暂延迟确保接口状态改变
+        log_info "接口 '$interface_name' 已禁用，等待3秒..."
+        sleep 3
 
-        # 尝试修改 MAC 地址
         log_info "尝试为接口 '$interface_name' 设置 MAC 地址: $random_mac"
         if sudo ifconfig "$interface_name" ether "$random_mac"; then
             log_info "尝试修改接口 '$interface_name' 的 MAC 地址为: $random_mac [成功]"
@@ -123,37 +165,66 @@ _change_mac_for_one_interface() {
             log_error "尝试修改接口 '$interface_name' 的 MAC 地址失败。"
             log_error "请检查接口名称是否正确，或尝试手动执行: sudo ifconfig $interface_name down && sudo ifconfig $interface_name ether <新MAC地址> && sudo ifconfig $interface_name up"
             echo -e "${RED}修改接口 '$interface_name' 的 MAC 地址失败。请检查日志: $LOG_FILE ${NC}"
+            echo -e "${YELLOW}如多次失败，可尝试安装并使用macchanger或spoof-mac工具。${NC}"
+            echo -e "${YELLOW}macchanger安装: brew install macchanger，spoof-mac安装: brew install spoof-mac${NC}"
+            # 自动尝试第三方工具
+            if try_third_party_mac_tool "$interface_name" "$random_mac"; then
+                mac_change_success=true
+            fi
         fi
     fi
 
-    # 重新启用接口
     log_info "重新启用接口 '$interface_name'..."
     if ! sudo ifconfig "$interface_name" up; then
         log_error "重新启用接口 '$interface_name' 失败。"
         echo -e "${RED}重新启用网络接口 '$interface_name' 失败。请检查日志: $LOG_FILE ${NC}"
-        # 即使启用失败，也报告 MAC 修改尝试的结果
         if $mac_change_success; then
              echo -e "${YELLOW}接口 '$interface_name' 的 MAC 地址已修改，但重新启用接口失败。请手动检查网络连接。${NC}"
         fi
         return 1
     else
         log_info "接口 '$interface_name' 已重新启用。等待网络恢复..."
-        sleep 2 # 等待网络恢复
-        # Optional: Add a network connectivity check here
+        sleep 2
         if $mac_change_success; then
             local final_mac_check=$(ifconfig "$interface_name" | awk '/ether/{print $2}')
             log_info "最终验证接口 '$interface_name' 新 MAC 地址 (接口启用状态下): $final_mac_check"
             if [ "$final_mac_check" == "$random_mac" ]; then
-                 echo -e "${GREEN}已成功临时修改接口 '$interface_name' 的 MAC 地址。重启后恢复。${NC}"
-                 return 0 # 成功
+                 echo -e "${GREEN}已成功临时修改接口 '$interface_name' 的 MAC 地址（本地管理+单播）。重启后恢复。${NC}"
+                 return 0
             else
                  log_warn "最终验证失败，接口 '$interface_name' 的 MAC 地址可能未生效或已被重置。"
                  echo -e "${YELLOW}接口 '$interface_name' MAC 地址修改尝试完成，但最终验证失败。请检查接口状态和日志。${NC}"
-                 return 1 # 验证失败
+                 # 失败时提供恢复/重试选项
+                 select_menu_option "MAC地址修改失败，您可以：" "重试本接口|跳过本接口|退出脚本" 0
+                 local choice=$?
+                 if [ "$choice" = "0" ]; then
+                     log_info "用户选择重试本接口。"
+                     _change_mac_for_one_interface "$interface_name"
+                 elif [ "$choice" = "1" ]; then
+                     log_info "用户选择跳过本接口。"
+                     return 1
+                 else
+                     log_info "用户选择退出脚本。"
+                     exit 1
+                 fi
+                 return 1
             fi
         else
             echo -e "${RED}接口 '$interface_name' MAC 地址修改尝试失败。请检查日志: $LOG_FILE ${NC}"
-            return 1 # 修改失败
+            # 失败时提供恢复/重试选项
+            select_menu_option "MAC地址修改失败，您可以：" "重试本接口|跳过本接口|退出脚本" 0
+            local choice=$?
+            if [ "$choice" = "0" ]; then
+                log_info "用户选择重试本接口。"
+                _change_mac_for_one_interface "$interface_name"
+            elif [ "$choice" = "1" ]; then
+                log_info "用户选择跳过本接口。"
+                return 1
+            else
+                log_info "用户选择退出脚本。"
+                exit 1
+            fi
+            return 1
         fi
     fi
 }
@@ -202,7 +273,7 @@ check_and_kill_cursor() {
             kill $CURSOR_PIDS 2>/dev/null || true
         fi
         
-        sleep 1
+        sleep 3
         
         # 同样使用更精确的匹配来检查进程是否还在运行
         if ! ps aux | grep -i "/Applications/Cursor.app" | grep -v grep > /dev/null; then
@@ -836,7 +907,7 @@ global.macMachineId = '${mac_machine_id}';
             cat /tmp/codesign.log
         fi
         
-        sleep 1
+        sleep 3
     done
 
     if ! $sign_success; then
