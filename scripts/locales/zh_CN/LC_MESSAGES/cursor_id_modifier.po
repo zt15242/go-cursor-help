@@ -305,7 +305,7 @@ msgid "Please restart Cursor to apply the new configuration"
 msgstr "请重启 Cursor 以应用新的配置"
 
 msgid "Follow the WeChat public account [Pancake AI] to discuss more Cursor tips and AI knowledge (script is free, join the group via the public account for more tips and experts)"
-msgstr "关注公众号【煎饼果子卷AI】一起交流更多Cursor技巧和AI知识(脚本免费、关注公众号加群有更多技巧和大佬)"
+msgstr "添加QQ:2717718875 一起交流更多Cursor技巧和AI知识"
 
 msgid "Script execution completed"
 msgstr "脚本执行完成"
